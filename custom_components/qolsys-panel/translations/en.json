@@ -1,0 +1,86 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Device is already configured",
+            "already_in_progress": "Configuration flow is already in progress",
+            "device_mismatch": "Please ensure you reconfigure against the same device.",
+            "reauth_successful": "Re-authentication was successful",
+            "reconfigure_successful": "Re-configuration was successful"
+        },
+        "error": {
+            "cannot_connect": "Failed to connect",
+            "invalid_auth": "Invalid authentication",
+            "unknown": "Unexpected error"
+        },
+        "flowtitle": "Qolsys IQ Panel",
+        "step": {
+            "existing_pki": {
+                "data": {
+                    "panel_ip": "Qolsys IQ Panel IP Address",
+                    "random_mac": "PKI Unique ID (random_mac)"
+                },
+                "description": "Connect to your Qolsys IQ Panel using an existing client certificate.",
+                "title": "Qolsys IQ Panel - Existing PKI"
+            },
+            "pki_autodiscovery_1": {
+                "description": "Autodiscovery Mode: Ensure Home Assistant is on the same subnet than your IQ Panel, open IQ Remote pairing page and wait for next step. The plugin will detect or create the PKI folder for secure pairing.",
+                "title": "Qolsys IQ Panel - PKI Autodiscovery"
+            },
+            "pki_autodiscovery_2": {
+                "description": "Press 'Submit' button on this page and then 'Pair' button on IQ Remote pairing page."
+            },
+            "user": {
+                "description": "Pair to your Qolsys IQ Panel"
+            }
+        }
+    },
+    "entity": {
+        "binary_sensor": {
+            "dimmer_node_status": {
+                "name": "Node Status"
+            },
+            "panel_ac_status": {
+                "name": "AC Status"
+            },
+            "panel_auto_arm_stay": {
+                "name": "Auto Arm Stay"
+            },
+            "panel_auto_bypass": {
+                "name": "Auto Bypass"
+            },
+            "panel_auto_stay": {
+                "name": "Auto Stay"
+            },
+            "panel_battery_status": {
+                "name": "Battery Status"
+            },
+            "panel_control_4": {
+                "name": "Control4"
+            },
+            "panel_fail_to_communicate": {
+                "name": "Communication"
+            },
+            "panel_gsm_connection_status": {
+                "name": "GSM Status"
+            },
+            "panel_secure_arming": {
+                "name": "Secure Arming"
+            },
+            "panel_tamper_state": {
+                "name": "Tamper"
+            },
+            "panel_zwave_controller": {
+                "name": "Z-Wave Controller"
+            },
+            "partition_alarm_auxiliary": {
+                "name": "Auxiliary Alarm"
+            },
+            "partition_alarm_fire": {
+                "name": "Fire Alarm"
+            },
+            "partition_alarm_police": {
+                "name": "Police Alarm"
+            }
+        }
+    }
+}
