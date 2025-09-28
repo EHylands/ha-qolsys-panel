@@ -1,5 +1,5 @@
 {
-  "domain": "qolsys-panel",
+  "domain": "qolsys_panel",
   "name": "Qolsys Panel",
   "codeowners": [
     "@EHylands"
@@ -8,6 +8,8 @@
   "documentation": "",
   "iot_class": "local_push",
   "integration_type": "device",
-  "requirements": ["qolsys-controller==0.0.4"]
+  "requirements": ["qolsys-controller==0.0.4"],
+  "loggers": ["qolsys_panel", "qolsys-controller"],
+  "version": "0.0.1"
 }
 
