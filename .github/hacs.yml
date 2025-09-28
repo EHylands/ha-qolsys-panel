@@ -1,0 +1,30 @@
+name: "HACS Validation"
+on:
+  workflow_dispatch:
+  schedule:
+    - cron:  "0 0 * * *"
+  push:
+    branches:
+      - "main"
+  pull_request:
+    branches:
+      - "main"
+jobs:
+  hassfest:
+    name: "Hassfest Validation"
+    runs-on: "ubuntu-latest"
+    steps:
+        - name: "Checkout the repository"
+          uses: "actions/checkout@v5"
+        - name: "Run hassfest validation"
+          uses: "home-assistant/actions/hassfest@master"
+  hacs:
+    name: "HACS Validation"
+    runs-on: "ubuntu-latest"
+    steps:
+        - name: "Checkout the repository"
+          uses: "actions/checkout@v5"
+        - name: "Run HACS validation"
+          uses: "hacs/action@main"
+          with:
+            category: "integration"
