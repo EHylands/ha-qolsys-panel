@@ -58,7 +58,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     # Configure remote plugin
     if not await QolsysPanel.plugin.config(start_pairing=False):
-        LOGGER.debug('Error Configuring remote plugin')
+        LOGGER.error('Error Configuring remote plugin')
         return False
 
     # Start the plugin
@@ -66,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         await QolsysPanel.plugin.start_operation()
 
     except QolsysSslError as err:
-        LOGGER.error('Credentials rejected by panel')
+        LOGGER.error('Credentials rejected by panel - Signed certificate error')
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
         ) from err

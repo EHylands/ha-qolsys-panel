@@ -57,37 +57,31 @@ PANEL_SENSOR = [
         key="ZWAVE_CONTROLLER",
         translation_key="panel_zwave_controller",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
         key="SECURE_ARMING",
         translation_key="panel_secure_arming",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
         key="AUTO_STAY",
         translation_key="panel_auto_stay",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
         key="AUTO_ARM_STAY",
         translation_key="panel_auto_arm_stay",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
         key="CONTROL_4",
         translation_key="panel_control_4",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     ),
     BinarySensorEntityDescription(
         key="AUTO_BYPASS",
         translation_key="panel_auto_bypass",
         entity_registry_enabled_default=True,
-        #device_class=BinarySensorDeviceClass.PROBLEM,
     )
 ]
 
