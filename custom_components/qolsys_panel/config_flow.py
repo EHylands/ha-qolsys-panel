@@ -28,20 +28,20 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Init config flow."""
-
         self._data: dict[str, Any] = {}
         self._pki_list = []
         self._config_directory = ""
-
-        self._QolsysPanel = qolsys_controller()
-        self._QolsysPanel.select_plugin("remote")
-        self._QolsysPanel.plugin.settings.config_directory = self.hass.config.config_dir + "/qolsys_panel/"
-        self._QolsysPanel.plugin.log_mqtt_mesages = False
+        self._QolsysPanel = None
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
+
+        self._QolsysPanel = qolsys_controller()
+        self._QolsysPanel.select_plugin("remote")
+        self._QolsysPanel.plugin.settings.config_directory = self.hass.config.config_dir + "/qolsys_panel/"
+        self._QolsysPanel.plugin.log_mqtt_mesages = False
 
         return self.async_show_menu(
             step_id="user",
