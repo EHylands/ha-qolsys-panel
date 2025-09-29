@@ -1,6 +1,5 @@
 {
   "config": {
-    "flowtitle": "Qolsys IQ Panel",
     "step": {
       "user": {
         "description": "Pair to your Qolsys IQ Panel"

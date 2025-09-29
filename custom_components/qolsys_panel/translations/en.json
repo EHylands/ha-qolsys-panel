@@ -12,14 +12,13 @@
             "invalid_auth": "Invalid authentication",
             "unknown": "Unexpected error"
         },
-        "flowtitle": "Qolsys IQ Panel",
         "step": {
             "existing_pki": {
                 "data": {
                     "panel_ip": "Qolsys IQ Panel IP Address",
                     "random_mac": "PKI Unique ID (random_mac)"
                 },
-                "description": "Connect to your Qolsys IQ Panel using an existing client certificate.",
+                "description": "Connect to your Qolsys Panel using an existing client certificate.",
                 "title": "Qolsys IQ Panel - Existing PKI"
             },
             "pki_autodiscovery_1": {
