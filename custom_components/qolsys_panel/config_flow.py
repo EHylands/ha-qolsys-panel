@@ -37,10 +37,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the initial step."""
-
+        self._config_directory = self.hass.config.config_dir + "/qolsys_panel/"
         self._QolsysPanel = qolsys_controller()
         self._QolsysPanel.select_plugin("remote")
-        self._QolsysPanel.plugin.settings.config_directory = self.hass.config.config_dir + "/qolsys_panel/"
+        self._QolsysPanel.plugin.settings.config_directory = self._config_directory
         self._QolsysPanel.plugin.log_mqtt_mesages = False
 
         return self.async_show_menu(
