@@ -39,8 +39,9 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) -> bool:
     """Set up Qolsys Panel from a config entry."""
 
-    QolsysPanel = qolsys_controller(config_directory= f"{hass.config.config_dir}/qolsys_panel_hass/")
+    QolsysPanel = qolsys_controller()
     QolsysPanel.select_plugin("remote")
+    QolsysPanel.plugin.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]

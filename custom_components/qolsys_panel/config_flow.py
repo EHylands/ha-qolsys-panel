@@ -39,9 +39,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the initial step."""
 
-        self._config_directory = self.hass.config.config_dir + "/qolsys_panel_hass/"
-        self._QolsysPanel = qolsys_controller(config_directory=self._config_directory)
+        self._QolsysPanel = qolsys_controller()
         self._QolsysPanel.select_plugin("remote")
+        self._QolsysPanel.plugin.settings.config_directory = self.hass.config.config_dir + "/qolsys_panel_hass/"
         self._QolsysPanel.plugin.log_mqtt_mesages = False
 
         return self.async_show_menu(
@@ -217,7 +217,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except QolsysSslError:
             _LOGGER.debug("credential error Error connecting to panel")
             return False
-
 
         _LOGGER.debug("Plugin is configured")
 
