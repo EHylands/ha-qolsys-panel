@@ -13,6 +13,8 @@ from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
+from homeassistant.helpers import config_validation as cv
+
 
 from .const import CONF_RANDOM_MAC, DOMAIN
 from .types import QolsysPanelConfigEntry
@@ -30,6 +32,8 @@ _PLATFORMS: list[Platform] = [
     Platform.LOCK,
     Platform.CLIMATE,
 ]
+
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Qolsys Panel services."""
