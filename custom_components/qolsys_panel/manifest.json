@@ -9,7 +9,7 @@
   "issue_tracker": "https://github.com/EHylands/ha-qolsys-panel/issues",
   "iot_class": "local_push",
   "integration_type": "device",
-  "requirements": ["qolsys-controller==0.0.4"],
+  "requirements": ["network","qolsys-controller==0.0.4"],
   "loggers": ["qolsys_panel", "qolsys-controller"],
   "version": "0.0.1"
 }
