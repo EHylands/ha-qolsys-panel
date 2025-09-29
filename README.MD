@@ -1,7 +1,7 @@
 A custom HACS integration for Qolsys Panels.
 
 Installation with HACS custom repository:
-Please follow https://www.hacs.xyz/docs/faq/custom_repositories/ for custom repository installation in 
+Please follow https://www.hacs.xyz/docs/faq/custom_repositories/ for custom repository installation.
 
 ### Supported Features Milestones
 
