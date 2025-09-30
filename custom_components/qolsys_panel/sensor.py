@@ -56,7 +56,10 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
-        return int(self._zone.latestdBm)
+        if self._zone.latestdBm is None or self._zone.latestdBm == '':
+            return 0
+        else:
+            return int(self._zone.latestdBm)
 
 class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     """A sensor entity for the average DBM of a zone."""
