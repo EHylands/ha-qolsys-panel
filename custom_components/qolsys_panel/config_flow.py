@@ -216,7 +216,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except QolsysSslError:
             _LOGGER.debug("credential error Error connecting to panel")
             return False
+        finally:
+            await self._QolsysPanel.plugin.stop_operation()
 
         _LOGGER.debug("Plugin is configured")
-
         return True

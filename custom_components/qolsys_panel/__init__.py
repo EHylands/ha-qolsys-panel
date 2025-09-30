@@ -23,7 +23,7 @@ from .utils import get_local_ip
 logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(module)s: %(message)s')
 LOGGER = logging.getLogger(__name__)
 
-_PLATFORMS: list[Platform] = [
+PLATFORMS: list[Platform] = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.BINARY_SENSOR,
     Platform.SENSOR,
@@ -59,14 +59,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     # Configure remote plugin
     if not await QolsysPanel.plugin.config(start_pairing=False):
         LOGGER.error('Error Configuring remote plugin')
-        return False
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN,
+            translation_key="cannot_configure",
+        )
 
-    # Start the plugin
+    # Start plugin operation
     try:
         await QolsysPanel.plugin.start_operation()
 
     except QolsysSslError as err:
-        LOGGER.error('Credentials rejected by panel - Signed certificate error')
+        LOGGER.error('Credentials rejected by panel - Signed Certificate Error')
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
         ) from err
@@ -91,7 +94,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         sw_version=QolsysPanel.panel.ANDROID_VERSION,
     )
 
-    await hass.config_entries.async_forward_entry_setups(entry, _PLATFORMS)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 # Update entry annotation
@@ -99,4 +102,6 @@ async def async_unload_entry(
     hass: HomeAssistant, entry: QolsysPanelConfigEntry
 ) -> bool:
     """Unload a config entry."""
-    return await hass.config_entries.async_unload_platforms(entry, _PLATFORMS)
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        await entry.runtime_data.stop_operation()
+    return unload_ok

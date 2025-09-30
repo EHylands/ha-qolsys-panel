@@ -9,6 +9,7 @@
         },
         "error": {
             "cannot_connect": "Failed to connect",
+            "cannot_configure": "Could not configure panel.",
             "invalid_auth": "Invalid authentication",
             "unknown": "Unexpected error"
         },
