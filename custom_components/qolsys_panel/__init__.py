@@ -49,7 +49,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
-    QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
+    QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC].upper()
 
     # Additionnal remote plugin config
     QolsysPanel.plugin.check_user_code_on_disarm = False
