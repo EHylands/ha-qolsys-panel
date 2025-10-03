@@ -2,18 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "description": "Pair to your Qolsys Panel"
+        "description": "Choose pairing method:"
       },
       "pki_autodiscovery_1":{
-        "title": "Qolsys Panel - PKI Autodiscovery",
-        "description": "Autodiscovery Mode: Ensure Home Assistant is on the same subnet than your Qolsys Panel, open IQ Remote pairing page and wait for next step. The plugin will detect or create the PKI folder for secure pairing."
+        "title": "Qolsys Panel - Automatic Panel Discovery",
+        "description": "Autodiscovery Mode:\n1. Ensure Home Assistant is on the same subnet than your Qolsys Panel\n2. Open IQ Remote pairing page on Qolsys Panel and wait for next step"
       },
       "pki_autodiscovery_2":{
         "description": "Press 'Submit' button on this page and then 'Pair' button on IQ Remote pairing page."
       },
       "existing_pki":{
         "title": "Qolsys Panel - Existing PKI",
-        "description": "Connect to your Qolsys IQ Panel using an existing client certificate.",
+        "description": "Connect to your Qolsys Panel using an existing client certificate.",
         "data": {
           "random_mac": "PKI Unique ID (random_mac)",
           "panel_ip": "Qolsys Panel IP Address"
