@@ -4,6 +4,8 @@
 
 This is a custom integration for **Qolsys Panels** (such as IQ Panel 2/4), allowing local pairing and control via Home Assistant.
 
+![Qolsys01](https://github.com/EHylands/ha-qolsys-panel/assets/qolsys01.jpg)
+
 ---
 
 ## 🧩 Installation
