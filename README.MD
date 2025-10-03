@@ -48,8 +48,6 @@ You can pair with your Qolsys Panel using one of the following two methods:
 4. When prompted for the pairing method, choose:  
    **Automatic Panel Discovery and Pairing**
 
----
-
 ### 🔐 2. Pairing with an Existing Signed Client Certificate (PKI)
 
 If you already have a **signed client certificate**, you can use it for secure, authenticated pairing with the panel.
