@@ -66,6 +66,7 @@ If you already have a **signed client certificate**, you can use it for secure, 
 |                        | Home Instant Arming                 | ✅     |
 |                        | Set Exit Sounds                      | ✅     |
 |                        | Disarm Photos                        | 🛠️     |
+|                        | TTS.                                 | 🛠️     |
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
