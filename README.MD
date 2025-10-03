@@ -53,3 +53,29 @@ You can pair with your Qolsys Panel using one of the following two methods:
 If you already have a **signed client certificate**, you can use it for secure, authenticated pairing with the panel.
 
 **Steps:** (coming soon or to be documented based on implementation)
+
+---
+
+## ✨ Functionality Highlights
+
+| Category               | Feature                             | Status |
+|------------------------|--------------------------------------|--------|
+| **Panel**              | Diagnostic Sensors                   | ✅     |
+| **Partition**          | Arming Status                        | ✅     |
+|                        | Alarm State                          | ✅     |
+|                        | Home Instant Arming                 | ✅     |
+|                        | Set Exit Sounds                      | ✅     |
+|                        | Disarm Photos                        | 🛠️     |
+| **Zones**              | Sensor Status                        | ✅     |
+|                        | Tamper State                         | ✅     |
+|                        | Battery Level                        | ✅     |
+|                        | Signal Level                         | ✅     |
+| **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
+| **Z-Wave Devices**     | Battery Level                        | ✅     |
+|                        | Pairing Status                       | ✅     |
+|                        | Node Status                          | ✅     |
+|                        | Control Generic Devices              | 🔜     |
+| **Z-Wave Door Locks**  |                                      | 🛠️     |
+| **Z-Wave Thermostats** |                                      | 🛠️     |
+| **Z-Wave Garage Doors**|                                      | 🛠️     |
+| **Z-Wave Outlets**     |                                      | 🛠️     |
