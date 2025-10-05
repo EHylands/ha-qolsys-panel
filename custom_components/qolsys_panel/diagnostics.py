@@ -65,7 +65,7 @@ async def async_get_config_entry_diagnostics(
             "zones": [
                 {
                     "id": zone.id,
-                    "name": zone.name,
+                    "name": zone.sensorname,
                     "sensorstatus": zone.sensorstatus,
                 }
                 for zone in QolsysPanel.state.zones
