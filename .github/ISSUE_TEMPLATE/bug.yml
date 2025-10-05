@@ -1,4 +1,3 @@
----
 name: "Bug report"
 description: "Report a bug with the integration"
 labels: "Bug"
@@ -16,16 +15,16 @@ body:
 - type: dropdown
   id: panel_version
   attributes:
-  label: Version of the panel
-  description: Qolsys Panel Version
-  options:
-    - IQ Panel 2
-    - IQ Panel 2+
-    - IQ Panel 4
-    - IQ 4 Hub
-    - IQ Hub
-    - IQ Pro
-  multiple: false
+    label: Version of the panel
+    description: Qolsys Panel Version
+    options:
+      - IQ Panel 2
+      - IQ Panel 2+
+      - IQ Panel 4
+      - IQ 4 Hub
+      - IQ Hub
+      - IQ Pro
+    multiple: false
   validations:
     required: true
 - type: textarea
