@@ -2,6 +2,27 @@ name: "Bug report"
 description: "Report a bug with the integration"
 labels: "Bug"
 body:
- - type: markdown
+- type: markdown
   attributes:
     value: Before you open a new issue, search through the existing issues to see if others have had the same problem.
+
+- type: dropdown
+    id: panel_version
+    attributes:
+      label: Version of the panel
+      description: This is needed to know which Panel special case you might encounters, and identify similar issues
+      options:
+        - IQ Panel 2
+        - IQ Panel 2+
+        - IQ Panel 4
+        - IQ Pro
+        - Other (specify in the description)
+      multiple: false
+    validations:
+      required: true
+- type: textarea
+  attributes:
+    label: "Describe the issue"
+    description: "A clear and concise description of what the issue is."
+  validations:
+    required: true
