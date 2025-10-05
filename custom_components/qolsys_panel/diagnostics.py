@@ -24,7 +24,7 @@ async def async_get_config_entry_diagnostics(
             "model": QolsysPanel.panel.product_type,
             "android_version": QolsysPanel.panel.ANDROID_VERSION,
             "hardware_version": QolsysPanel.panel.HARDWARE_VERSION,
-            "pane_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
+            "panel_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
             "ac_status": QolsysPanel.panel.AC_STATUS,
             "battery_status": QolsysPanel.panel.BATTERY_STATUS,
             "gsm_connection_satus": QolsysPanel.panel.GSM_CONNECTION_STATUS,
