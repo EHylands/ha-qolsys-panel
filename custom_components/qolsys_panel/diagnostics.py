@@ -3,12 +3,13 @@
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.const import CONF_HOST, CONF_MAC
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_IMEI, CONF_PANEL_IP, CONF_RANDOM_MAC
+from .const import CONF_IMEI, CONF_RANDOM_MAC
 from .types import QolsysPanelConfigEntry
 
-TO_REDACT = [CONF_IMEI, CONF_PANEL_IP, CONF_RANDOM_MAC]
+TO_REDACT = [CONF_IMEI, CONF_RANDOM_MAC, CONF_HOST, CONF_MAC]
 
 
 async def async_get_config_entry_diagnostics(
@@ -17,6 +18,9 @@ async def async_get_config_entry_diagnostics(
     """Return diagnostics for a config entry."""
 
     QolsysPanel = entry.runtime_data
+
+    if QolsysPanel is None:
+        return {"entry_data": async_redact_data(entry.data, TO_REDACT)}
 
     return {
         "entry_data": async_redact_data(entry.data, TO_REDACT),
@@ -59,17 +63,37 @@ async def async_get_config_entry_diagnostics(
                 {
                     "id": partition.id,
                     "name": partition.name,
+                    "system_status": partition.system_status,
+                    "alarm_state":partition.alarm_state,
+                    "alarm_type": partition.alarm_type_array,
                 }
                 for partition in QolsysPanel.state.partitions
             ],
             "zones": [
                 {
-                    "id": zone.id,
-                    "name": zone.sensorname,
+                    "zone_id": zone.zone_id,
+                    "sensorname": zone.sensorname,
                     "sensorstatus": zone.sensorstatus,
+                    "sensortype": zone.sensortype,
+                    "sensorgroup": zone.sensorgroup,
+                    "battery_status": zone.battery_status,
+                    "averagedBm": zone.averagedBm,
+                    "latestdBm": zone.latestdBm,
+                    "ac_status": zone.ac_status,
+                    "signal_source": zone.signal_source,
                 }
                 for zone in QolsysPanel.state.zones
             ],
-            
+            "zwave_dimmers": [
+                {
+                    "dimmer_node_id": dimmer.dimmer_node_id,
+                    "dimmer_name": dimmer.dimmer_name,
+                    "node_status": dimmer.node_status,
+                    "dimmer_level": dimmer.dimmer_level,
+                    "power_details": dimmer.power_details,
+                    "paired_status": dimmer.paired_status,
+                }
+                for dimmer in QolsysPanel.state.zwave_dimmers
+            ]
         },
     }
