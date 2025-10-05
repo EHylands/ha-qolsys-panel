@@ -79,6 +79,7 @@ async def async_get_config_entry_diagnostics(
                     "battery_status": zone.battery_status,
                     "averagedBm": zone.averagedBm,
                     "latestdBm": zone.latestdBm,
+                    
                 }
                 for zone in QolsysPanel.state.zones
             ],
