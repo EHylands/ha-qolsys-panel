@@ -1,0 +1,7 @@
+name: "Bug report"
+description: "Report a bug with the integration"
+labels: "Bug"
+body:
+ - type: markdown
+  attributes:
+    value: Before you open a new issue, search through the existing issues to see if others have had the same problem.
