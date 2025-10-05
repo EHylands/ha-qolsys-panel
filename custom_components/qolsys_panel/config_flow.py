@@ -16,7 +16,7 @@ from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 
-from .const import CONF_IMEI, CONF_PANEL_IP, CONF_RANDOM_MAC, DOMAIN
+from .const import CONF_IMEI, CONF_RANDOM_MAC, DOMAIN
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
@@ -170,7 +170,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         self._QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=self.hass)
-        self._QolsysPanel.plugin.settings.panel_ip = user_input[CONF_PANEL_IP]
+        self._QolsysPanel.plugin.settings.panel_ip = user_input[CONF_HOST]
         self._QolsysPanel.plugin.settings.random_mac = user_input[CONF_RANDOM_MAC]
         self._QolsysPanel.plugin.auto_discover_pki = False
 
