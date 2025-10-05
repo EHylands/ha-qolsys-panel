@@ -25,9 +25,9 @@ body:
     - IQ 4 Hub
     - IQ Hub
     - IQ Pro
-      multiple: false
+  multiple: false
   validations:
-  required: true
+    required: true
 - type: textarea
   attributes:
     label: "Describe the issue"
