@@ -79,7 +79,6 @@ async def async_get_config_entry_diagnostics(
                     "battery_status": zone.battery_status,
                     "averagedBm": zone.averagedBm,
                     "latestdBm": zone.latestdBm,
-                    "signal_source": zone.signal_source,
                 }
                 for zone in QolsysPanel.state.zones
             ],
@@ -89,7 +88,6 @@ async def async_get_config_entry_diagnostics(
                     "dimmer_name": dimmer.dimmer_name,
                     "node_status": dimmer.node_status,
                     "dimmer_level": dimmer.dimmer_level,
-                    "power_details": dimmer.power_details,
                     "paired_status": dimmer.paired_status,
                 }
                 for dimmer in QolsysPanel.state.zwave_dimmers
