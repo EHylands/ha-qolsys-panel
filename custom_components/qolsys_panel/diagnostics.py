@@ -1,0 +1,75 @@
+"""Diagnostics for Qolsys Panel."""
+
+from typing import Any
+
+from homeassistant.components.diagnostics import async_redact_data
+from homeassistant.core import HomeAssistant
+
+from .const import CONF_IMEI, CONF_PANEL_IP, CONF_RANDOM_MAC
+from .types import QolsysPanelConfigEntry
+
+TO_REDACT = [CONF_IMEI, CONF_PANEL_IP, CONF_RANDOM_MAC]
+
+
+async def async_get_config_entry_diagnostics(
+    hass: HomeAssistant, entry: QolsysPanelConfigEntry
+) -> dict[str, Any]:
+    """Return diagnostics for a config entry."""
+
+    QolsysPanel = entry.runtime_data
+
+    return {
+        "entry_data": async_redact_data(entry.data, TO_REDACT),
+        "data": {
+            "model": QolsysPanel.panel.product_type,
+            "android_version": QolsysPanel.panel.ANDROID_VERSION,
+            "hardware_version": QolsysPanel.panel.HARDWARE_VERSION,
+            "pane_tamper_state": QolsysPanel.panel.PANE_TAMPER_STATE,
+            "ac_status": QolsysPanel.panel.AC_STATUS,
+            "battery_status": QolsysPanel.panel.BATTERY_STATUS,
+            "gsm_connection_satus": QolsysPanel.panel.GSM_CONNECTION_STATUS,
+            "gsm_signal_strength": QolsysPanel.panel.GSM_SIGNAL_STRENGTH,
+            "fail_to_communicate": QolsysPanel.panel.FAIL_TO_COMMUNICATE,
+            "language": QolsysPanel.panel.LANGUAGE,
+            "temp_format": QolsysPanel.panel.TEMP_FORMAT,
+            "zwave_firmware_version": QolsysPanel.panel.ZWAVE_FIRM_WARE_VERSION,  
+            "zwave_card_present": QolsysPanel.panel.ZWAVE_CARD,
+            "zwave_controller_enabled": QolsysPanel.panel.ZWAVE_CONTROLLER,
+            "partitions_enabled": QolsysPanel.panel.PARTITIONS,
+            "control4_enabled": QolsysPanel.panel.CONTROL_4,
+            "six_digit_user_code_enabled": QolsysPanel.panel.SIX_DIGIT_USER_CODE,
+            "secure_arming": QolsysPanel.panel.SECURE_ARMING,
+            "auto_stay": QolsysPanel.panel.AUTO_STAY,
+            "auto_bypass": QolsysPanel.panel.AUTO_BYPASS,
+            "auto_arm_stay": QolsysPanel.panel.AUTO_ARM_STAY,
+            "auto_exit_extension": QolsysPanel.panel.AUTO_EXIT_EXTENSION,
+            "final_exit_door_arming": QolsysPanel.panel.FINAL_EXIT_DOOR_ARMING,
+            "no_arm_low_battery": QolsysPanel.panel.NO_ARM_LOW_BATTERY,
+            "normal_entry_delay": QolsysPanel.panel.NORMAL_ENTRY_DELAY,
+            "normal_exit_delay": QolsysPanel.panel.NORMAL_EXIT_DELAY,
+            "long_entry_delay": QolsysPanel.panel.LONG_ENTRY_DELAY,
+            "long_exit_delay": QolsysPanel.panel.LONG_EXIT_DELAY,
+            "auxiliary_panic_enabled": QolsysPanel.panel.AUXILIARY_PANIC_ENABLED,
+            "fire_panic_enabled": QolsysPanel.panel.FIRE_PANIC_ENABLED,
+            "police_panic_enabled": QolsysPanel.panel.POLICE_PANIC_ENABLED,
+            "night_mode_settings": QolsysPanel.panel.NIGHTMODE_SETTINGS,
+            "night_mode_settings_stage2": QolsysPanel.panel.NIGHT_SETTINGS_STATE,
+            "show_security_sensors": QolsysPanel.panel.SHOW_SECURITY_SENSORS,
+            "partitions": [
+                {
+                    "id": partition.id,
+                    "name": partition.name,
+                }
+                for partition in QolsysPanel.state.partitions
+            ],
+            "zones": [
+                {
+                    "id": zone.id,
+                    "name": zone.name,
+                    "sensorstatus": zone.sensorstatus,
+                }
+                for zone in QolsysPanel.state.zones
+            ],
+            
+        },
+    }
