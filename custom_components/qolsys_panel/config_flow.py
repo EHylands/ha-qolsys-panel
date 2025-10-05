@@ -142,7 +142,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
 
         data_schema = {
-            vol.Required(CONF_PANEL_IP): str,
+            vol.Required(CONF_HOST): str,
             vol.Required(CONF_RANDOM_MAC): selector(
                 {
                     "select": {
