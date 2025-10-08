@@ -44,6 +44,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     _attr_supported_features = (
         AlarmControlPanelEntityFeature.ARM_HOME
         | AlarmControlPanelEntityFeature.ARM_AWAY
+        | AlarmControlPanelEntityFeature.ARM_NIGHT
         | AlarmControlPanelEntityFeature.TRIGGER
     )
 
@@ -75,14 +76,17 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
         if system_status == PartitionSystemStatus.ARM_AWAY:
             return AlarmControlPanelState.ARMED_AWAY
-
+        
+        if system_status == PartitionSystemStatus.ARM_NIGHT:
+            return AlarmControlPanelState.ARMED_NIGHT
+    
         return None
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
-        exit_sounds = self._partition.command_exit_sounds
+        silent_disarming = self._partition.command_silent_disarming
         await self.QolsysPanel.plugin.command_disarm(
-            self._partition_id, user_code="", exit_sounds=exit_sounds
+            self._partition_id, user_code="", silent_disarming=silent_disarming
         )
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
@@ -100,14 +104,28 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send ARM-AWAY command."""
         exit_sounds = self._partition.command_exit_sounds
+        arm_stay_instant = self._partition.command_arm_stay_instant
+
         await self.QolsysPanel.plugin.command_arm(
             self._partition_id,
             arming_type="ARM-AWAY",
             user_code="1111",
             exit_sounds=exit_sounds,
-            instant_arm=True,
+            instant_arm=arm_stay_instant,
         )
 
+    async def async_alarm_arm_night(self, code = None):
+        """Send ARM-NIGHT command."""
+        exit_sounds = self._partition.command_exit_sounds
+        arm_stay_instant = self._partition.command_arm_stay_instant
+
+        await self.QolsysPanel.plugin.command_arm(
+            self._partition_id,
+            arming_type="ARM-NIGHT",
+            user_code="",
+            exit_sounds=exit_sounds,
+            instant_arm=arm_stay_instant,
+        )
 
 
 

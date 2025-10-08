@@ -32,8 +32,12 @@ async def async_setup_entry(
         switch2 = PartitionSwitch_ArmStayInstant(
             QolsysPanel, partition.id, config_entry.unique_id
         )
+        switch3 = PartitionSwitch_SilentDisarming(
+            QolsysPanel, partition.id, config_entry.unique_id
+        )
         entities.append(switch1)
         entities.append(switch2)
+        entities.append(switch3)
 
     async_add_entities(entities)
 
@@ -115,3 +119,43 @@ class PartitionSwitch_ArmStayInstant(
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_stay_instant = False
+
+class PartitionSwitch_SilentDisarming(
+    QolsysPartitionEntity, SwitchEntity, RestoreEntity
+):
+    """A switch entity for partition silent disarming."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        partition_id: int,
+        unique_id: str,
+    ) -> None:
+        """Set up a switch entity for a partition silent disarming."""
+        super().__init__(QolsysPanel, partition_id, unique_id)
+        self._attr_unique_id = f"{self._partition_unique_id}_silent_disarming"
+        self._attr_name = "Arm Stay Instant"
+        self._attr_device_class = SwitchDeviceClass.SWITCH
+
+    async def async_added_to_hass(self) -> None:
+        """Restore previous state on restart."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+
+        if last_state and last_state.state == "on":
+            self._partition.command_arm_stay_instant = True
+        else:
+            self._partition.command_arm_stay_instant = False
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the switch is on."""
+        return  self._partition.command_silent_disarming
+
+    def turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        self._partition.command_silent_disarming = True
+
+    def turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        self._partition.command_silent_disarming = False
