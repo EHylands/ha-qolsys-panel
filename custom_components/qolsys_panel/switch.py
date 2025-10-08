@@ -133,7 +133,7 @@ class PartitionSwitch_SilentDisarming(
     ) -> None:
         """Set up a switch entity for a partition silent disarming."""
         super().__init__(QolsysPanel, partition_id, unique_id)
-        self._attr_unique_id = f"{self._partition_unique_id}_silent_disarming"
+        self._attr_unique_id = f"{self._partition_unique_id}_arm_stay_silent_disarming"
         self._attr_name = "Arm Stay Silent Disarming"
         self._attr_device_class = SwitchDeviceClass.SWITCH
 
