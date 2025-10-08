@@ -25,7 +25,6 @@ async def async_get_config_entry_diagnostics(
     return {
         "entry_data": async_redact_data(entry.data, TO_REDACT),
         "data": {
-            "model": QolsysPanel.panel.product_type,
             "android_version": QolsysPanel.panel.ANDROID_VERSION,
             "hardware_version": QolsysPanel.panel.HARDWARE_VERSION,
             "panel_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
