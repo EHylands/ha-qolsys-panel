@@ -55,9 +55,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     # Additionnal remote plugin config
     QolsysPanel.plugin.check_user_code_on_disarm = False
+    QolsysPanel.plugin.check_user_code_on_arm = False
     QolsysPanel.plugin.log_mqtt_mesages = False
     QolsysPanel.plugin.auto_discover_pki = False
-
 
     # Configure remote plugin
     if not await QolsysPanel.plugin.config(start_pairing=False):

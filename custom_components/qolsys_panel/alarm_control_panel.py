@@ -96,7 +96,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         await self.QolsysPanel.plugin.command_arm(
             partition_id=self._partition_id,
             arming_type="ARM-STAY",
-            user_code="1111",
+            user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
         )
@@ -109,7 +109,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         await self.QolsysPanel.plugin.command_arm(
             self._partition_id,
             arming_type="ARM-AWAY",
-            user_code="1111",
+            user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
         )
