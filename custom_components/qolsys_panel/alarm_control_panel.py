@@ -68,7 +68,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         if system_status == PartitionSystemStatus.DISARM and alarm_state != PartitionAlarmState.ALARM:
             return AlarmControlPanelState.DISARMED
 
-        if system_status in (PartitionSystemStatus.ARM_AWAY_EXIT_DELAY, PartitionSystemStatus.ARM_STAY_EXIT_DELAY):
+        if system_status in (PartitionSystemStatus.ARM_AWAY_EXIT_DELAY, PartitionSystemStatus.ARM_STAY_EXIT_DELAY,PartitionSystemStatus.ARM_NIGHT_EXIT_DELAY):
             return AlarmControlPanelState.ARMING
 
         if system_status == PartitionSystemStatus.ARM_STAY:
