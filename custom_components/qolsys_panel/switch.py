@@ -134,7 +134,7 @@ class PartitionSwitch_SilentDisarming(
         """Set up a switch entity for a partition silent disarming."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_silent_disarming"
-        self._attr_name = "Arm Stay Instant"
+        self._attr_name = "Silent Disarming"
         self._attr_device_class = SwitchDeviceClass.SWITCH
 
     async def async_added_to_hass(self) -> None:
