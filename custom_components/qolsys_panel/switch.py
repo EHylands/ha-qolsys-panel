@@ -143,9 +143,9 @@ class PartitionSwitch_SilentDisarming(
         last_state = await self.async_get_last_state()
 
         if last_state and last_state.state == "on":
-            self._partition.command_arm_stay_instant = True
+            self._partition.command_silent_disarming = True
         else:
-            self._partition.command_arm_stay_instant = False
+            self._partition.command_silent_disarming = False
 
     @property
     def is_on(self) -> bool:
