@@ -84,7 +84,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
-        silent_disarming = self._partition.command_silent_disarming
+        silent_disarming = self._partition.command_arm_stay_silent_disarming
         await self.QolsysPanel.plugin.command_disarm(
             self._partition_id, user_code="", silent_disarming=silent_disarming
         )
