@@ -65,7 +65,7 @@ If you already have a **signed client certificate**, you can use it for secure, 
 | **Partition**          | Arming Status                        | ✅     |
 |                        | Alarm State                          | ✅     |
 |                        | Home Instant Arming                  | ✅     |
-|                        | Home Silet Disarming (Firmware 4.6.1)| ✅     |
+|                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
 |                        | Set Exit Sounds                      | ✅     |
 |                        | Disarm Photos                        | 🛠️     |
 |                        | TTS                                  | 🛠️     |
