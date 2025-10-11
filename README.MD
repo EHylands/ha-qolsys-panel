@@ -58,12 +58,14 @@ If you already have a **signed client certificate**, you can use it for secure, 
 
 ## ✨ Functionality Highlights
 
-| Category               | Feature                             | Status |
+| Category               | Feature                              | Status |
 |------------------------|--------------------------------------|--------|
 | **Panel**              | Diagnostic Sensors                   | ✅     |
+|                        | Panels Scenes                        | ✅     |
 | **Partition**          | Arming Status                        | ✅     |
 |                        | Alarm State                          | ✅     |
-|                        | Home Instant Arming                 | ✅     |
+|                        | Home Instant Arming                  | ✅     |
+|                        | Home Silet Disarming (Firmware 4.6.1)| ✅     |
 |                        | Set Exit Sounds                      | ✅     |
 |                        | Disarm Photos                        | 🛠️     |
 |                        | TTS                                  | 🛠️     |
@@ -71,12 +73,13 @@ If you already have a **signed client certificate**, you can use it for secure, 
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
 |                        | Signal Level                         | ✅     |
-| **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
 | **Z-Wave Devices**     | Battery Level                        | ✅     |
 |                        | Pairing Status                       | ✅     |
 |                        | Node Status                          | ✅     |
-|                        | Control Generic Devices              | 🔜     |
+|                        | Control Generic Devices              | TBD    |
+| **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
+| **Z-Wave Thermostats** | Read device status                   | ✅     |
+|                        | Write device status                  | 🛠️     |
 | **Z-Wave Door Locks**  |                                      | 🛠️     |
-| **Z-Wave Thermostats** |                                      | 🛠️     |
 | **Z-Wave Garage Doors**|                                      | 🛠️     |
 | **Z-Wave Outlets**     |                                      | 🛠️     |

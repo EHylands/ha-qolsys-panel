@@ -33,7 +33,7 @@ async def async_setup_entry(
 class QolsysPanelScene(Scene,QolsysPanelEntity):
     """An scene entity for a qolsys panel."""
 
-    _attr_has_entity_name = True
+    _attr_has_entity_name = False
     
     def __init__(
         self, QolsysPanel: qolsys_controller, scene_id:str, unique_id: str
@@ -42,9 +42,9 @@ class QolsysPanelScene(Scene,QolsysPanelEntity):
         super().__init__(QolsysPanel, unique_id)
         self._attr_unique_id = f"{unique_id}_scene_{scene_id}"
         self._scene_id = scene_id
-        self._scene =  QolsysPanel.state.scene(scene_id)
+        scene =  QolsysPanel.state.scene(scene_id)
         if self._scene is not None:
-            self._attr_name = self._scene.name
+            self._attr_name = f"Qolsys Panel - {scene.name}"
 
     async def async_activate(self, **kwargs: Any) -> None:
         """Activate scene. Try to get entities into requested state."""
