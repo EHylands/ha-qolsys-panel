@@ -95,7 +95,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         return None
 
     @property
-    def hvac_mode(self):
+    def hvac_modes(self):
         return []
 
     async def async_set_hvac_mode(self, hvac_mode):
