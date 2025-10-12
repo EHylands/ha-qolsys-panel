@@ -6,8 +6,6 @@ This is a custom integration for **Qolsys Panels** (such as IQ Panel 2/4), allow
 
 ![Qolsys01](https://github.com/EHylands/ha-qolsys-panel/blob/main/assets/qolsys01.jpg)
 
----
-
 ## 🧩 Installation
 
 This integration is not yet part of the official HACS store. You must add it manually as a custom repository.
@@ -49,7 +47,7 @@ You can pair with your Qolsys Panel using one of the following two methods:
 
 ### 🔐 2. Pairing with an Existing Signed Client Certificate (PKI)
 
-If you already have a **signed client certificate**, you can use it to securely and authentically pair with your Qolsys panel.  
+If you already have a **signed client certificate**, you can use it to securely pair with your Qolsys panel.  
 
 With this method, **Home Assistant and the Qolsys Panel do not need to be on the same subnet**, since it doesn’t rely on mDNS discovery.
 
