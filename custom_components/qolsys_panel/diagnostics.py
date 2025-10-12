@@ -69,27 +69,8 @@ async def async_get_config_entry_diagnostics(
                 for partition in QolsysPanel.state.partitions
             ],
             "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
-            "zwave_dimmers": [
-                {
-                    dimmer.to_dict_dimmer()
-                }
-                for dimmer in QolsysPanel.state.zwave_dimmers
-            ],
-            "zwave_locks": [
-                {
-                    "lock_node_id":lock.lock_node_id,
-                    "lock_name": lock.lock_name,
-                    "lock_status": lock.lock_status,
-                    "node_status": lock.node_status,
-                    "paired_status": lock.paired_status,
-                }
-                for lock in QolsysPanel.state.zwave_locks
-            ],
-            "zwave_nodes": [
-                {
-                    device.to_dict_base()
-                }
-                for device in QolsysPanel.state.zwave_devices
-            ]
+            "zwave_dimmers": [dimmer.to_dict_dimmer() for dimmer in QolsysPanel.state.zwave_dimmers],
+            "zwave_locks": [lock.to_dict_lock() for lock in QolsysPanel.state.zwave_locks],
+            "zwave_nodes": [device.to_dict_base() for device in QolsysPanel.state.zwave_devices],
         },
     }
