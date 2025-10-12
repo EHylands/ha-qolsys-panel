@@ -407,10 +407,10 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
             return BinarySensorDeviceClass.DOOR
 
         if self._zone.sensortype == ZoneSensorType.PANEL_GLASS_BREAK:
-            return BinarySensorDeviceClass.GLASS
+            return BinarySensorDeviceClass.PROBLEM
 
         if self._zone.sensortype == ZoneSensorType.GLASS_BREAK:
-            return BinarySensorDeviceClass.GLASS
+            return BinarySensorDeviceClass.PROBLEM
 
         if self._zone.sensortype == ZoneSensorType.SMOKE_DETECTOR:
             return BinarySensorDeviceClass.SMOKE

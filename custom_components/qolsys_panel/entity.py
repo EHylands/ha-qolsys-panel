@@ -185,7 +185,7 @@ class QolsysZwaveLockEntity(QolsysPanelEntity):
         self._zwave_lock_unique_id = f"{unique_id}_zwave_lock{node_id}"
         self._locks = QolsysPanel.state.zwave_device(node_id)
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._zwave_dimmer_unique_id)},
+            identifiers={(DOMAIN, self._zwave_lock_unique_id)},
             manufacturer="Johnson Controls",
             name=f"Z-Wave{node_id} - Lock - {self.lock.lock_name}",
             model="Qolsys Z-Wave Lock",
