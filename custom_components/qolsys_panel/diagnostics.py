@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from .const import CONF_IMEI, CONF_RANDOM_MAC
 from .types import QolsysPanelConfigEntry
 
-TO_REDACT = [CONF_IMEI, CONF_RANDOM_MAC, CONF_HOST, CONF_MAC]
+TO_REDACT = [CONF_IMEI, CONF_RANDOM_MAC, CONF_HOST, CONF_MAC, "name", "sensorname", "node_name", "dimmer_name", "doorlock_name","thermostat_name"]
 
 
 async def async_get_config_entry_diagnostics(
@@ -24,7 +24,7 @@ async def async_get_config_entry_diagnostics(
 
     return {
         "entry_data": async_redact_data(entry.data, TO_REDACT),
-        "data": {
+        "data": async_redact_data({
             "android_version": QolsysPanel.panel.ANDROID_VERSION,
             "hardware_version": QolsysPanel.panel.HARDWARE_VERSION,
             "panel_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
@@ -72,5 +72,5 @@ async def async_get_config_entry_diagnostics(
             "zwave_dimmers": [dimmer.to_dict_dimmer() for dimmer in QolsysPanel.state.zwave_dimmers],
             "zwave_locks": [lock.to_dict_lock() for lock in QolsysPanel.state.zwave_locks],
             "zwave_nodes": [device.to_dict_base() for device in QolsysPanel.state.zwave_devices],
-        },
+        },TO_REDACT)
     }
