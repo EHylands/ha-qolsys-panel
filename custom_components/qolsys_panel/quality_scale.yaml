@@ -1,23 +1,29 @@
 rules:
   # Bronze
-  action-setup: todo
-  appropriate-polling: todo
-  brands: todo
+  action-setup: 
+  status: exempt
+    comment: |
+      No custom actions defined
+  appropriate-polling:
+    status: exempt
+    comment: |
+      No polling
+  brands: done
   common-modules: todo
   config-flow-test-coverage: todo
-  config-flow: todo
+  config-flow: done
   dependency-transparency: todo
   docs-actions: todo
   docs-high-level-description: todo
   docs-installation-instructions: todo
   docs-removal-instructions: todo
   entity-event-setup: todo
-  entity-unique-id: todo
+  entity-unique-id: dome
   has-entity-name: todo
-  runtime-data: todo
+  runtime-data: done
   test-before-configure: todo
   test-before-setup: todo
-  unique-config-entry: todo
+  unique-config-entry: done
 
   # Silver
   action-exceptions: todo
@@ -56,5 +62,8 @@ rules:
 
   # Platinum
   async-dependency: todo
-  inject-websession: todo
+  inject-websession:
+    status: exempt
+    comment: |
+      Integration does not make any HTTP requests.
   strict-typing: todo
