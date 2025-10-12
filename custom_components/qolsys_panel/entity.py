@@ -216,9 +216,9 @@ class QolsysZwaveThermostatEntity(QolsysPanelEntity):
         self._zwave_thermostat_unique_id = f"{unique_id}_zwave_thermostat{node_id}"
         self._thermostat = QolsysPanel.state.zwave_device(node_id)
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._zwave_dimmer_unique_id)},
+            identifiers={(DOMAIN, self._zwave_thermostat_unique_id)},
             manufacturer="Johnson Controls",
-            name=f"Z-Wave{node_id} - Thermostat - {self.lock.lock_name}",
+            name=f"Z-Wave{node_id} - Thermostat - {self._thermostat.thermostat_name}",
             model="Qolsys Z-Wave Thermostat",
             via_device=(DOMAIN, unique_id),
         )
