@@ -45,8 +45,7 @@ You can pair with your Qolsys Panel using one of the following two methods:
 
 3. Search for **Qolsys Panel**.
 
-4. When prompted for the pairing method, choose:  
-   **Automatic Panel Discovery and Pairing**
+4. When prompted for the pairing method, choose:  **Automatic Panel Discovery and Pairing**
 
 ### 🔐 2. Pairing with an Existing Signed Client Certificate (PKI)
 
@@ -58,7 +57,7 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 
 - Qolsys Panel IP address
 - A valid PKI folder located at:  
-  `/homeassistant/qolsys_panel/pki/rando_mac/`
+  `/homeassistant/qolsys_panel/pki/random_mac/`
 
   Example contents of the PKI folder (`f2163e3a5fb1` is the random_mac):
 
@@ -78,14 +77,27 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
      `Settings → Devices & Services → Integrations → Add Integration`
    - Search for **Qolsys Panel**
 
-2. When prompted for the pairing method, choose:  
-   **Use Existing PKI**
+2. When prompted for the pairing method, choose: **Use Existing PKI**
 
 3. Enter your **Qolsys Panel IP**
 
 4. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
 
 ---
+
+## 🔧 Removing the Integration
+
+This integration follows the standard Home Assistant integration removal process — **no extra steps are required**.
+
+To remove an integration instance from Home Assistant:
+
+1. Go to **Settings** > **Devices & Services**.
+2. Find and select the **integration card** you want to remove.
+3. From the list of devices, locate the specific **integration instance**.
+4. Click the **three dots menu** (⋮) next to the entry.
+5. Select **Delete**.
+
+The integration will be cleanly removed from your system.
 
 ## ✨ Functionality Highlights
 
