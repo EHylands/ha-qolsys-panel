@@ -68,12 +68,7 @@ async def async_get_config_entry_diagnostics(
                 }
                 for partition in QolsysPanel.state.partitions
             ],
-            "zones": [
-                {
-                    zone.to_dict()
-                }
-                for zone in QolsysPanel.state.zones
-            ],
+            "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
             "zwave_dimmers": [
                 {
                     dimmer.to_dict_dimmer()
