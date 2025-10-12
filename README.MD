@@ -50,9 +50,63 @@ You can pair with your Qolsys Panel using one of the following two methods:
 
 ### 🔐 2. Pairing with an Existing Signed Client Certificate (PKI)
 
-If you already have a **signed client certificate**, you can use it for secure, authenticated pairing with the panel.
+If you already have a **signed client certificate**, you can use it to securely and authentically pair with your Qolsys panel.  
+With this method, **Home Assistant and the Qolsys Panel do not need to be on the same subnet**, since it doesn’t rely on mDNS discovery.
 
-**Steps:** (coming soon or to be documented based on implementation)
+---
+
+**Requirements:**
+
+- Qolsys Panel IP address
+- A valid PKI folder located at:  
+  `/homeassistant/qolsys_panel/pki/rando_mac/`
+
+  Example contents of the PKI folder (`f2163e3a5fb1` is the random_mac):
+
+  ```
+  /homeassistant/qolsys_panel/pki/f2163e3a5fb1/
+    ├── f2163e3a5fb1.key
+    ├── f2163e3a5fb1.cer
+    ├── f2163e3a5fb1.csr
+    ├── f2163e3a5fb1.qolsys
+    ├── f2163e3a5fb1.secure
+  ```
+
+---
+
+### 🧭 Pairing Steps
+
+1. **On the Qolsys Panel**, open the IQ Remote pairing page:  
+   `Settings → Advanced Settings → Installation → Devices → WI-FI Devices → IQ Remote Devices`
+
+2. **In Home Assistant**:
+   - Navigate to:  
+     `Settings → Devices & Services → Integrations → Add Integration`
+   - Search for **Qolsys Panel**
+
+3. When prompted for the pairing method, choose:  
+   **Use Existing PKI**
+
+4. Enter your **Qolsys Panel IP**
+
+5. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
+
+**Steps:**
+
+1. **On the Qolsys Panel**, open the IQ Remote pairing page:  
+   `Settings → Advanced Settings → Installation → Devices → WI-FI Devices → IQ Remote Devices`
+
+2. **In Home Assistant**:
+   - Navigate to:  
+     `Settings → Devices & Services → Integrations → Add Integration`
+   - Search for **Qolsys Panel**
+
+3. When prompted for the pairing method, choose:  
+   **Use Existing PKI**
+
+4. Enter your **Qolsys Panel IP**
+
+5. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
 
 ---
 
