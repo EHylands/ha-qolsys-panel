@@ -384,7 +384,12 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return if this zone is on."""
-        if self._zone.sensorstatus in {ZoneStatus.OPEN, ZoneStatus.ACTIVE, ZoneStatus.ACTIVATED,ZoneStatus.CONNECTED}:
+        if self._zone.sensorstatus in {
+                ZoneStatus.OPEN, 
+                ZoneStatus.ACTIVE, 
+                ZoneStatus.ACTIVATED,
+                ZoneStatus.NORMAL,
+                ZoneStatus.CONNECTED}:
             return True
 
         return False
