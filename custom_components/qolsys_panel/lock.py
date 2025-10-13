@@ -53,7 +53,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
         return self._lock.lock_status == "Locked"
     
     async def async_lock(self, **kwargs: Any):
-        self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=True)
+        await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=True)
 
     async def async_unlock(self, **kwargs: Any):
-        self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=False)
+        await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=False)
