@@ -388,7 +388,6 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
                 ZoneStatus.OPEN, 
                 ZoneStatus.ACTIVE, 
                 ZoneStatus.ACTIVATED,
-                ZoneStatus.NORMAL,
                 ZoneStatus.CONNECTED}:
             return True
 

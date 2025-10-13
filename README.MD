@@ -2,7 +2,7 @@
 
 # Qolsys Panel – HACS Custom Integration
 
-This is a custom integration for **Qolsys Panels** (such as IQ Panel 2/4), allowing local pairing and control via Home Assistant.
+This is a custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allowing local pairing and control via Home Assistant.
 
 ![Qolsys01](https://github.com/EHylands/ha-qolsys-panel/blob/main/assets/qolsys01.jpg)
 
@@ -133,7 +133,7 @@ A **Light** entity is added for each **Z-Wave dimmer** light configured on the p
 
 A **Lock** entity is added for each **Z-Wave lock** connected to the panel.
 
-### 📊 Sensor
+### Sensor
 
 Sensors are added to provide:
 
