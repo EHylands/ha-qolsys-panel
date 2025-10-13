@@ -20,7 +20,6 @@ This integration is not yet part of the official HACS store. You must add it man
 
 🔗 [How to add a custom repository in HACS](https://www.hacs.xyz/docs/faq/custom_repositories/)
 
----
 
 ## ⚙️ Configuration
 
@@ -80,8 +79,6 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 3. Enter your **Qolsys Panel IP**
 
 4. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
-
----
 
 ## 🔧 Removing the Integration
 

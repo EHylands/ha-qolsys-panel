@@ -23,7 +23,7 @@ async def async_setup_entry(
     entities: list[QolsysZwaveLockEntity] = []
 
     for lock in QolsysPanel.state.zwave_locks:
-        entities.append(ZWaveLock(QolsysPanel,lock.node_id,config_entry.unique_id))  # noqa: PERF401
+        entities.append(ZWaveLock(QolsysPanel,lock.node_id,config_entry.unique_id))
 
     async_add_entities(entities)
 
@@ -32,6 +32,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
+    _attr_code_format = None
 
     def __init__(
         self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
@@ -46,23 +47,27 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
         return self.QolsysPanel.plugin.connected and self._lock.node_status == 'Normal'
 
     @property
-    def is_locked(self) -> bool:  # noqa: D102
-        return self._lock.lock_status == 'Locked'
+    def is_locked(self) -> bool:
+        return self._lock.lock_status == "Locked"
+    
+    @property
+    def is_open(self) -> bool:
+        return self._lock.lock_status != "Locked"
 
     @property
-    def is_locking(self) -> bool:  # noqa: D102
+    def is_locking(self) -> bool:
         return False
 
     @property
-    def is_unlocking(self) -> bool:  # noqa: D102
+    def is_unlocking(self) -> bool:
         return False
 
     @property
-    def is_jammed(self) -> bool:  # noqa: D102
+    def is_jammed(self) -> bool:
         return False
 
-    async def async_lock(self, **kwargs): # noqa: D102
-        pass
+    async def async_lock(self, **kwargs):
+        self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=True)
 
-    async def async_unlock(self, **kwargs): # noqa: D102
-        pass
+    async def async_unlock(self, **kwargs):
+        self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=False)
