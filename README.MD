@@ -54,7 +54,7 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 
 - Qolsys Panel IP address
 - A valid PKI folder located at:  
-  `/homeassistant/qolsys_panel/pki/random_mac/`
+  `/homeassistant/qolsys_panel/pki/[***random_mac***]/`
 
   Example contents of the PKI folder (`f2163e3a5fb1` is the random_mac):
 
@@ -71,14 +71,91 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 
 1. **In Home Assistant**:
    - Navigate to:  
-     `Settings → Devices & Services → Integrations → Add Integration`
-   - Search for **Qolsys Panel**
+`Settings → Devices & Services → Integrations → Add Integration`
 
-2. When prompted for the pairing method, choose: **Use Existing PKI**
+2. Search for **Qolsys Panel**.
 
-3. Enter your **Qolsys Panel IP**
+3. When prompted for the pairing method, choose: **Use Existing PKI**
 
-4. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
+4. Enter your **Qolsys Panel IP**
+
+5. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
+
+## ✅ Supported Devices
+
+Any **Qolsys Panel** that can be paired with an **IQ Remote**:
+
+- IQ Panel 2+
+- IQ Panel 4
+- IQ 4 Hub
+- IQ Hub
+- IQ Pro
+
+## 📦 Provided Entities
+
+The following entities are provided by this integration:
+
+- Alarm Control Panel
+- Binary Sensor
+- Climate
+- Light
+- Lock
+- Sensor
+- Switch
+- Scene
+
+
+### Alarm Control Panel
+
+An **Alarm Control Panel** entity is created for each configured partition, with full support for **arming and disarming**.
+
+
+### Binary Sensor
+
+A **Binary Sensor** is added for each configured zone on your alarm system.
+
+Additionally, binary sensors are added as **diagnostic sensors** for:
+
+- Panel
+- Partition
+- Zones
+- Z-Wave devices
+
+### Climate
+
+A **Climate** entity is added for each **Z-Wave thermostat** configured on the panel.
+
+### Light
+
+A **Light** entity is added for each **Z-Wave dimmer** light configured on the panel.
+
+### Lock
+
+A **Lock** entity is added for each **Z-Wave lock** connected to the panel.
+
+### 📊 Sensor
+
+Sensors are added to provide:
+
+- Zone **Average dBm**
+- Zone **Latest dBm**
+
+### Switch
+
+Switches are added for each partition to enable specific features:
+
+- **Arm Stay Instant**
+- **Arm Stay Silent Disarm**
+- **Exit Sounds**
+
+### Scene
+
+Scenes are added for panel actions:
+
+- **Away**
+- **Home**
+- **Sleep**
+- **Wake Up**
 
 ## 🔧 Removing the Integration
 

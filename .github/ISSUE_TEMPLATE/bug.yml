@@ -18,7 +18,6 @@ body:
     label: Version of the panel
     description: Qolsys Panel Version
     options:
-      - IQ Panel 2
       - IQ Panel 2+
       - IQ Panel 4
       - IQ 4 Hub
