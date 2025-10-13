@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from qolsys_controller import qolsys_controller
 
 from homeassistant.components.lock import LockEntity
@@ -32,7 +34,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_code_format = None
+    #_attr_code_format = None
 
     def __init__(
         self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
@@ -50,24 +52,8 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     def is_locked(self) -> bool:
         return self._lock.lock_status == "Locked"
     
-    @property
-    def is_open(self) -> bool:
-        return self._lock.lock_status != "Locked"
-
-    @property
-    def is_locking(self) -> bool:
-        return False
-
-    @property
-    def is_unlocking(self) -> bool:
-        return False
-
-    @property
-    def is_jammed(self) -> bool:
-        return False
-
-    async def async_lock(self, **kwargs):
+    async def async_lock(self, **kwargs: Any):
         self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=True)
 
-    async def async_unlock(self, **kwargs):
+    async def async_unlock(self, **kwargs: Any):
         self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=self._lock.lock_node_id,locked=False)
