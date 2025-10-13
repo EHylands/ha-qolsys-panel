@@ -385,10 +385,11 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return if this zone is on."""
         if self._zone.sensorstatus in {
-                ZoneStatus.OPEN, 
-                ZoneStatus.ACTIVE, 
-                ZoneStatus.ACTIVATED,
-                ZoneStatus.CONNECTED}:
+            ZoneStatus.OPEN, 
+            ZoneStatus.ALARMED, 
+            ZoneStatus.ACTIVATED,
+            ZoneStatus.CONNECTED
+        }:
             return True
 
         return False
@@ -430,7 +431,7 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
             return None
 
         if self._zone.sensortype == ZoneSensorType.KEYPAD:
-            return None
+            return BinarySensorDeviceClass.PROBLEM
 
         if self._zone.sensortype == ZoneSensorType.KEY_FOB:
             return BinarySensorDeviceClass.SAFETY
