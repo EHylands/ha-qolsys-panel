@@ -2,16 +2,21 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_zwave import ThermostatFanMode, ThermostatMode
 
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
     HVACMode,
     FAN_AUTO,
     FAN_HIGH,
     FAN_LOW,
-    FAN_MEDIUM
+    FAN_MEDIUM,
+    ATTR_TARGET_TEMP_HIGH,
+    ATTR_TARGET_TEMP_LOW,
 )
 
 from homeassistant.core import HomeAssistant
@@ -66,11 +71,10 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         if available_fan_modes != 0:
             self._attr_supported_features = self._attr_supported_features | ClimateEntityFeature.FAN_MODE
 
-
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.QolsysPanel.plugin.connected and self._thermostat.node_status == 'Normal'
+        return self.QolsysPanel.plugin.connected and self._thermostat.node_status == "Normal"
 
     @property
     def current_temperature(self) -> float:
@@ -85,10 +89,10 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         panel_temp_unit = self._thermostat.thermostat_device_temp_unit
 
         if panel_temp_unit == "F":
-            return "TEMP_FAHRENHEIT"
+            return UnitOfTemperature.FAHRENHEIT
 
         if panel_temp_unit == "C":
-            return "TEMP_CELSIUS"
+            return UnitOfTemperature.CELSIUS
 
         return None
 
@@ -130,15 +134,36 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
 
     async def async_set_hvac_mode(self, hvac_mode):
         """Set new target hvac mode."""
+        node_id = int(self._thermostat.thermostat_node_id)
+        qolsys_thermostat_mode = self._hass_to_qolsys_thermostat_mode(hvac_mode)
+        await self.QolsysPanel.plugin.command_zwave_thermostat_mode_set(node_id=node_id,mode=qolsys_thermostat_mode)
 
     async def async_turn_off(self):
         """Turn the entity off."""
+        node_id = int(self._thermostat.thermostat_node_id)
+        await self.QolsysPanel.plugin.command_zwave_thermostat_mode_set(node_id=node_id,mode=ThermostatMode.OFF)
 
     async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
+        node_id = int(self._thermostat.thermostat_node_id)
+        qolsys_fan_mode = self._hass_to_qolsys_fan_mode(fan_mode)
+        await self.QolsysPanel.plugin.command_zwave_thermostat_fan_mode_set(node_id=node_id,fan_mode=qolsys_fan_mode)
 
-    async def async_set_temperature(self, **kwargs):
+    async def async_set_temperature(self, **kwargs: Any):
         """Set new target temperature."""
+        node_id = int(self._thermostat.thermostat_node_id)
+        if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
+            temp = int(value)
+            await self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(node_id=node_id,mode=ThermostatMode.HEAT,setpoint=temp)
+        
+        if value := kwargs.get(ATTR_TARGET_TEMP_LOW):
+            temp = int(value)
+            await self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(node_id=node_id,mode=ThermostatMode.COOL,setpoint=temp)
+
+        if value := kwargs.get(ATTR_TEMPERATURE):
+            temp = int(value)
+            current_thermosat_mode = self._qolsys_to_hass_thermostat_mode(self._thermostat.thermostat_mode)
+            await self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(node_id=node_id,mode=current_thermosat_mode,setpoint=temp)
 
     def _qolsys_to_hass_fan_mode(self,qolsys_fan_mode:ThermostatFanMode):
         match qolsys_fan_mode:
@@ -181,6 +206,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         return None
 
     def _qolsys_to_hass_thermostat_mode(self,qolsys_thermostat_mode:ThermostatMode) -> HVACMode:
+                
         match qolsys_thermostat_mode:
             case ThermostatMode.OFF:
                 return HVACMode.OFF
@@ -231,4 +257,46 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
                 return HVACMode.HEAT_COOL
             
         return None
+    
+    def _hass_to_qolsys_thermostat_mode(self,hass_hvac_mode:HVACMode) -> HVACMode:
+        match hass_hvac_mode:
+            case HVACMode.OFF:
+                return ThermostatMode.OFF
+            
+            case HVACMode.HEAT:
+                return ThermostatMode.HEAT
+            
+            case HVACMode.COOL:
+                return ThermostatMode.COOL
+            
+            case HVACMode.HEAT_COOL:
+                return ThermostatMode.AUTO_CHANGEOVER
+
+            case HVACMode.AUTO:
+                return ThermostatMode.AUTO
+            
+            case HVACMode.FAN_ONLY:
+                return ThermostatMode.FAN_ONLY
+            
+            case HVACMode.DRY:
+                return ThermostatMode.AUTO
+            
+        return None
+    
+
+    def _hass_to_qolsys_fan_mode(self,hass_fan_mode:str):
         
+        if hass_fan_mode == FAN_AUTO:
+            return ThermostatFanMode.AUTO_MEDIUM
+        
+        match hass_fan_mode:
+            case "auto":
+                return ThermostatFanMode.AUTO_MEDIUM
+            
+            case "high":
+                return ThermostatFanMode.HIGH
+            
+            case "low":
+                return ThermostatFanMode.LOW
+
+        return ThermostatFanMode.AUTO_MEDIUM

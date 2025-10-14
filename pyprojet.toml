@@ -265,22 +265,6 @@ known-first-party = ["homeassistant"]
 combine-as-imports = true
 split-on-trailing-comma = false
 
-[tool.ruff.lint.per-file-ignores]
-
-# Allow for main entry & scripts to write to stdout
-"homeassistant/__main__.py" = ["T201"]
-"homeassistant/scripts/*" = ["T201"]
-"script/*" = ["T20"]
-
-# Allow relative imports within auth and within components
-"homeassistant/auth/*/*" = ["TID252"]
-"homeassistant/components/*/*/*" = ["TID252"]
-"tests/components/*/*/*" = ["TID252"]
-
-# Temporary
-"homeassistant/**" = ["PTH"]
-"tests/**" = ["PTH"]
-
 [tool.ruff.lint.mccabe]
 max-complexity = 25
 
