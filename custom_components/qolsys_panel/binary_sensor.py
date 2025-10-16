@@ -240,7 +240,7 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
 
         match self._alarm_type:
             case 'Police':
-                if PartitionAlarmType.POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.SILENT_POLICE_EMERGENCY in partition_alarm:
+                if PartitionAlarmType.POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.SILENT_POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.GLASS_BREAK_AWAY_ONLY in partition_alarm:
                     return True
 
             case 'Fire':
