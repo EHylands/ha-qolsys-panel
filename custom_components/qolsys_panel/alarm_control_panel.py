@@ -106,19 +106,22 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         """Send ARM-AWAY command."""
         exit_sounds = self._partition.command_exit_sounds
         arm_stay_instant = self._partition.command_arm_stay_instant
+        entry_delay = self._partition.command_arm_entry_delay
 
         await self.QolsysPanel.plugin.command_arm(
             self._partition_id,
-            arming_type="ARM-AWAY",
-            user_code="",
-            exit_sounds=exit_sounds,
-            instant_arm=arm_stay_instant,
+            arming_type= "ARM-AWAY",
+            user_code= "",
+            exit_sounds= exit_sounds,
+            instant_arm= arm_stay_instant,
+            entry_delay= entry_delay
         )
 
     async def async_alarm_arm_night(self, code = None):
         """Send ARM-NIGHT command."""
         exit_sounds = self._partition.command_exit_sounds
         arm_stay_instant = self._partition.command_arm_stay_instant
+        entry_delay = self._partition.command_arm_entry_delay
 
         await self.QolsysPanel.plugin.command_arm(
             self._partition_id,
@@ -126,6 +129,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
             user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
+            entry_delay=entry_delay
         )
 
 
