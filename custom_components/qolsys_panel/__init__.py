@@ -48,8 +48,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.select_plugin("remote")
     QolsysPanel.plugin.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
-    #QolsysPanel.plugin.settings.mqtt_timeout = 30
-    #QolsysPanel.plugin.settings.mqtt_ping = 600
+    QolsysPanel.plugin.settings.mqtt_timeout = 30
+    QolsysPanel.plugin.settings.mqtt_ping = 600
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]

@@ -43,7 +43,6 @@ async def async_setup_entry(
         entities.append(switch_silent_disarming)
         entities.append(switch_entry_delay)
 
-
     async_add_entities(entities)
 
 
@@ -85,9 +84,9 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
 
     def __init__(
         self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str) -> None:
-        """Set up a switch entity for a partition exit_delay."""
+        """Set up a switch entity for a partition entry_delay."""
         super().__init__(QolsysPanel, partition_id, unique_id)
-        self._attr_unique_id = f"{self._partition_unique_id}_arming_entry_delay"
+        self._attr_unique_id = f"{self._partition_unique_id}_command_arm_entry_delay"
         self._attr_name = "Entry Delay"
         self._attr_device_class = SwitchDeviceClass.SWITCH
 
