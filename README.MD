@@ -182,6 +182,7 @@ The integration will be cleanly removed from your system.
 |                        | Home Instant Arming                  | ✅     |
 |                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
 |                        | Set Exit Sounds                      | ✅     |
+|                        | Set Entry Delay                      | ✅            |
 |                        | Disarm Photos                        | 🛠️     |
 |                        | TTS                                  | 🛠️     |
 | **Zones**              | Sensor Status                        | ✅     |
