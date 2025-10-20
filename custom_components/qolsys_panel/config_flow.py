@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
-from pdb import run
 from typing import Any
 
 from qolsys_controller import qolsys_controller
@@ -138,6 +137,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         self._pki_list = []
         path = self._config_directory.joinpath("pki")
+
+
+        
         directories = [p.name for p in path.iterdir() if p.is_dir()]
         for d in directories:
             self._pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
