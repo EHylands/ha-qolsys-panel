@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from pathlib import Path
+from pdb import run
 from typing import Any
 
 from qolsys_controller import qolsys_controller
@@ -97,7 +98,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         try:
-            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False)
+            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False, run_forever=False)
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
@@ -218,7 +219,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         try:
-            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False)
+            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False, run_forever=False)
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
