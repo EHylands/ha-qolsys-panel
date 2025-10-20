@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError
+from qolsys_controller.errors import QolsysSslError, QolsysMqttError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
@@ -50,6 +50,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.plugin.settings.mqtt_timeout = 30
     QolsysPanel.plugin.settings.mqtt_ping = 600
+    QolsysPanel.plugin.settings.motion_sensor_delay = True
+    QolsysPanel.plugin.settings.motion_sensor_delay_sec = 310
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
@@ -76,6 +78,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         LOGGER.error('Credentials rejected by panel - Signed Certificate Error')
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
+        ) from err
+    
+    except QolsysMqttError as err:
+        LOGGER.error('MQTT Error')
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="mqtt_error"
         ) from err
 
     if not QolsysPanel.plugin.connected:
