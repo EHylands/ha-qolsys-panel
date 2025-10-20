@@ -51,7 +51,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.plugin.settings.mqtt_timeout = 30
     QolsysPanel.plugin.settings.mqtt_ping = 600
     QolsysPanel.plugin.settings.motion_sensor_delay = True
-    #QolsysPanel.plugin.settings.motion_sensor_delay_sec = 310
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
