@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
-from .entity import QolsysZoneEntity, QolsysZwaveDimmerEntity, QolsysZwaveLockEntity
+from .entity import QolsysZoneEntity, QolsysZwaveDimmerEntity, QolsysZwaveLockEntity, QolsysZwaveThermostatEntity
 
 
 async def async_setup_entry(
@@ -26,21 +26,28 @@ async def async_setup_entry(
     """Set up binary sensors."""
     QolsysPanel = config_entry.runtime_data
 
-    entities: list[SensorEntity] = [
-        ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    ]
+    entities: list[SensorEntity] = []
 
-    entities.extend(
-        ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    )
+    # Add Zone Sensors
+    for zone in QolsysPanel.state.zones:
+        entities.append(ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
 
     # Add Z-Wave Dimmer Sensors
     for dimmer in QolsysPanel.state.zwave_dimmers:
-        # Add Battery Value if battery présent
-        #if dimmer.node_battery_level != "-1":
-        entities.append(DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id))
+        # Addu Battery Value if battery présent
+        if dimmer.node_battery_level != "-1":
+            entities.append(DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id))
+
+    # Add Z-Wave Lock Sensors
+    for lock in QolsysPanel.state.zwave_locks:
+        if lock.node_battery_level != "-1":
+            entities.append(LockSensor_BatteryValue(QolsysPanel,lock.node_id,config_entry.unique_id))
+
+    # Add Z-Wave Thermostat Sensors
+    for thermostat in QolsysPanel.state.zwave_thermostats:
+        if thermostat.node_battery_level != "-1":
+            entities.append(ThermostatSensor_BatteryValue(QolsysPanel,thermostat.node_id,config_entry.unique_id))
 
     async_add_entities(entities)
 
@@ -92,7 +99,7 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     """A sensor entity for a dimmer battery value."""
 
     def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
-        """Set up a binary sensor entity for a zone battery status."""
+        """Set up a sensor entity for a dimmer battery value."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_battery_value"
         self._attr_name = 'Battery'
@@ -104,7 +111,6 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return dimmer battery value."""
-        return None
         try:
             value = int(self._dimmer.node_battery_level_value)
             if value >= 0 and value <= 100:
@@ -114,5 +120,58 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
         
         except ValueError:
             return None
+        
+class LockSensor_BatteryValue(QolsysZwaveLockEntity, SensorEntity):
+    """A sensor entity for a lock battery value."""
+
+    def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
+        """Set up a sensor entity for a lock battery value."""
+        super().__init__(QolsysPanel, node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_lock_unique_id}_battery_value"
+        self._attr_name = 'Battery'
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
+        """Return lock battery value."""
+        try:
+            value = int(self._lock.node_battery_level_value)
+            if value >= 0 and value <= 100:
+                return value
+            else:
+                return None
+        
+        except ValueError:
+            return None
+
+class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
+    """A sensor entity for a thermostat battery value."""
+
+    def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
+        """Set up a sensor entity for a thermostat battery value."""
+        super().__init__(QolsysPanel, node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_thermostat_unique_id}_battery_value"
+        self._attr_name = 'Battery'
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
+        """Return thermostat battery value."""
+        try:
+            value = int(self._thermostat.node_battery_level_value)
+            if value >= 0 and value <= 100:
+                return value
+            else:
+                return None
+        
+        except ValueError:
+            return None
+
 
 
