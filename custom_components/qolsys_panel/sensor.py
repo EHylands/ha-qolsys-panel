@@ -1,6 +1,7 @@
 """Sensor platform for Qolsys Panel."""
 
 from __future__ import annotations
+from math import e
 
 from qolsys_controller import qolsys_controller
 
@@ -14,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
-from .entity import QolsysZoneEntity
+from .entity import QolsysZoneEntity, QolsysZwaveDimmerEntity, QolsysZwaveLockEntity
 
 
 async def async_setup_entry(
@@ -33,6 +34,12 @@ async def async_setup_entry(
     entities.extend(
         ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id)
         for zone in QolsysPanel.state.zones
+    )
+
+    # Add Z-Wave Dimmer Battery Value Sensor
+    entities.extend(
+        DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id)
+        for dimmer in QolsysPanel.state.zwave_dimmers
     )
 
     async_add_entities(entities)
@@ -80,6 +87,32 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
         return int(self._zone.averagedBm)
+    
+class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
+    """A sensor entity for a dimmer battery value."""
 
+    def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
+        """Set up a binary sensor entity for a zone battery status."""
+        super().__init__(QolsysPanel, node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_battery_value"
+        self._attr_name = 'Battery'
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
+        """Return dimmer battery value."""
+        return 85
+        try:
+            value = int(self._dimmer.node_battery_level_value)
+            if value >= 0 and value <= 100:
+                return value
+            else:
+                return None
+        
+        except ValueError:
+            return None
 
 
