@@ -36,17 +36,17 @@ async def async_setup_entry(
     # Add Z-Wave Dimmer Sensors
     for dimmer in QolsysPanel.state.zwave_dimmers:
         # Addu Battery Value if battery présent
-        if dimmer.node_battery_level != "-1":
+        if dimmer.node_battery_level_value != "-1":
             entities.append(DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id))
 
     # Add Z-Wave Lock Sensors
     for lock in QolsysPanel.state.zwave_locks:
-        if lock.node_battery_level != "-1":
+        if lock.node_battery_level_value != "-1":
             entities.append(LockSensor_BatteryValue(QolsysPanel,lock.node_id,config_entry.unique_id))
 
     # Add Z-Wave Thermostat Sensors
     for thermostat in QolsysPanel.state.zwave_thermostats:
-        if thermostat.node_battery_level != "-1":
+        if thermostat.node_battery_level_value != "-1":
             entities.append(ThermostatSensor_BatteryValue(QolsysPanel,thermostat.node_id,config_entry.unique_id))
 
     async_add_entities(entities)
