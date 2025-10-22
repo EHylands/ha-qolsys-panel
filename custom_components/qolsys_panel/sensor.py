@@ -36,11 +36,11 @@ async def async_setup_entry(
         for zone in QolsysPanel.state.zones
     )
 
-    # Add Z-Wave Dimmer Battery Value Sensor
-    entities.extend(
-        DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id)
-        for dimmer in QolsysPanel.state.zwave_dimmers
-    )
+    # Add Z-Wave Dimmer Sensors
+    for dimmer in QolsysPanel.state.zwave_dimmers:
+        # Add Battery Value if battery présent
+        #if dimmer.node_battery_level != "-1":
+        entities.append(DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id))
 
     async_add_entities(entities)
 
@@ -104,7 +104,6 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return dimmer battery value."""
-        return 85
         try:
             value = int(self._dimmer.node_battery_level_value)
             if value >= 0 and value <= 100:
