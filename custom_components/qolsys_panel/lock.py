@@ -38,7 +38,6 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
-    #_attr_code_format = None
 
     def __init__(
         self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
@@ -46,6 +45,8 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
         """Initialise a Qolsys Z-Wave Lock entity."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = self._zwave_lock_unique_id
+        self._value_is_locking = False
+        self._value_is_unlocking = False
 
     @property
     def available(self) -> bool:
@@ -56,14 +57,30 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     def is_locked(self) -> bool:
         return self._lock.lock_status == "Locked"
     
+    @property
+    def is_locking(self) -> bool:
+        return self._value_is_locking
+        
+    @property
+    def is_unlocking(self) -> bool:
+        return self._value_is_unlocking
+
     async def async_lock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = True
         LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
+        self._value_is_locking = True
+        self._value_is_unlocking = False
+        self.async_schedule_update_ha_state()
         await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=node_id,locked=locked)
+        self._value_is_locking = False
 
     async def async_unlock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = False
         LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
+        self._value_is_unlocking = True
+        self._value_is_locking = False
+        self.async_schedule_update_ha_state()
         await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=node_id,locked=locked)
+        self._value_is_unlocking = False
