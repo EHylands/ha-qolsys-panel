@@ -104,6 +104,7 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return dimmer battery value."""
+        return None
         try:
             value = int(self._dimmer.node_battery_level_value)
             if value >= 0 and value <= 100:
