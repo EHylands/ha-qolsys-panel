@@ -35,7 +35,7 @@ async def async_setup_entry(
 
     # Add Z-Wave Dimmer Sensors
     for dimmer in QolsysPanel.state.zwave_dimmers:
-        # Addu Battery Value if battery présent
+        # Add Battery Value if battery present
         if dimmer.node_battery_level_value != "-1":
             entities.append(DimmerSensor_BatteryValue(QolsysPanel,dimmer.node_id,config_entry.unique_id))
 

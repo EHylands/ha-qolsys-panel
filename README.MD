@@ -123,15 +123,15 @@ Additionally, binary sensors are added as **diagnostic sensors** for:
 
 ### Climate
 
-A **Climate** entity is added for each **Z-Wave thermostat** configured on the panel.
+A **Climate** entity is added for each **Z-Wave Thermostat** configured on the panel.
 
 ### Light
 
-A **Light** entity is added for each **Z-Wave dimmer** light configured on the panel.
+A **Light** entity is added for each **Z-Wave Dimmer** light configured on the panel.
 
 ### Lock
 
-A **Lock** entity is added for each **Z-Wave lock** connected to the panel.
+A **Lock** entity is added for each **Z-Wave Lock** connected to the panel.
 
 ### Sensor
 
@@ -139,6 +139,7 @@ Sensors are added to provide:
 
 - Zone **Average dBm**
 - Zone **Latest dBm**
+- Z-Wave Device **Battery %** (if Battery present)
 
 ### Switch
 
@@ -188,14 +189,14 @@ The integration will be cleanly removed from your system.
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
-|                        | Signal Level                         | ✅     |
+|                        | Average dBm                          | ✅     |
+|                        | Latest. dBm                          | ✅     |
 | **Z-Wave Devices**     | Battery Level                        | ✅     |
-|                        | Pairing Status                       | ✅     |
 |                        | Node Status                          | ✅     |
 |                        | Control Generic Devices              | TBD    |
 | **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
+| **Z-Wave Door Locks**  | Lock, Unlock                         | ✅     |
 | **Z-Wave Thermostats** | Read device status                   | ✅     |
 |                        | Write device status                  | 🛠️     |
-| **Z-Wave Door Locks**  |                                      | 🛠️     |
 | **Z-Wave Garage Doors**|                                      | 🛠️     |
 | **Z-Wave Outlets**     |                                      | 🛠️     |
