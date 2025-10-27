@@ -33,11 +33,11 @@ async def async_setup_entry(
         entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
         
         # Add PowerG Sensors if enabled
-        if zone.is_powerg_temperature_enabled:
+        if zone.is_powerg_temperature_enabled():
             entities.append(ZoneSensor_PowerG_Temperture(QolsysPanel, zone.zone_id, config_entry.unique_id))   
 
         # Add PowerG Light Sensor if enabled
-        if zone.is_powerg_light_enabled:
+        if zone.is_powerg_light_enabled():
             entities.append(ZoneSensor_PowerG_Light(QolsysPanel, zone.zone_id, config_entry.unique_id))  
 
     # Add Z-Wave Dimmer Sensors
