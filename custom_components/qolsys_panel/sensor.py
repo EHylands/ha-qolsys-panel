@@ -1,7 +1,6 @@
 """Sensor platform for Qolsys Panel."""
 
 from __future__ import annotations
-from math import e
 
 from qolsys_controller import qolsys_controller
 
@@ -32,6 +31,14 @@ async def async_setup_entry(
     for zone in QolsysPanel.state.zones:
         entities.append(ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
         entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        
+        # Add PowerG Sensors if enabled
+        if zone.is_powerg_temperature_enabled:
+            entities.append(ZoneSensor_PowerG_Temperture(QolsysPanel, zone.zone_id, config_entry.unique_id))   
+
+        # Add PowerG Light Sensor if enabled
+        if zone.is_powerg_light_enabled:
+            entities.append(ZoneSensor_PowerG_Light(QolsysPanel, zone.zone_id, config_entry.unique_id))  
 
     # Add Z-Wave Dimmer Sensors
     for dimmer in QolsysPanel.state.zwave_dimmers:
@@ -94,6 +101,50 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
         return int(self._zone.averagedBm)
+    
+class ZoneSensor_PowerG_Temperture(QolsysZoneEntity, SensorEntity):
+    """A sensor entity for PowerG Temperature."""
+
+    def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
+        """Set up a binary sensor entity for a zone powerg temperature."""
+        super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_unique_id = f"{self._zone_unique_id}_powerg_temperature"
+        self._attr_name = 'Temperature'
+        self._attr_native_unit_of_measurement = "°F"
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        self._attr_suggested_display_precision = 1
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the latest Zone PowerG Temperature."""
+        try:
+            temp = float(self._zone.powerg_temperature)
+            return round(temp,1)
+        except ValueError:
+            return None 
+        
+class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
+    """A sensor entity for PowerG Light."""
+
+    def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
+        """Set up a binary sensor entity for a zone powerg light."""
+        super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_unique_id = f"{self._zone_unique_id}_powerg_light"
+        self._attr_name = 'Light'
+        self._attr_native_unit_of_measurement = "lx"
+        self._attr_device_class = SensorDeviceClass.ILLUMINANCE
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the latest Zone PowerG Light."""
+        try:
+            temp = int(self._zone.powerg_light)
+            return round(temp,1)
+        except ValueError:
+            return None
     
 class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     """A sensor entity for a dimmer battery value."""

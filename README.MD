@@ -190,7 +190,7 @@ The integration will be cleanly removed from your system.
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
 |                        | Average dBm                          | ✅     |
-|                        | Latest. dBm                          | ✅     |
+|                        | Latest dBm                           | ✅     |
 | **Z-Wave Devices**     | Battery Level                        | ✅     |
 |                        | Node Status                          | ✅     |
 |                        | Control Generic Devices              | TBD    |
