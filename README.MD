@@ -189,6 +189,8 @@ The integration will be cleanly removed from your system.
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
+|                        | Temperature (supported PowerG device)| ✅     |
+|                        | Light (supported PowerG device)      | ✅     |
 |                        | Average dBm                          | ✅     |
 |                        | Latest dBm                           | ✅     |
 | **Z-Wave Devices**     | Battery Level                        | ✅     |
