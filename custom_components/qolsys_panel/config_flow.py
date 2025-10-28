@@ -32,7 +32,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
 
     VERSION = 0
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     task_one_configure: asyncio.Task | None = None
     task_two_pair: asyncio.Task | None = None
