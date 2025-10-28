@@ -139,7 +139,7 @@ async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
             if CONF_MOTION_SENSOR_DELAY not in new_data:
                 new_data[CONF_MOTION_SENSOR_DELAY] = 6
 
-    hass.config_entries.async_update_entry(config_entry, data=new_data, minor_version=2, version=0)
+    hass.config_entries.async_update_entry(config_entry, data=new_data, minor_version=3, version=0)
 
     LOGGER.debug("Migration to configuration version %s.%s successful", config_entry.version, config_entry.minor_version)
     return True

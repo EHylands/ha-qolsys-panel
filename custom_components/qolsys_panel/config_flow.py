@@ -15,6 +15,8 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFl
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
+from homeassistant.core import callback
+
 
 from .const import (
     CONF_IMEI, 
@@ -43,6 +45,11 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._pki_list = []
         self._config_directory = Path()
         self._QolsysPanel = None
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        return QolsysPanelOptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -127,6 +134,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
+        self._data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
+        self._data[CONF_MOTION_SENSOR_DELAY] = 6
 
         await self._QolsysPanel.plugin.stop_operation()
 
@@ -265,15 +274,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
     """Handle Qolsys Panel options."""
 
-    def __init__(self) -> None:
-        """Initialize options flow."""
-        pass
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the options."""
-        errors: dict[str, str] = {}
 
         if user_input is not None:
              return self.async_create_entry(data=user_input)
@@ -282,8 +286,16 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
             vol.Required(CONF_MOTION_SENSOR_DELAY_ENABLED, default=True): bool,
             vol.Required(CONF_MOTION_SENSOR_DELAY, default=6): int,
         }
-
+        
+        options = self.config_entry.options
         return self.async_show_form(
-            step_id="init", 
-            data_schema=vol.Schema(options), errors=errors
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_MOTION_SENSOR_DELAY_ENABLED,
+                        default=options.get(CONF_MOTION_SENSOR_DELAY_ENABLED, False)
+                    ): bool,
+                }
+            ),
         )
