@@ -11,12 +11,19 @@ from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysSslError
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 
-from .const import CONF_IMEI, CONF_RANDOM_MAC, DOMAIN
+from .const import (
+    CONF_IMEI, 
+    CONF_MOTION_SENSOR_DELAY,
+    CONF_MOTION_SENSOR_DELAY_ENABLED, 
+    CONF_RANDOM_MAC, 
+    DOMAIN
+)
+
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
@@ -25,7 +32,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
 
     VERSION = 0
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     task_one_configure: asyncio.Task | None = None
     task_two_pair: asyncio.Task | None = None
@@ -243,6 +250,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
+        self._data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
+        self._data[CONF_MOTION_SENSOR_DELAY] = 6
 
         print('stop')
         await self._QolsysPanel.plugin.stop_operation()
@@ -250,4 +259,31 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"Qolsys Panel ({self._data[CONF_MAC]})",
             data=self._data,
+        )
+    
+# Options Flow Handler
+class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
+    """Handle Qolsys Panel options."""
+
+    def __init__(self) -> None:
+        """Initialize options flow."""
+        pass
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+             return self.async_create_entry(data=user_input)
+        
+        options = {
+            vol.Required(CONF_MOTION_SENSOR_DELAY_ENABLED, default=True): bool,
+            vol.Required(CONF_MOTION_SENSOR_DELAY, default=6): int,
+        }
+
+        return self.async_show_form(
+            step_id="init", 
+            data_schema=vol.Schema(options), errors=errors
         )

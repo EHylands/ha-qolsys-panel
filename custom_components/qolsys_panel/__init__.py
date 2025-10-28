@@ -15,8 +15,13 @@ from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 
+from .const import (
+    CONF_RANDOM_MAC, 
+    CONF_MOTION_SENSOR_DELAY_ENABLED,
+    CONF_MOTION_SENSOR_DELAY,
+    DOMAIN
+)
 
-from .const import CONF_RANDOM_MAC, DOMAIN
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
@@ -50,7 +55,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.plugin.settings.mqtt_timeout = 30
     QolsysPanel.plugin.settings.mqtt_ping = 600
-    QolsysPanel.plugin.settings.motion_sensor_delay = True
+    QolsysPanel.plugin.settings.motion_sensor_delay = entry.data[CONF_MOTION_SENSOR_DELAY_ENABLED]
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
@@ -116,3 +121,26 @@ async def async_unload_entry(
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
         await entry.runtime_data.plugin.stop_operation()
     return unload_ok
+
+async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
+    """Migrate old entry."""
+    LOGGER.debug("Migrating configuration from version %s.%s", config_entry.version, config_entry.minor_version)
+
+    if config_entry.version > 0:
+        # This means the user has downgraded from a future version
+        return False
+
+    if config_entry.version == 0:
+        new_data = {**config_entry.data}
+        if config_entry.minor_version == 2:
+            new_data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
+            new_data[CONF_MOTION_SENSOR_DELAY] = 6
+            pass
+
+        if config_entry.minor_version == 1:
+            pass
+
+    hass.config_entries.async_update_entry(config_entry, data=new_data, minor_version=2, version=0)
+
+    LOGGER.debug("Migration to configuration version %s.%s successful", config_entry.version, config_entry.minor_version)
+    return True
