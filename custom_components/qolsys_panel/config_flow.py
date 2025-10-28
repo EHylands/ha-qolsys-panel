@@ -17,6 +17,8 @@ from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.core import callback
 
+from .types import QolsysPanelConfigEntry
+
 
 from .const import (
     CONF_IMEI, 
@@ -48,8 +50,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
-        return QolsysPanelOptionsFlowHandler(config_entry)
+    def async_get_options_flow(config_entry:QolsysPanelConfigEntry):
+        return QolsysPanelOptionsFlowHandler()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
