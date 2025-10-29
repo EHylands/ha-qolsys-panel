@@ -17,8 +17,8 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     CONF_RANDOM_MAC, 
-    CONF_MOTION_SENSOR_DELAY_ENABLED,
-    CONF_MOTION_SENSOR_DELAY,
+    OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_MOTION_SENSOR_DELAY,
     DOMAIN
 )
 
@@ -49,7 +49,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) -> bool:
     """Set up Qolsys Panel from a config entry."""
 
-    LOGGER.debug("Setting up entry: %s", entry.data)
+    LOGGER.debug("Setting up entry: %s", entry)
 
     QolsysPanel = qolsys_controller()
     QolsysPanel.select_plugin("remote")
@@ -57,7 +57,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.plugin.settings.mqtt_timeout = 30
     QolsysPanel.plugin.settings.mqtt_ping = 600
-    QolsysPanel.plugin.settings.motion_sensor_delay = entry.data[CONF_MOTION_SENSOR_DELAY_ENABLED]
+    QolsysPanel.plugin.settings.motion_sensor_delay_sec = entry.options.get(OPTION_MOTION_SENSOR_DELAY,310)
+    QolsysPanel.plugin.settings.motion_sensor_delay = entry.options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED,False)
     QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
@@ -135,11 +136,11 @@ async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
     if config_entry.version == 0:
         new_data = {**config_entry.data}
         if config_entry.minor_version < 4:
-            if CONF_MOTION_SENSOR_DELAY_ENABLED not in new_data:
-                new_data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
+            if OPTION_MOTION_SENSOR_DELAY in new_data:
+                del new_data[OPTION_MOTION_SENSOR_DELAY_ENABLED]
 
-            if CONF_MOTION_SENSOR_DELAY not in new_data:
-                new_data[CONF_MOTION_SENSOR_DELAY] = 6
+            if OPTION_MOTION_SENSOR_DELAY in new_data:
+                del new_data[OPTION_MOTION_SENSOR_DELAY]
 
     hass.config_entries.async_update_entry(config_entry, data=new_data, minor_version=3, version=0)
 

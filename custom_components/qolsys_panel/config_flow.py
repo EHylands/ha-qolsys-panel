@@ -24,10 +24,10 @@ from .types import QolsysPanelConfigEntry
 
 from .const import (
     CONF_IMEI, 
-    CONF_MOTION_SENSOR_DELAY,
-    CONF_MOTION_SENSOR_DELAY_ENABLED, 
-    CONF_RANDOM_MAC, 
-    DOMAIN
+    CONF_RANDOM_MAC,
+    DOMAIN,
+    OPTION_MOTION_SENSOR_DELAY,
+    OPTION_MOTION_SENSOR_DELAY_ENABLED,
 )
 
 from .utils import get_local_ip
@@ -53,7 +53,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry:QolsysPanelConfigEntry):
-        return QolsysPanelOptionsFlowHandler()
+        return QolsysPanelOptionsFlowHandler(config_entry=config_entry)
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -138,9 +138,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
-        self._data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
-        self._data[CONF_MOTION_SENSOR_DELAY] = 6
-
         await self._QolsysPanel.plugin.stop_operation()
 
         return self.async_create_entry(
@@ -158,8 +155,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._pki_list = []
         path = self._config_directory.joinpath("pki")
 
-
-        
         directories = [p.name for p in path.iterdir() if p.is_dir()]
         for d in directories:
             self._pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
@@ -263,8 +258,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
-        self._data[CONF_MOTION_SENSOR_DELAY_ENABLED] = True
-        self._data[CONF_MOTION_SENSOR_DELAY] = 6
 
         print('stop')
         await self._QolsysPanel.plugin.stop_operation()
@@ -277,12 +270,13 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 # Options Flow Handler
 class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
     """Handle Qolsys Panel options."""
+    def __init__(self, config_entry: QolsysPanelConfigEntry) -> None:
+        self.config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the options."""
-
         if user_input is not None:
              LOGGER.debug("Options user_input: %s", user_input)
              return self.async_create_entry(data=user_input)
@@ -293,12 +287,12 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
             data_schema=vol.Schema(
                 {
                     vol.Required(
-                        CONF_MOTION_SENSOR_DELAY_ENABLED,
-                        default=options.get(CONF_MOTION_SENSOR_DELAY_ENABLED, False)
+                        OPTION_MOTION_SENSOR_DELAY_ENABLED,
+                        default=options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED, False)
                     ): bool,
                     vol.Required(
-                        CONF_MOTION_SENSOR_DELAY,
-                        default=options.get(CONF_MOTION_SENSOR_DELAY,6)
+                        OPTION_MOTION_SENSOR_DELAY,
+                        default=options.get(OPTION_MOTION_SENSOR_DELAY,310)
                     ): int,
                 }
             ),
