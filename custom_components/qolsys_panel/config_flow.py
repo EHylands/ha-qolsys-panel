@@ -284,11 +284,6 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
         if user_input is not None:
              return self.async_create_entry(data=user_input)
         
-        options = {
-            vol.Required(CONF_MOTION_SENSOR_DELAY_ENABLED, default=True): bool,
-            vol.Required(CONF_MOTION_SENSOR_DELAY, default=6): int,
-        }
-        
         options = self.config_entry.options
         return self.async_show_form(
             step_id="init",
@@ -298,6 +293,10 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                         CONF_MOTION_SENSOR_DELAY_ENABLED,
                         default=options.get(CONF_MOTION_SENSOR_DELAY_ENABLED, False)
                     ): bool,
+                    vol.Required(
+                        CONF_MOTION_SENSOR_DELAY,
+                        default=options.get(CONF_MOTION_SENSOR_DELAY,6)
+                    ): int,
                 }
             ),
         )
