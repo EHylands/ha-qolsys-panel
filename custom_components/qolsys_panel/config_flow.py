@@ -17,6 +17,8 @@ from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.core import callback
 
+from custom_components.qolsys_panel.lock import LOGGER
+
 from .types import QolsysPanelConfigEntry
 
 
@@ -282,6 +284,7 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
         """Manage the options."""
 
         if user_input is not None:
+             LOGGER.debug("Options user_input: %s", user_input)
              return self.async_create_entry(data=user_input)
         
         options = self.config_entry.options

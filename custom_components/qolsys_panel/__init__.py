@@ -49,6 +49,8 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) -> bool:
     """Set up Qolsys Panel from a config entry."""
 
+    LOGGER.debug("Setting up entry: %s", entry.data)
+
     QolsysPanel = qolsys_controller()
     QolsysPanel.select_plugin("remote")
     QolsysPanel.plugin.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
