@@ -20,7 +20,14 @@
         }
       }
     },
-    "options": {
+    "error": {
+      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
+      "cannot_configure": "Could not configure panel.",
+      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
+      "unknown": "[%key:common::config_flow::error::unknown%]"
+    }
+  },
+  "options": {
       "step": {
         "init": {
           "title": "Qolsys Panel - Options",
@@ -31,13 +38,6 @@
           }
         }
       }
-    },
-    "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "cannot_configure": "Could not configure panel.",
-      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
-      "unknown": "[%key:common::config_flow::error::unknown%]"
-    }
   },
   "exceptions": {
     "integration_not_found": {
