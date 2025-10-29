@@ -32,10 +32,10 @@
       "step": {
         "init": {
           "title": "Qolsys Panel - Options",
-          "description": "Configure motion sensor delay options.",
+          "description": "Configure Motion Sensors Delay Pptions.",
           "data": {
-            "motion_sensor_delay_enabled": "Enable Motion Sensor Delay",
-            "motion_sensor_delay": "Motion Sensor Delay (seconds)"
+            "motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
+            "motion_sensor_delay": "Motion Sensors Delay (seconds)"
           }
         }
       }
