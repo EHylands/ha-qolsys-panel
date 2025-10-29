@@ -53,7 +53,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry:QolsysPanelConfigEntry):
-        return QolsysPanelOptionsFlowHandler(config_entry=config_entry)
+        return QolsysPanelOptionsFlowHandler()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -270,9 +270,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 # Options Flow Handler
 class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
     """Handle Qolsys Panel options."""
-    def __init__(self, config_entry: QolsysPanelConfigEntry) -> None:
-        self.config_entry = config_entry
-
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
