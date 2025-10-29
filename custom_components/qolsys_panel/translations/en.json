@@ -1,14 +1,6 @@
 {
   "config": {
     "step": {
-      "init":{
-        "title": "Qolsys Panel - Options",
-        "description": "Configure motion sensor delay options.",
-        "data": {
-          "motion_sensor_delay_enabled": "Enable Motion Sensor Delay",
-          "motion_sensor_delay": "Motion Sensor Delay (seconds)"
-        }
-      },
       "user": {
         "description": "Choose pairing method:"
       },
@@ -25,6 +17,18 @@
         "data": {
           "random_mac": "PKI Unique ID (random_mac)",
           "panel_ip": "Qolsys Panel IP Address"
+        }
+      }
+    },
+    "options": {
+      "step": {
+        "init": {
+          "title": "Qolsys Panel - Options",
+          "description": "Configure motion sensor delay options.",
+          "data": {
+            "motion_sensor_delay_enabled": "Enable Motion Sensor Delay",
+            "motion_sensor_delay": "Motion Sensor Delay (seconds)"
+          }
         }
       }
     },
