@@ -1,6 +1,7 @@
 {
   "config": {
     "step": {
+
       "user": {
         "description": "Choose pairing method:"
       },
@@ -21,24 +22,24 @@
       }
     },
     "error": {
-      "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
-      "cannot_configure": "Could not configure panel.",
-      "invalid_auth": "[%key:common::config_flow::error::invalid_auth%]",
-      "unknown": "[%key:common::config_flow::error::unknown%]"
+      "mqtt_error": "Qolsys Panel MQTT communication error.",
+      "cannot_configure": "Could not Configure Qolsys Panel.",
+      "cannot_connect": "Qolsys Panel Connection Error.",
+      "authentication_failed":"Credentials rejected by panel - Signed Certificate Error"
     }
   },
   "options": {
       "step": {
         "init": {
           "title": "Qolsys Panel - Options",
-          "description": "Configure motion sensors delay options.",
+          "description": "Configure Motion Sensors Delay Pptions.",
           "data": {
-            "motion_sensor_delay_enabled": "Enable Motion Sensors Delay",
+            "motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
             "motion_sensor_delay": "Motion Sensors Delay (seconds)"
           }
         }
       }
-  },
+    },
   "exceptions": {
     "integration_not_found": {
       "message": "Integration \"{target}\" not found in registry."
@@ -63,6 +64,29 @@
     }
   },
   "entity": {
+    "sensor": {
+      "latest_dbm": {
+        "name": "Latest dBm"
+      },
+      "average_dbm": {
+        "name": "Average dBm"
+      },
+      "powerg_temperature": {
+        "name": "Temperature"
+      },
+      "powerg_light": {
+        "name": "Light"
+      },
+      "dimmer_battery": {
+        "name": "Battery"
+      },
+      "lock_battery": {
+        "name": "Battery"
+      },
+      "thermostat_battery": {
+        "name": "Battery"
+      } 
+    },
     "binary_sensor": {
       "panel_ac_status": {
         "name": "AC Status"
@@ -108,6 +132,21 @@
       },
       "dimmer_node_status": {
         "name": "Node Status"
+      },
+      "partition_exit_sounds": {
+        "name": "Exit Sounds"
+      },
+      "partition_entry_delays": {
+        "name": "Entry Delays"
+      },
+      "zone_unreachable": {
+        "name": "Status"
+      },
+      "zone_tamper": {
+        "name": "Tamper"
+      },
+      "zone_battery_status": {
+        "name": "Battery"
       }
     }
   }

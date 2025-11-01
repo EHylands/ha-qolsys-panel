@@ -50,13 +50,16 @@ async def async_setup_entry(
 
 
 class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
-    """An Z-Wave Thermostat entity for a qolsys panel."""
+    """A Z-Wave Thermostat entity for a qolsys panel."""
 
     _attr_has_entity_name = True
     _attr_name = None
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
+        self, 
+        QolsysPanel: qolsys_controller, 
+        node_id: str, 
+        unique_id: str
     ) -> None:
         """Initialise a Qolsys Z-Wave Thermostat entity."""
         super().__init__(QolsysPanel, node_id, unique_id)

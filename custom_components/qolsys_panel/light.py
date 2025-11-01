@@ -21,22 +21,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up Ligh for each Z-Wave dimmer."""
     QolsysPanel = config_entry.runtime_data
+    entities: list[QolsysZwaveDimmerEntity] = []
 
-    async_add_entities(
-        ZWaveDimmer(
-            QolsysPanel,
-            dimmer.dimmer_node_id,
-            config_entry.unique_id,
-        )
-        for dimmer in QolsysPanel.state.zwave_dimmers
-    )
+    for dimmer in QolsysPanel.state.zwave_dimmers:
+        entities.append(ZWaveDimmer(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id))  
+
+    async_add_entities(entities)
 
 def to_qolsys_level(level):
     """Convert the given Home Assistant light level (0-255) to Qolsys (0-99)."""
     return int((level * 99) / 255)
 
 def to_hass_level(level):
-    """Convert the given Lutron (0-99) light level to Home Assistant (0-255)."""
+    """Convert the given Qolsys (0-99) light level to Home Assistant (0-255)."""
     return int((level * 255) / 99)
 
 class ZWaveDimmer(QolsysZwaveDimmerEntity, LightEntity):
@@ -46,7 +43,12 @@ class ZWaveDimmer(QolsysZwaveDimmerEntity, LightEntity):
     _attr_supported_color_modes = {ColorMode.BRIGHTNESS}
     _attr_name = None
 
-    def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
+    def __init__(
+            self, 
+            QolsysPanel: qolsys_controller, 
+            node_id: str, 
+            unique_id: str
+        ) -> None:
         """Initialise a ZWaveLightEntity."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = self._zwave_dimmer_unique_id

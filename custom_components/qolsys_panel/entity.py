@@ -11,13 +11,14 @@ from .const import DOMAIN
 
 
 class QolsysPanelEntity(Entity):
-    """A base entity for a Qolsys Panel."""
+    """A base entity for Qolsys Panel Entity."""
 
     _attr_has_entity_name = True
 
-    def __init__(self,
-                 QolsysPanel:qolsys_controller,
-                 unique_id:str
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        unique_id: str
     ) -> None:
         """Set up a entity for a Qolsys Panel."""
         self.QolsysPanel = QolsysPanel
@@ -53,7 +54,7 @@ class QolsysPartitionEntity(QolsysPanelEntity):
         partition_id: str,
         unique_id: str,
     ) -> None:
-        """Set up Qolsys Partition."""
+        """Set up Qolsys Partition Entity."""
         super().__init__(QolsysPanel, unique_id)
         self._partition_id = partition_id
         self._partition_unique_id = f"{unique_id}_partition{partition_id}"
