@@ -199,6 +199,6 @@ The integration will be cleanly removed from your system.
 | **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
 | **Z-Wave Door Locks**  | Lock, Unlock                         | ✅     |
 | **Z-Wave Thermostats** | Read device status                   | ✅     |
-|                        | Write device status                  | 🛠️     |
+|                        | Write device status                  | ✅     |
 | **Z-Wave Garage Doors**|                                      | 🛠️     |
 | **Z-Wave Outlets**     |                                      | 🛠️     |
