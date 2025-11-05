@@ -147,7 +147,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             temp = self._thermostat.thermostat_target_cool_temp
             return float(temp) if temp else 74.0
         except (ValueError, TypeError):
-            _LOGGER.warning(f"Invalid cool temperature value in AUTO mode, using default 74.0")
+            _LOGGER.warning("Invalid cool temperature value in AUTO mode, using default 74.0")
             return 74.0
 
     @property
@@ -161,7 +161,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             temp = self._thermostat.thermostat_target_heat_temp
             return float(temp) if temp else 68.0
         except (ValueError, TypeError):
-            _LOGGER.warning(f"Invalid heat temperature value in AUTO mode, using default 68.0")
+            _LOGGER.warning("Invalid heat temperature value in AUTO mode, using default 68.0")
             return 68.0
 
     @property
