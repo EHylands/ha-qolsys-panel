@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 from typing import Any
 
 from qolsys_controller import qolsys_controller
@@ -15,7 +13,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .entity import QolsysZwaveLockEntity
 from .types import QolsysPanelConfigEntry
 
-_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -69,7 +66,6 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     async def async_lock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = True
-        _LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
         self._value_is_locking = True
         self._value_is_unlocking = False
         self.async_schedule_update_ha_state()
@@ -79,7 +75,6 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     async def async_unlock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = False
-        _LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
         self._value_is_unlocking = True
         self._value_is_locking = False
         self.async_schedule_update_ha_state()
