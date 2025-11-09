@@ -63,7 +63,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._config_directory = Path(self.hass.config.config_dir + "/qolsys_panel/")
         self._QolsysPanel = qolsys_controller()
         self._QolsysPanel.select_plugin("remote")
-        self._QolsysPanel.plugin.settings.config_directory = self._config_directory.resolve()
+        self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
         self._QolsysPanel.plugin.log_mqtt_mesages = False
 
         return self.async_show_menu(
@@ -81,9 +81,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         _LOGGER.debug("pki_autodiscovery_1: User information")
 
         if self._QolsysPanel is not None:
-            self._QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=self.hass)
-            self._QolsysPanel.plugin.settings.panel_ip = ""
-            self._QolsysPanel.plugin.settings.random_mac = ""
+            self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
+            self._QolsysPanel.settings.panel_ip = ""
+            self._QolsysPanel.settings.random_mac = ""
             self._QolsysPanel.plugin.auto_discover_pki = True
 
         if user_input is None:
@@ -187,9 +187,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step_id="existing_pki", data_schema=vol.Schema(data_schema)
             )
 
-        self._QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=self.hass)
-        self._QolsysPanel.plugin.settings.panel_ip = user_input[CONF_HOST]
-        self._QolsysPanel.plugin.settings.random_mac = user_input[CONF_RANDOM_MAC]
+        self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
+        self._QolsysPanel.settings.panel_ip = user_input[CONF_HOST]
+        self._QolsysPanel.settings.random_mac = user_input[CONF_RANDOM_MAC]
         self._QolsysPanel.plugin.auto_discover_pki = False
 
         # Check if PKI is valid

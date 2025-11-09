@@ -52,15 +52,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     QolsysPanel = qolsys_controller()
     QolsysPanel.select_plugin("remote")
-    QolsysPanel.plugin.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
-    QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
-    QolsysPanel.plugin.settings.mqtt_timeout = 30
-    QolsysPanel.plugin.settings.mqtt_ping = 600
-    QolsysPanel.plugin.settings.motion_sensor_delay_sec = entry.options.get(OPTION_MOTION_SENSOR_DELAY,310)
-    QolsysPanel.plugin.settings.motion_sensor_delay = entry.options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED,False)
-    QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
-    QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
-    QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
+    QolsysPanel.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
+    QolsysPanel.settings.plugin_ip = await get_local_ip(hass=hass)
+    QolsysPanel.settings.mqtt_timeout = 30
+    QolsysPanel.settings.mqtt_ping = 600
+    QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(OPTION_MOTION_SENSOR_DELAY,310)
+    QolsysPanel.settings.motion_sensor_delay = entry.options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED,False)
+    QolsysPanel.settings.panel_ip = entry.data[CONF_HOST]
+    QolsysPanel.settings.panel_mac = entry.data[CONF_MAC]
+    QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
 
     # Additionnal remote plugin config
     QolsysPanel.plugin.check_user_code_on_disarm = False
