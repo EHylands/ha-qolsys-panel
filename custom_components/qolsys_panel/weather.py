@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import logging
 
+from datetime import datetime, timezone
+
 from qolsys_controller import qolsys_controller
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -48,9 +50,15 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
         if self._weather:
             if self._weather.forecasts: 
                 forecasts = []
+                
                 for daily in self._weather.forecasts:
+                    timestamp = daily.get("current_weather_date")
+                    timestamp = int(timestamp)
+                    timestamp = int(timestamp/1000)
+                    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+
                     forecast: Forecast = {
-                        "datetime": daily.current_weather_date,
+                        "datetime": dt.isoformat(),
                         "condition": daily.condition,
                         "native_temperature": daily.high_temp,
                         "native_templow": daily.low_temp,

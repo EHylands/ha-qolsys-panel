@@ -109,7 +109,6 @@ async def async_setup_entry(
         entities.append(PartitionAlarmSensor(QolsysPanel,partition.id,config_entry.unique_id,"Auxiliary"))
         entities.append(PartitionExitSoundSensor(QolsysPanel,partition.id,config_entry.unique_id))
         entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
-        entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
             
     for dimmer in QolsysPanel.state.zwave_dimmers:
         entities.append(DimmerSensor_Status(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id))
