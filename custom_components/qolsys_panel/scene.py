@@ -19,16 +19,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up scenes."""
+    entities: list[Scene] = []
     QolsysPanel = config_entry.runtime_data
 
-    async_add_entities(
-        QolsysPanelScene(
-            QolsysPanel,
-            scene.scene_id,
-            config_entry.unique_id,
-        )
-        for scene in QolsysPanel.state.scenes
-    )
+    for scene in QolsysPanel.state.scenes:
+        entities.append(QolsysPanelScene(QolsysPanel,scene.scene_id,config_entry.unique_id))
+        
+    async_add_entities(entities)
 
 class QolsysPanelScene(Scene,QolsysPanelEntity):
     """An scene entity for a qolsys panel."""
@@ -36,7 +33,10 @@ class QolsysPanelScene(Scene,QolsysPanelEntity):
     _attr_has_entity_name = False
     
     def __init__(
-        self, QolsysPanel: qolsys_controller, scene_id:str, unique_id: str
+        self, 
+        QolsysPanel: qolsys_controller, 
+        scene_id: str, 
+        unique_id: str
     ) -> None:
         """Initialise a Qolsys Scene entity."""
         super().__init__(QolsysPanel, unique_id)

@@ -25,8 +25,7 @@ from .const import (
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
-logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(module)s: %(message)s')
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [
     Platform.ALARM_CONTROL_PANEL,
@@ -36,7 +35,8 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
     Platform.LOCK,
     Platform.CLIMATE,
-    Platform.SCENE
+    Platform.SCENE,
+    Platform.WEATHER
 ]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -45,23 +45,22 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Qolsys Panel services."""
     return True
 
-# Update entry annotation
 async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) -> bool:
     """Set up Qolsys Panel from a config entry."""
 
-    LOGGER.debug("Setting up entry: %s", entry)
+    _LOGGER.debug("Setting up entry: %s", entry)
 
     QolsysPanel = qolsys_controller()
     QolsysPanel.select_plugin("remote")
-    QolsysPanel.plugin.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
-    QolsysPanel.plugin.settings.plugin_ip = await get_local_ip(hass=hass)
-    QolsysPanel.plugin.settings.mqtt_timeout = 30
-    QolsysPanel.plugin.settings.mqtt_ping = 600
-    QolsysPanel.plugin.settings.motion_sensor_delay_sec = entry.options.get(OPTION_MOTION_SENSOR_DELAY,310)
-    QolsysPanel.plugin.settings.motion_sensor_delay = entry.options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED,False)
-    QolsysPanel.plugin.settings.panel_ip = entry.data[CONF_HOST]
-    QolsysPanel.plugin.settings.panel_mac = entry.data[CONF_MAC]
-    QolsysPanel.plugin.settings.random_mac = entry.data[CONF_RANDOM_MAC]
+    QolsysPanel.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
+    QolsysPanel.settings.plugin_ip = await get_local_ip(hass=hass)
+    QolsysPanel.settings.mqtt_timeout = 30
+    QolsysPanel.settings.mqtt_ping = 600
+    QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(OPTION_MOTION_SENSOR_DELAY,310)
+    QolsysPanel.settings.motion_sensor_delay = entry.options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED,False)
+    QolsysPanel.settings.panel_ip = entry.data[CONF_HOST]
+    QolsysPanel.settings.panel_mac = entry.data[CONF_MAC]
+    QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
 
     # Additionnal remote plugin config
     QolsysPanel.plugin.check_user_code_on_disarm = False
@@ -71,7 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     # Configure remote plugin
     if not await QolsysPanel.plugin.config(start_pairing=False):
-        LOGGER.error('Error Configuring remote plugin')
+        _LOGGER.error('Error Configuring remote plugin')
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="cannot_configure",
@@ -82,18 +81,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         await QolsysPanel.plugin.start_operation()
 
     except QolsysSslError as err:
-        LOGGER.error('Credentials rejected by panel - Signed Certificate Error')
+        _LOGGER.error('Credentials rejected by panel - Signed Certificate Error')
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
         ) from err
     
     except QolsysMqttError as err:
-        LOGGER.error('MQTT Error')
+        _LOGGER.error('MQTT Error')
         raise ConfigEntryNotReady(
-            translation_domain=DOMAIN, translation_key="mqtt_error"
+            translation_domain=DOMAIN, 
+            translation_key="mqtt_error"
         ) from err
 
     if not QolsysPanel.plugin.connected:
+       _LOGGER.error('Unable to connect to panel')
        raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="cannot_connect",
@@ -116,7 +117,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
-# Update entry annotation
 async def async_unload_entry(
     hass: HomeAssistant, entry: QolsysPanelConfigEntry
 ) -> bool:
@@ -127,7 +127,7 @@ async def async_unload_entry(
 
 async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
     """Migrate old entry."""
-    LOGGER.debug("Migrating configuration from version %s.%s", config_entry.version, config_entry.minor_version)
+    _LOGGER.debug("Migrating configuration from version %s.%s", config_entry.version, config_entry.minor_version)
 
     if config_entry.version > 0:
         # This means the user has downgraded from a future version
@@ -136,13 +136,9 @@ async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
     if config_entry.version == 0:
         new_data = {**config_entry.data}
         if config_entry.minor_version < 4:
-            if OPTION_MOTION_SENSOR_DELAY in new_data:
-                del new_data[OPTION_MOTION_SENSOR_DELAY_ENABLED]
-
-            if OPTION_MOTION_SENSOR_DELAY in new_data:
-                del new_data[OPTION_MOTION_SENSOR_DELAY]
+            pass
 
     hass.config_entries.async_update_entry(config_entry, data=new_data, minor_version=3, version=0)
 
-    LOGGER.debug("Migration to configuration version %s.%s successful", config_entry.version, config_entry.minor_version)
+    _LOGGER.debug("Migration to configuration version %s.%s successful", config_entry.version, config_entry.minor_version)
     return True

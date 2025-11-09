@@ -22,7 +22,7 @@ async def async_setup_entry(
     config_entry: QolsysPanelConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up control panels for each partition."""
+    """Set up alarm control panels for each partition."""
     QolsysPanel = config_entry.runtime_data
 
     async_add_entities(
@@ -36,7 +36,7 @@ async def async_setup_entry(
 
 
 class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity):
-    """An alarm control panel entity for a qolsys panel."""
+    """An alarm control panel entity for a Qolsys Panel."""
 
     _attr_has_entity_name = True
     _attr_code_arm_required = False
@@ -49,7 +49,10 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     )
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+        self, 
+        QolsysPanel: qolsys_controller, 
+        partition_id: str, 
+        unique_id: str
     ) -> None:
         """Initialise a Qolsys Alarm control panel entity."""
         super().__init__(QolsysPanel, partition_id, unique_id)

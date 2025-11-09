@@ -50,13 +50,16 @@ async def async_setup_entry(
 
 
 class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
-    """An Z-Wave Thermostat entity for a qolsys panel."""
+    """A Z-Wave Thermostat entity for a qolsys panel."""
 
     _attr_has_entity_name = True
     _attr_name = None
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
+        self, 
+        QolsysPanel: qolsys_controller, 
+        node_id: str, 
+        unique_id: str
     ) -> None:
         """Initialise a Qolsys Z-Wave Thermostat entity."""
         super().__init__(QolsysPanel, node_id, unique_id)
@@ -144,7 +147,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             temp = self._thermostat.thermostat_target_cool_temp
             return float(temp) if temp else 74.0
         except (ValueError, TypeError):
-            _LOGGER.warning(f"Invalid cool temperature value in AUTO mode, using default 74.0")
+            _LOGGER.warning("Invalid cool temperature value in AUTO mode, using default 74.0")
             return 74.0
 
     @property
@@ -158,7 +161,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             temp = self._thermostat.thermostat_target_heat_temp
             return float(temp) if temp else 68.0
         except (ValueError, TypeError):
-            _LOGGER.warning(f"Invalid heat temperature value in AUTO mode, using default 68.0")
+            _LOGGER.warning("Invalid heat temperature value in AUTO mode, using default 68.0")
             return 68.0
 
     @property

@@ -34,7 +34,7 @@ async def async_setup_entry(
         
         # Add PowerG Sensors if enabled
         if zone.is_powerg_temperature_enabled():
-            entities.append(ZoneSensor_PowerG_Temperture(QolsysPanel, zone.zone_id, config_entry.unique_id))   
+            entities.append(ZoneSensor_PowerG_Temperature(QolsysPanel, zone.zone_id, config_entry.unique_id))   
 
         # Add PowerG Light Sensor if enabled
         if zone.is_powerg_light_enabled():
@@ -60,7 +60,7 @@ async def async_setup_entry(
 
 
 class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
-    """A sensor entity for the latest DBM of a zone."""
+    """A sensor entity for a zone latest DBM."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
@@ -68,7 +68,7 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
         """Set up a binary sensor entity for a zone battery status."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = f"{self._zone_unique_id}_latestdBm"
-        self._attr_name = 'Latest dBm'
+        self._attr_translation_key="latest_dbm"
         self._attr_native_unit_of_measurement = 'dBm'
         self._attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
         self._attr_suggested_display_precision = 0
@@ -77,11 +77,11 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
-        if self._zone.latestdBm is None or self._zone.latestdBm == '':
-            return 0
-        else:
+        try:
             return int(self._zone.latestdBm)
-
+        except ValueError:
+            return None
+       
 class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     """A sensor entity for the average DBM of a zone."""
 
@@ -91,7 +91,7 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
         """Set up a binary sensor entity for a zone battery status."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = f"{self._zone_unique_id}_averagedBm"
-        self._attr_name = 'Average dBm'
+        self._attr_translation_key="average_dbm"
         self._attr_native_unit_of_measurement = 'dBm'
         self._attr_device_class = SensorDeviceClass.SIGNAL_STRENGTH
         self._attr_suggested_display_precision = 0
@@ -100,16 +100,19 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
-        return int(self._zone.averagedBm)
+        try:
+            return int(self._zone.averagedBm)
+        except ValueError:
+            return None
     
-class ZoneSensor_PowerG_Temperture(QolsysZoneEntity, SensorEntity):
+class ZoneSensor_PowerG_Temperature(QolsysZoneEntity, SensorEntity):
     """A sensor entity for PowerG Temperature."""
 
     def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
         """Set up a binary sensor entity for a zone powerg temperature."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = f"{self._zone_unique_id}_powerg_temperature"
-        self._attr_name = 'Temperature'
+        self._attr_translation_key = "powerg_temperature"
         self._attr_native_unit_of_measurement = "°F"
         self._attr_device_class = SensorDeviceClass.TEMPERATURE
         self._attr_suggested_display_precision = 1
@@ -131,7 +134,7 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
         """Set up a binary sensor entity for a zone powerg light."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = f"{self._zone_unique_id}_powerg_light"
-        self._attr_name = 'Light'
+        self._attr_translation_key = "powerg_light"
         self._attr_native_unit_of_measurement = "lx"
         self._attr_device_class = SensorDeviceClass.ILLUMINANCE
         self._attr_suggested_display_precision = 0
@@ -141,8 +144,7 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
     def native_value(self) -> float | None:
         """Return the latest Zone PowerG Light."""
         try:
-            temp = int(self._zone.powerg_light)
-            return round(temp,1)
+            return int(self._zone.powerg_light)
         except ValueError:
             return None
     
@@ -153,7 +155,7 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
         """Set up a sensor entity for a dimmer battery value."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_battery_value"
-        self._attr_name = 'Battery'
+        self._attr_translation_key="dimmer_battery"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_suggested_display_precision = 0
@@ -179,7 +181,7 @@ class LockSensor_BatteryValue(QolsysZwaveLockEntity, SensorEntity):
         """Set up a sensor entity for a lock battery value."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_lock_unique_id}_battery_value"
-        self._attr_name = 'Battery'
+        self._attr_translation_key="lock_battery"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_suggested_display_precision = 0
@@ -205,7 +207,7 @@ class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
         """Set up a sensor entity for a thermostat battery value."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_thermostat_unique_id}_battery_value"
-        self._attr_name = 'Battery'
+        self._attr_translation_key="thermostat_battery"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_suggested_display_precision = 0
@@ -223,6 +225,3 @@ class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
         
         except ValueError:
             return None
-
-
-

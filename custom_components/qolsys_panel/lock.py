@@ -15,8 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .entity import QolsysZwaveLockEntity
 from .types import QolsysPanelConfigEntry
 
-logging.basicConfig(level=logging.DEBUG,format='%(levelname)s - %(module)s: %(message)s')
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -25,7 +24,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Z-Wave Lock entities."""
     QolsysPanel = config_entry.runtime_data
-
     entities: list[QolsysZwaveLockEntity] = []
 
     for lock in QolsysPanel.state.zwave_locks:
@@ -40,7 +38,10 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     _attr_name = None
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
+        self, 
+        QolsysPanel: qolsys_controller, 
+        node_id: str, 
+        unique_id: str
     ) -> None:
         """Initialise a Qolsys Z-Wave Lock entity."""
         super().__init__(QolsysPanel, node_id, unique_id)
@@ -68,7 +69,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     async def async_lock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = True
-        LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
+        _LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
         self._value_is_locking = True
         self._value_is_unlocking = False
         self.async_schedule_update_ha_state()
@@ -78,7 +79,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     async def async_unlock(self, **kwargs: Any):
         node_id = int(self._lock.lock_node_id)
         locked = False
-        LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
+        _LOGGER.debug("Sending Lock Command: Node:%s Lock:%s",node_id,locked)
         self._value_is_unlocking = True
         self._value_is_locking = False
         self.async_schedule_update_ha_state()

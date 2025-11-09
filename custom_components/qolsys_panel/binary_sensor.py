@@ -91,88 +91,29 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up binary sensors."""
+    entities: list[BinarySensorEntity] = []
     QolsysPanel = config_entry.runtime_data
 
-    entities: list[BinarySensorEntity] = [
-        ZonesSensor(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    ]
+    for zone in QolsysPanel.state.zones:
+        entities.append(ZonesSensor(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        entities.append(ZoneSensor_BatteryStatus(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        entities.append(ZoneSensor_Unreachable(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        entities.append(ZoneSensor_Tamper(QolsysPanel, zone.zone_id, config_entry.unique_id))
 
-    entities.extend(
-        ZoneSensor_BatteryStatus(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    )
+    for sensor in PANEL_SENSOR:
+        entities.append(PanelSensor(QolsysPanel, config_entry.unique_id, sensor))
 
-    entities.extend(
-        ZoneSensor_Unreachable(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    )
-
-    entities.extend(
-        ZoneSensor_Tamper(QolsysPanel, zone.zone_id, config_entry.unique_id)
-        for zone in QolsysPanel.state.zones
-    )
-
-    entities.extend(
-        PanelSensor(
-            QolsysPanel,
-            config_entry.unique_id,
-            Sensor
-        )
-        for Sensor in PANEL_SENSOR
-    )
-
-    entities.extend(
-        PartitionAlarmSensor(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id,
-            "Police"
-        )
-        for partition in QolsysPanel.state.partitions
-    )
-
-    entities.extend(
-        PartitionAlarmSensor(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id,
-            "Fire"
-        )
-        for partition in QolsysPanel.state.partitions
-    )
-
-    entities.extend(
-        PartitionAlarmSensor(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id,
-            "Auxiliary"
-        )
-        for partition in QolsysPanel.state.partitions
-    )
-
-    entities.extend(
-        PartitionExitSoundSensor(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id
-        )
-        for partition in QolsysPanel.state.partitions
-    )
-
-    entities.extend(
-        PartitionEntryDelaySensor(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id
-        )
-        for partition in QolsysPanel.state.partitions
-    )
-
+    for partition in QolsysPanel.state.partitions:
+        entities.append(PartitionAlarmSensor(QolsysPanel,partition.id,config_entry.unique_id,"Police"))
+        entities.append(PartitionAlarmSensor(QolsysPanel,partition.id,config_entry.unique_id,"Fire"))
+        entities.append(PartitionAlarmSensor(QolsysPanel,partition.id,config_entry.unique_id,"Auxiliary"))
+        entities.append(PartitionExitSoundSensor(QolsysPanel,partition.id,config_entry.unique_id))
+        entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
+        entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
+            
     for dimmer in QolsysPanel.plugin.state.zwave_dimmers:
-        entities.extend([DimmerSensor_Status(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id)])
-
+        entities.append(DimmerSensor_Status(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id))
+  
     async_add_entities(entities)
 
 class PartitionExitSoundSensor(QolsysPartitionEntity, BinarySensorEntity):
@@ -185,10 +126,10 @@ class PartitionExitSoundSensor(QolsysPartitionEntity, BinarySensorEntity):
         partition_id: int,
         unique_id: str
     ) -> None:
-        """Set up a binary sensor entity for each panel sensor on Qolsys Panel."""
+        """Binary sensor entity for partition exit sound status."""
         super().__init__(QolsysPanel,partition_id,unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_panel_exit_sounds"
-        self._attr_name = 'Exit Sounds'
+        self._attr_translation_key="partition_exit_sounds"
 
     @property
     def is_on(self) -> bool:
@@ -196,7 +137,7 @@ class PartitionExitSoundSensor(QolsysPartitionEntity, BinarySensorEntity):
         return self._partition.exit_sounds == 'ON'
 
 class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
-    """A binary sensor entity for partition exit sound."""
+    """A binary sensor entity for partition entry delay."""
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
@@ -205,14 +146,14 @@ class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
         partition_id: int,
         unique_id: str
     ) -> None:
-        """Set up a binary sensor entity for each panel sensor on Qolsys Panel."""
+        """Set up a binary sensor entity partition entry delay."""
         super().__init__(QolsysPanel,partition_id,unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_panel_entry_delays"
-        self._attr_name = 'Entry Delays'
+        self._attr_translation_key="partition_entry_delays"
 
     @property
     def is_on(self) -> bool:
-        """Return if this partition exit sound is on."""
+        """Return if this partition entry delay is on."""
         return self._partition.entry_delays == 'ON'
 
 class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
@@ -223,9 +164,10 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
-        partition_id: int,
+        partition_id: str,
         unique_id: str,
-        alarm_type: str) -> None:
+        alarm_type: str
+    ) -> None:
         """Set up a binary sensor entity for partition alarm type."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self.QolsysPanel = QolsysPanel
@@ -240,7 +182,7 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
 
         match self._alarm_type:
             case 'Police':
-                if PartitionAlarmType.POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.SILENT_POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.GLASS_BREAK_AWAY_ONLY in partition_alarm:
+                if PartitionAlarmType.POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.SILENT_POLICE_EMERGENCY in partition_alarm or PartitionAlarmType.GLASS_BREAK_AWAY_ONLY in partition_alarm or PartitionAlarmType.GLASS_BREAK in partition_alarm:
                     return True
 
             case 'Fire':
@@ -320,18 +262,14 @@ class ZoneSensor_Unreachable(QolsysZoneEntity, BinarySensorEntity):
     def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
         """Set up a binary sensor entity for a zone unreachable."""
         super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_device_class = BinarySensorDeviceClass.CONNECTIVITY
         self._attr_unique_id = f"{self._zone_unique_id}_unreachable"
-        self._attr_name = 'Status'
+        self._attr_translation_key="zone_unreachable"
 
     @property
     def is_on(self) -> bool:
         """Return if this zone is unreachable."""
         return self._zone.sensorstatus != 'Unreachable'
-
-    @property
-    def device_class(self) -> BinarySensorDeviceClass | None:
-        """Return the device class of this zone unreachable."""
-        return BinarySensorDeviceClass.CONNECTIVITY
 
 class ZoneSensor_Tamper(QolsysZoneEntity, BinarySensorEntity):
     """A binary sensor entity for a zone tamper."""
@@ -341,18 +279,14 @@ class ZoneSensor_Tamper(QolsysZoneEntity, BinarySensorEntity):
     def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
         """Set up a binary sensor entity for a zone tamper."""
         super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_device_class = BinarySensorDeviceClass.TAMPER
         self._attr_unique_id = f"{self._zone_unique_id}_tamper"
-        self._attr_name = 'Tamper'
+        self._attr_translation_key="zone_tamper"
 
     @property
     def is_on(self) -> bool:
         """Return if this zone tamper is on."""
         return self._zone.sensorstatus == ZoneStatus.TAMPERED
-
-    @property
-    def device_class(self) -> BinarySensorDeviceClass | None:
-        """Return the device class of this zone tamper."""
-        return BinarySensorDeviceClass.TAMPER
 
 class ZoneSensor_BatteryStatus(QolsysZoneEntity, BinarySensorEntity):
     """A binary sensor entity for a zone battery status."""
@@ -362,9 +296,9 @@ class ZoneSensor_BatteryStatus(QolsysZoneEntity, BinarySensorEntity):
     def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
         """Set up a binary sensor entity for a zone battery status."""
         super().__init__(QolsysPanel, zone_id, unique_id)
-        self._attr_unique_id = f"{self._zone_unique_id}_battery_status"
-        self._attr_name = 'Battery'
         self._attr_device_class = BinarySensorDeviceClass.BATTERY
+        self._attr_unique_id = f"{self._zone_unique_id}_battery_status"
+        self._attr_translation_key="zone_battery_status"
 
     @property
     def is_on(self) -> bool:
@@ -376,7 +310,12 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
 
     _attr_name = None
 
-    def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
+    def __init__(
+        self, 
+        QolsysPanel: qolsys_controller, 
+        zone_id: int, 
+        unique_id: str
+    ) -> None:
         """Set up a binary sensor entity for a zone in a Qolsys Panel."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = self._zone_unique_id
@@ -398,7 +337,7 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     @property
     def device_class(self) -> BinarySensorDeviceClass | None:
         """Return the device class of this point sensor."""
-        if self._zone.sensortype == 'Panel Motion':
+        if self._zone.sensortype == ZoneSensorType.PANEL_MOTION:
             return BinarySensorDeviceClass.MOTION
 
         if self._zone.sensortype == ZoneSensorType.MOTION:
@@ -457,7 +396,12 @@ class DimmerSensor_Status(QolsysZwaveDimmerEntity, BinarySensorEntity):
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str) -> None:
+    def __init__(
+            self, 
+            QolsysPanel: qolsys_controller, 
+            node_id: str, 
+            unique_id: str
+    ) -> None:
         """Set up a binary sensor entity for a z-wave dimmer status."""
         super().__init__(QolsysPanel,  node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_dimmer_unique_id }_status"
