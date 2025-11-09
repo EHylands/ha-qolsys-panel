@@ -52,7 +52,7 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
                 forecasts = []
                 
                 for daily in self._weather.forecasts:
-                    timestamp = daily.get("current_weather_date")
+                    timestamp = daily.current_weather_date
                     timestamp = int(timestamp)
                     timestamp = int(timestamp/1000)
                     dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
