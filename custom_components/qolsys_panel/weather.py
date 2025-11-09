@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import logging
+
 from qolsys_controller import qolsys_controller
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.components.weather import WeatherEntity, WeatherEntityFeature, Forecast
-from homeassistant.const import UnitOfTemperature
 
 from .types import QolsysPanelConfigEntry
 from .entity import QolsysWeatherEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -37,7 +40,7 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
         super().__init__(QolsysPanel, unique_id)
         self._attr_unique_id = self._weather_unique_id
         self._attr_name = "Qolsys Panel - Weather"
-        self._attr_native_temperature_unit = UnitOfTemperature.FAHRENHEIT
+        self._attr_native_temperature_unit = "°F"
         self._attr_supported_features = WeatherEntityFeature.FORECAST_DAILY
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
@@ -51,8 +54,9 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
                         "condition": daily.condition,
                         "native_temperature": daily.high_temp,
                         "native_templow": daily.low_temp,
-                        "native_precipitation": daily.precipitation,
+                        "precipitation_probability": daily.precipitation,
                     }
                     forecasts.append(forecast)
+                _LOGGER.debug(forecasts)
                 return forecasts
         return None

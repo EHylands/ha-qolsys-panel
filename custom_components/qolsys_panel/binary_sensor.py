@@ -111,7 +111,7 @@ async def async_setup_entry(
         entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
         entities.append(PartitionEntryDelaySensor(QolsysPanel,partition.id,config_entry.unique_id))
             
-    for dimmer in QolsysPanel.plugin.state.zwave_dimmers:
+    for dimmer in QolsysPanel.state.zwave_dimmers:
         entities.append(DimmerSensor_Status(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id))
   
     async_add_entities(entities)
