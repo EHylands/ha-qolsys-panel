@@ -178,6 +178,8 @@ The integration will be cleanly removed from your system.
 |------------------------|--------------------------------------|--------|
 | **Panel**              | Diagnostic Sensors                   | ✅     |
 |                        | Panels Scenes                        | ✅     |
+|                        | Weather Forecast                     | ✅     |
+|                        | (Alarm.com Weather to Panel)         |        |
 | **Partition**          | Arming Status                        | ✅     |
 |                        | Alarm State                          | ✅     |
 |                        | Home Instant Arming                  | ✅     |

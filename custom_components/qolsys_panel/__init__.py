@@ -35,7 +35,8 @@ PLATFORMS: list[Platform] = [
     Platform.SWITCH,
     Platform.LOCK,
     Platform.CLIMATE,
-    Platform.SCENE
+    Platform.SCENE,
+    Platform.WEATHER
 ]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
