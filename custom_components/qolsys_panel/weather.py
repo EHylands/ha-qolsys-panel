@@ -17,7 +17,7 @@ async def async_setup_entry(
     config_entry: QolsysPanelConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up scenes."""
+    """Set up Weather."""
     entities: list[WeatherSensor] = []
     QolsysPanel = config_entry.runtime_data
     entities.append(WeatherSensor(QolsysPanel,config_entry.unique_id))
