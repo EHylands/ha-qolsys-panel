@@ -41,9 +41,16 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
         """Initialise a Qolsys Weather entity."""
         super().__init__(QolsysPanel, unique_id)
         self._attr_unique_id = self._weather_unique_id
-        self._attr_name = "Qolsys Panel - Weather"
+        self._attr_name = "Weather"
         self._attr_native_temperature_unit = "°F"
         self._attr_supported_features = WeatherEntityFeature.FORECAST_DAILY
+
+    @property
+    def condition(self) -> str:
+        if self._weather.current_weather():
+            return self.forecasts.current_weather().condition
+    
+        return ""
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
         """Return the daily forecast in native units."""
@@ -53,9 +60,7 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
                 
                 for daily in self._weather.forecasts:
                     timestamp = daily.current_weather_date
-                    timestamp = int(timestamp)
-                    timestamp = int(timestamp/1000)
-                    dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+                    dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=timezone.utc)
 
                     forecast: Forecast = {
                         "datetime": dt.isoformat(),
