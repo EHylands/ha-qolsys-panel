@@ -48,7 +48,7 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
     @property
     def condition(self) -> str:
         if self._weather.current_weather():
-            return self.forecasts.current_weather().condition
+            return self._weather.current_weather().condition
     
         return ""
 
