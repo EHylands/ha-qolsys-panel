@@ -151,6 +151,7 @@ Switches are added for each partition to enable specific features:
 - **Arm Stay Instant**
 - **Arm Stay Silent Disarm**
 - **Exit Sounds**
+- **Entry Delay**
 
 ### Scene
 
