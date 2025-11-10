@@ -167,7 +167,7 @@ Scenes are added for panel actions:
 - Current weather condition
 - Weather forescast
 
-**Weather to Panel to be enabled in Alarm.com account**
+**Requirement**: Weather to Panel feature to be enabled in associated Alarm.com account
 
 ## 🔧 Removing the Integration
 
