@@ -188,7 +188,7 @@ The integration will be cleanly removed from your system.
 | Category               | Feature                              | Status |
 |------------------------|--------------------------------------|--------|
 | **Panel**              | Diagnostic Sensors                   | ✅     |
-|                        | Panels Scenes                        | ✅     |
+|                        | Panel Scenes                         | ✅     |
 |                        | Weather Forecast                     | ✅     |
 |                        | (Alarm.com Weather to Panel)         |        |
 | **Partition**          | Arming Status                        | ✅     |
