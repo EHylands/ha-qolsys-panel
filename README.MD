@@ -103,6 +103,7 @@ The following entities are provided by this integration:
 - Sensor
 - Switch
 - Scene
+- Weather
 
 
 ### Alarm Control Panel
@@ -139,6 +140,8 @@ Sensors are added to provide:
 
 - Zone **Average dBm**
 - Zone **Latest dBm**
+- Zone **Temperature** (Supported PowerG devices)
+- Zone **Light Level** (Supported PowerG devices)
 - Z-Wave Device **Battery %** (if Battery present)
 
 ### Switch
@@ -157,6 +160,13 @@ Scenes are added for panel actions:
 - **Home**
 - **Sleep**
 - **Wake Up**
+
+### Weather
+
+- Current weather condition
+- Weather forescast
+
+**Weather to Panel to be enabled in Alarm.com account**
 
 ## 🔧 Removing the Integration
 
