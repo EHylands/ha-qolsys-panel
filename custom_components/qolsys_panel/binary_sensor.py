@@ -332,7 +332,7 @@ class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return if this zone ac status is not normal."""
-        return self._zone.ac_status != 'Normal'
+        return self._zone.ac_status == 'Normal'
 
 class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     """A binary sensor entity for a zone in a Qolsys Panel."""
@@ -340,7 +340,7 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     _attr_name = None
 
     def __init__(
-        self, 
+        self,
         QolsysPanel: qolsys_controller, 
         zone_id: int, 
         unique_id: str
