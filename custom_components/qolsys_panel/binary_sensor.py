@@ -20,6 +20,8 @@ from .entity import (
     QolsysPartitionEntity,
     QolsysZoneEntity,
     QolsysZwaveDimmerEntity,
+    QolsysZwaveLockEntity,
+    QolsysZwaveThermostatEntity,
 )
 
 PANEL_SENSOR = [
@@ -95,10 +97,15 @@ async def async_setup_entry(
     QolsysPanel = config_entry.runtime_data
 
     for zone in QolsysPanel.state.zones:
-        entities.append(ZonesSensor(QolsysPanel, zone.zone_id, config_entry.unique_id))
-        entities.append(ZoneSensor_BatteryStatus(QolsysPanel, zone.zone_id, config_entry.unique_id))
+        entities.append(ZonesSensor(QolsysPanel, zone.zone_id, config_entry.unique_id))    
         entities.append(ZoneSensor_Unreachable(QolsysPanel, zone.zone_id, config_entry.unique_id))
         entities.append(ZoneSensor_Tamper(QolsysPanel, zone.zone_id, config_entry.unique_id))
+
+        if zone.is_battery_enabled():
+            entities.append(ZoneSensor_BatteryStatus(QolsysPanel, zone.zone_id, config_entry.unique_id))
+
+        if zone.is_ac_enabled():
+            entities.append(ZoneSensor_ACStatus(QolsysPanel, zone.zone_id, config_entry.unique_id))
 
     for sensor in PANEL_SENSOR:
         entities.append(PanelSensor(QolsysPanel, config_entry.unique_id, sensor))
@@ -112,6 +119,12 @@ async def async_setup_entry(
             
     for dimmer in QolsysPanel.state.zwave_dimmers:
         entities.append(DimmerSensor_Status(QolsysPanel,dimmer.dimmer_node_id,config_entry.unique_id))
+
+    for lock in QolsysPanel.state.zwave_locks:
+        entities.append(LockSensor_Status(QolsysPanel,lock.lock_node_id,config_entry.unique_id))
+
+    for thermostat in QolsysPanel.state.zwave_thermostats:
+        entities.append(ThermostatSensor_Status(QolsysPanel,thermostat.thermostat_node_id,config_entry.unique_id))
   
     async_add_entities(entities)
 
@@ -303,6 +316,23 @@ class ZoneSensor_BatteryStatus(QolsysZoneEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return if this zone battery status is low."""
         return self._zone.battery_status != 'Normal'
+    
+class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
+    """A binary sensor entity for a zone ac status."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str) -> None:
+        """Set up a binary sensor entity for a zone ac status."""
+        super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_device_class = BinarySensorDeviceClass.PLUG
+        self._attr_unique_id = f"{self._zone_unique_id}_ac_status"
+        self._attr_translation_key="zone_ac_status"
+
+    @property
+    def is_on(self) -> bool:
+        """Return if this zone ac status is not normal."""
+        return self._zone.ac_status != 'Normal'
 
 class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
     """A binary sensor entity for a zone in a Qolsys Panel."""
@@ -405,9 +435,53 @@ class DimmerSensor_Status(QolsysZwaveDimmerEntity, BinarySensorEntity):
         super().__init__(QolsysPanel,  node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_dimmer_unique_id }_status"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_translation_key="dimmer_node_status"
+        self._attr_translation_key="zwave_node_status"
 
     @property
     def is_on(self) -> bool:
         """Return if this z-wave dimmer status."""
         return self._dimmer.node_status != 'Normal'
+    
+class LockSensor_Status(QolsysZwaveLockEntity, BinarySensorEntity):
+    """A binary sensor entity for a z-wave lock status."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+            self, 
+            QolsysPanel: qolsys_controller, 
+            node_id: str, 
+            unique_id: str
+    ) -> None:
+        """Set up a binary sensor entity for a z-wave lock status."""
+        super().__init__(QolsysPanel,  node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_lock_unique_id}_status"
+        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
+        self._attr_translation_key="zwave_node_status"
+
+    @property
+    def is_on(self) -> bool:
+        """Return if this z-wave lock status."""
+        return self._lock.node_status != 'Normal'
+    
+class ThermostatSensor_Status(QolsysZwaveThermostatEntity, BinarySensorEntity):
+    """A binary sensor entity for a z-wave thermostat status."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+            self, 
+            QolsysPanel: qolsys_controller, 
+            node_id: str, 
+            unique_id: str
+    ) -> None:
+        """Set up a binary sensor entity for a z-wave thermostat status."""
+        super().__init__(QolsysPanel,  node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_thermostat_unique_id}_status"
+        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
+        self._attr_translation_key="zwave_node_status"
+
+    @property
+    def is_on(self) -> bool:
+        """Return if this z-wave thermostat status."""
+        return self._thermostat.node_status != 'Normal'

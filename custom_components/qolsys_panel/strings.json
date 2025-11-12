@@ -130,7 +130,7 @@
       "panel_auto_bypass": {
         "name": "Auto Bypass"
       },
-      "dimmer_node_status": {
+      "zwave_node_status": {
         "name": "Node Status"
       },
       "partition_exit_sounds": {
@@ -147,6 +147,9 @@
       },
       "zone_battery_status": {
         "name": "Battery"
+      },
+      "zone_ac_status": {
+        "name": "AC Status"
       }
     }
   }

@@ -133,6 +133,9 @@
       "dimmer_node_status": {
         "name": "Node Status"
       },
+      "lock_node_status": {
+        "name": "Node Status"
+      },
       "partition_exit_sounds": {
         "name": "Exit Sounds"
       },
@@ -147,6 +150,9 @@
       },
       "zone_battery_status": {
         "name": "Battery"
+      },
+      "zone_ac_status": {
+        "name": "AC Status"
       }
     }
   }

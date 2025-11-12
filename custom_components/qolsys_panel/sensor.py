@@ -29,8 +29,12 @@ async def async_setup_entry(
 
     # Add Zone Sensors
     for zone in QolsysPanel.state.zones:
-        entities.append(ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
-        entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
+
+        if zone.is_latest_dbm_enabled():
+            entities.append(ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
+
+        if zone.is_average_dbm_enabled():
+            entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id))
         
         # Add PowerG Sensors if enabled
         if zone.is_powerg_temperature_enabled():
