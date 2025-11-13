@@ -256,7 +256,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
 
-        print('stop')
         await self._QolsysPanel.plugin.stop_operation()
 
         return self.async_create_entry(

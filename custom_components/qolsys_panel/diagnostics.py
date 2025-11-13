@@ -71,6 +71,7 @@ async def async_get_config_entry_diagnostics(
             "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
             "zwave_dimmers": [dimmer.to_dict_dimmer() for dimmer in QolsysPanel.state.zwave_dimmers],
             "zwave_locks": [lock.to_dict_lock() for lock in QolsysPanel.state.zwave_locks],
+            "zwave_thermostats": [thermostat.to_dict_thermostat() for thermostat in QolsysPanel.state.zwave_thermostats],
             "zwave_nodes": [device.to_dict_base() for device in QolsysPanel.state.zwave_devices],
         },TO_REDACT)
     }
