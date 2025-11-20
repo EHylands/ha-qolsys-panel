@@ -83,7 +83,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.QolsysPanel.plugin.connected and self._thermostat.node_status == "Normal"
+        return self.QolsysPanel.connected and self._thermostat.node_status == "Normal"
 
     @property
     def current_temperature(self) -> float:
@@ -219,12 +219,11 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         self.async_write_ha_state()
 
         # Then send the command (await might hang, but UI is already updated)
-        node_id = int(self._thermostat.thermostat_node_id)
         qolsys_thermostat_mode = self._hass_to_qolsys_thermostat_mode(hvac_mode)
 
         try:
-            await self.QolsysPanel.plugin.command_zwave_thermostat_mode_set(
-                node_id=node_id,
+            await self.QolsysPanel.command_zwave_thermostat_mode_set(
+                node_id=self._thermostat.thermostat_node_id,
                 mode=qolsys_thermostat_mode
             )
             _LOGGER.debug(f"HVAC mode set to {hvac_mode} successfully")
@@ -235,18 +234,16 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
 
     async def async_turn_off(self):
         """Turn the entity off."""
-        node_id = int(self._thermostat.thermostat_node_id)
-        await self.QolsysPanel.plugin.command_zwave_thermostat_mode_set(
-            node_id=node_id,
+        await self.QolsysPanel.command_zwave_thermostat_mode_set(
+            node_id=self._thermostat.thermostat_node_id,
             mode=ThermostatMode.OFF
         )
 
     async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
-        node_id = int(self._thermostat.thermostat_node_id)
         qolsys_fan_mode = self._hass_to_qolsys_fan_mode(fan_mode)
-        await self.QolsysPanel.plugin.command_zwave_thermostat_fan_mode_set(
-            node_id=node_id,
+        await self.QolsysPanel.command_zwave_thermostat_fan_mode_set(
+            node_id=self._thermostat.thermostat_node_id,
             fan_mode=qolsys_fan_mode
         )
 
@@ -260,7 +257,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
     async def async_set_temperature(self, **kwargs: Any):
         """Set new target temperature."""
         _LOGGER.debug(f"Setting temperature with kwargs: {kwargs}")
-        node_id = int(self._thermostat.thermostat_node_id)
+        node_id = self._thermostat.thermostat_node_id
 
         # Handle dual slider mode (AUTO mode - both high and low)
         if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
@@ -269,7 +266,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             # Fire-and-forget to avoid blocking (panel might sleep)
             # Add error callback to log failures
             task = asyncio.create_task(
-                self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(
+                self.QolsysPanel.command_zwave_thermostat_setpoint_set(
                     node_id=node_id,
                     mode=ThermostatMode.COOL,
                     setpoint=temp
@@ -283,7 +280,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             # Fire-and-forget to avoid blocking (panel might sleep)
             # Add error callback to log failures
             task = asyncio.create_task(
-                self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(
+                self.QolsysPanel.command_zwave_thermostat_setpoint_set(
                     node_id=node_id,
                     mode=ThermostatMode.HEAT,
                     setpoint=temp
@@ -299,7 +296,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
                 current_thermostat_mode = ThermostatMode.HEAT
 
             _LOGGER.debug(f"Setting {current_thermostat_mode} setpoint to {temp} (node_id: {node_id})")
-            await self.QolsysPanel.plugin.command_zwave_thermostat_setpoint_set(
+            await self.QolsysPanel.command_zwave_thermostat_setpoint_set(
                 node_id=node_id,
                 mode=current_thermostat_mode,
                 setpoint=temp

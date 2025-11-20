@@ -51,7 +51,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     _LOGGER.debug("Setting up entry: %s", entry)
 
     QolsysPanel = qolsys_controller()
-    QolsysPanel.select_plugin("remote")
     QolsysPanel.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
     QolsysPanel.settings.plugin_ip = await get_local_ip(hass=hass)
     QolsysPanel.settings.mqtt_timeout = 30
@@ -61,15 +60,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
-
-    # Additionnal remote plugin config
-    QolsysPanel.plugin.check_user_code_on_disarm = False
-    QolsysPanel.plugin.check_user_code_on_arm = False
-    QolsysPanel.plugin.log_mqtt_mesages = False
-    QolsysPanel.plugin.auto_discover_pki = False
+    QolsysPanel.settings.check_user_code_on_disarm = False
+    QolsysPanel.settings.check_user_code_on_arm = False
+    QolsysPanel.settings.log_mqtt_mesages = False
+    QolsysPanel.settings.auto_discover_pki = False
 
     # Configure remote plugin
-    if not await QolsysPanel.plugin.config(start_pairing=False):
+    if not await QolsysPanel.config(start_pairing=False):
         _LOGGER.error('Error Configuring remote plugin')
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
@@ -78,7 +75,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     # Start plugin operation
     try:
-        await QolsysPanel.plugin.start_operation()
+        await QolsysPanel.start_operation()
 
     except QolsysSslError as err:
         _LOGGER.error('Credentials rejected by panel - Signed Certificate Error')
@@ -93,7 +90,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
             translation_key="mqtt_error"
         ) from err
 
-    if not QolsysPanel.plugin.connected:
+    if not QolsysPanel.connected:
        _LOGGER.error('Unable to connect to panel')
        raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
@@ -122,7 +119,7 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        await entry.runtime_data.plugin.stop_operation()
+        await entry.runtime_data.stop_operation()
     return unload_ok
 
 async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):

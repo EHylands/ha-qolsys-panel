@@ -31,17 +31,17 @@ class QolsysPanelEntity(Entity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.QolsysPanel.plugin.connected
+        return self.QolsysPanel.connected
 
     async def async_added_to_hass(self) -> None:
         """Observe connection_status changes."""
-        self.QolsysPanel.plugin.connected_observer.register(
+        self.QolsysPanel.connected_observer.register(
             self.schedule_update_ha_state
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing connection_status changes."""
-        self.QolsysPanel.plugin.connected_observer.unregister(
+        self.QolsysPanel.connected_observer.unregister(
             self.schedule_update_ha_state
         )
 

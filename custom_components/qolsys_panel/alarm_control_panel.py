@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import PartitionAlarmState, PartitionSystemStatus
+from qolsys_controller.enum import PartitionAlarmState, PartitionSystemStatus, PartitionArmingType
 
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
@@ -89,7 +89,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         """Disarm this panel."""
         silent_disarming = self._partition.command_arm_stay_silent_disarming
 
-        await self.QolsysPanel.plugin.command_disarm(
+        await self.QolsysPanel.command_disarm(
             self._partition_id, user_code="", silent_disarming=silent_disarming
         )
 
@@ -99,9 +99,9 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.plugin.command_arm(
+        await self.QolsysPanel.command_arm(
             partition_id=self._partition_id,
-            arming_type="ARM-STAY",
+            arming_type=PartitionArmingType.ARM_STAY,
             user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
@@ -114,9 +114,9 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.plugin.command_arm(
+        await self.QolsysPanel.command_arm(
             self._partition_id,
-            arming_type= "ARM-AWAY",
+            arming_type=PartitionArmingType.ARM_AWAY,
             user_code= "",
             exit_sounds= exit_sounds,
             instant_arm= arm_stay_instant,
@@ -129,14 +129,11 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.plugin.command_arm(
+        await self.QolsysPanel.command_arm(
             self._partition_id,
-            arming_type="ARM-NIGHT",
+            arming_type=PartitionArmingType.ARM_NIGHT,
             user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
             entry_delay=entry_delay
         )
-
-
-

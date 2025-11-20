@@ -59,9 +59,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         self._config_directory = Path(self.hass.config.config_dir + "/qolsys_panel/")
         self._QolsysPanel = qolsys_controller()
-        self._QolsysPanel.select_plugin("remote")
         self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
-        self._QolsysPanel.plugin.log_mqtt_mesages = False
+        self._QolsysPanel.settings.log_mqtt_mesages = False
 
         return self.async_show_menu(
             step_id="user",
@@ -81,7 +80,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
             self._QolsysPanel.settings.panel_ip = ""
             self._QolsysPanel.settings.random_mac = ""
-            self._QolsysPanel.plugin.auto_discover_pki = True
+            self._QolsysPanel.settings.auto_discover_pki = True
 
         if user_input is None:
             return self.async_show_form(
@@ -101,10 +100,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step_id="pki_autodiscovery_2",
             )
 
-        if not await self._QolsysPanel.plugin.config(start_pairing=True):
+        if not await self._QolsysPanel.config(start_pairing=True):
             _LOGGER.error("Error configuring and pairing with plugin")
             errors["base"] = "Error configuring and pairing with plugin"
-            await self._QolsysPanel.plugin.stop_operation()
+            await self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
                 data_schema = None,
@@ -116,14 +115,14 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
-            await self._QolsysPanel.plugin.stop_operation()
+            await self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
                 data_schema = None,
                 errors=errors,
             )
         finally:
-            await self._QolsysPanel.plugin.stop_operation()
+            await self._QolsysPanel.stop_operation()
             _LOGGER.debug("Plugin is configured")
 
         # Add entry to Home Assistant
@@ -135,7 +134,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
-        await self._QolsysPanel.plugin.stop_operation()
+        await self._QolsysPanel.stop_operation()
 
         return self.async_create_entry(
             title=f"Qolsys Panel ({self._data[CONF_MAC]})",
@@ -172,7 +171,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # Abord if no PKI available
         if not self._pki_list:
             errors["base"] = "No existing PKI found in configuration folder"
-            await self._QolsysPanel.plugin.stop_operation()
+            await self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=vol.Schema(data_schema),
@@ -187,14 +186,14 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
         self._QolsysPanel.settings.panel_ip = user_input[CONF_HOST]
         self._QolsysPanel.settings.random_mac = user_input[CONF_RANDOM_MAC]
-        self._QolsysPanel.plugin.auto_discover_pki = False
+        self._QolsysPanel.settings.auto_discover_pki = False
 
         # Check if PKI is valid
-        self._QolsysPanel.plugin._pki.set_id(user_input[CONF_RANDOM_MAC])
+        self._QolsysPanel._pki.set_id(user_input[CONF_RANDOM_MAC])
         if (
-            not self._QolsysPanel.plugin._pki.check_key_file()
-            or not self._QolsysPanel.plugin._pki.check_cer_file()
-            or not self._QolsysPanel.plugin._pki.check_csr_file()
+            not self._QolsysPanel._pki.check_key_file()
+            or not self._QolsysPanel._pki.check_cer_file()
+            or not self._QolsysPanel._pki.check_csr_file()
         ):  # noqa: SLF001
             errors["base"] = f"Invalid PKI: {user_input[CONF_RANDOM_MAC]}"
             return self.async_show_form(
@@ -215,17 +214,17 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             errors["base"] = (
                 f"Invalid Plugin IP: {self._QolsysPanel.settings.plugin_ip}"
             )
-            self._QolsysPanel.plugin.stop_operation()
+            self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=vol.Schema(data_schema),
                 errors=errors,
             )
 
-        if not await self._QolsysPanel.plugin.config(start_pairing=True):
+        if not await self._QolsysPanel.config(start_pairing=True):
             _LOGGER.error("Error configuring and pairing with plugin")
             errors["base"] = "Error configuring and pairing with plugin"
-            self._QolsysPanel.plugin.stop_operation()
+            self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
                 data_schema = None,
@@ -233,11 +232,11 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         try:
-            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False, run_forever=False)
+            await self._QolsysPanel.mqtt_connect_task(reconnect=False, run_forever=False)
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
-            self._QolsysPanel.plugin.stop_operation()
+            self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
                 data_schema = None,
@@ -256,7 +255,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data[CONF_RANDOM_MAC] = format_mac(self._QolsysPanel.settings.random_mac)
         self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
 
-        await self._QolsysPanel.plugin.stop_operation()
+        await self._QolsysPanel.stop_operation()
 
         return self.async_create_entry(
             title=f"Qolsys Panel ({self._data[CONF_MAC]})",
