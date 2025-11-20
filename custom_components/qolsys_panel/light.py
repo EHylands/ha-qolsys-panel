@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from typing import Any
 
 from qolsys_controller import qolsys_controller
@@ -13,6 +15,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysZwaveDimmerEntity
 from .types import QolsysPanelConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -52,7 +56,7 @@ class ZWaveDimmer(QolsysZwaveDimmerEntity, LightEntity):
         super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = self._zwave_dimmer_unique_id
 
-        if self._dimmer.generic_device_type() in (ZwaveDeviceClass.SwitchBinary,ZwaveDeviceClass.RemoteSwitchBinary):
+        if self._dimmer.generic_device_type in (ZwaveDeviceClass.SwitchBinary,ZwaveDeviceClass.RemoteSwitchBinary):
             self._attr_color_mode = ColorMode.ONOFF
             self._attr_supported_color_modes = {ColorMode.ONOFF}
         else:
@@ -66,17 +70,22 @@ class ZWaveDimmer(QolsysZwaveDimmerEntity, LightEntity):
 
     async def async_turn_on(self, **kwargs:Any) -> None:
         """Turn device on."""
-        print(kwargs)
-        brightness = -1
+        brightness = 255
 
         if ATTR_BRIGHTNESS in kwargs:
             brightness = to_qolsys_level(kwargs[ATTR_BRIGHTNESS])
 
-        await self.QolsysPanel.command_zwave_switch_multilevel_set(self._dimmer.dimmer_node_id,brightness)
+        if self._dimmer.generic_device_type in (ZwaveDeviceClass.SwitchBinary,ZwaveDeviceClass.RemoteSwitchBinary):
+            await self.QolsysPanel.command_zwave_switch_binary_set(self._dimmer.dimmer_node_id,True)
+        else:
+            await self.QolsysPanel.command_zwave_switch_multilevel_set(self._dimmer.dimmer_node_id,brightness)
 
     async def async_turn_off(self, **kwargs:Any) -> None:
         """Turn device off."""
-        await self.QolsysPanel.command_zwave_switch_multilevel_set(self._dimmer.dimmer_node_id,0)
+        if self._dimmer.generic_device_type in (ZwaveDeviceClass.SwitchBinary,ZwaveDeviceClass.RemoteSwitchBinary):
+            await self.QolsysPanel.command_zwave_switch_binary_set(self._dimmer.dimmer_node_id,False)
+        else:
+            await self.QolsysPanel.command_zwave_switch_multilevel_set(self._dimmer.dimmer_node_id,0)
 
     @property
     def is_on(self) -> bool:
