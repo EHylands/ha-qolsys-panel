@@ -49,7 +49,7 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.QolsysPanel.plugin.connected and self._lock.node_status == 'Normal'
+        return self.QolsysPanel.connected and self._lock.node_status == 'Normal'
 
     @property
     def is_locked(self) -> bool:
@@ -64,19 +64,19 @@ class ZWaveLock(QolsysZwaveLockEntity, LockEntity):
         return self._value_is_unlocking
 
     async def async_lock(self, **kwargs: Any):
-        node_id = int(self._lock.lock_node_id)
+        node_id = self._lock.lock_node_id
         locked = True
         self._value_is_locking = True
         self._value_is_unlocking = False
         self.async_schedule_update_ha_state()
-        await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=node_id,locked=locked)
+        await self.QolsysPanel.command_zwave_doorlock_set(node_id=node_id,locked=locked)
         self._value_is_locking = False
 
     async def async_unlock(self, **kwargs: Any):
-        node_id = int(self._lock.lock_node_id)
+        node_id = self._lock.lock_node_id
         locked = False
         self._value_is_unlocking = True
         self._value_is_locking = False
         self.async_schedule_update_ha_state()
-        await self.QolsysPanel.plugin.command_zwave_doorlock_set(node_id=node_id,locked=locked)
+        await self.QolsysPanel.command_zwave_doorlock_set(node_id=node_id,locked=locked)
         self._value_is_unlocking = False
