@@ -11,7 +11,11 @@ from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysSslError
 import voluptuous as vol
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult, OptionsFlowWithReload
+from homeassistant.config_entries import (
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlowWithReload,
+)
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
@@ -20,7 +24,7 @@ from homeassistant.core import callback
 from .types import QolsysPanelConfigEntry
 
 from .const import (
-    CONF_IMEI, 
+    CONF_IMEI,
     CONF_RANDOM_MAC,
     DOMAIN,
     OPTION_MOTION_SENSOR_DELAY,
@@ -30,6 +34,7 @@ from .const import (
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
@@ -49,7 +54,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry:QolsysPanelConfigEntry):
+    def async_get_options_flow(config_entry: QolsysPanelConfigEntry):
         return QolsysPanelOptionsFlowHandler()
 
     async def async_step_user(
@@ -106,19 +111,21 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             await self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
-                data_schema = None,
+                data_schema=None,
                 errors=errors,
             )
 
         try:
-            await self._QolsysPanel.plugin.mqtt_connect_task(reconnect=False, run_forever=False)
+            await self._QolsysPanel.plugin.mqtt_connect_task(
+                reconnect=False, run_forever=False
+            )
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
             await self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
-                data_schema = None,
+                data_schema=None,
                 errors=errors,
             )
         finally:
@@ -227,19 +234,21 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
-                data_schema = None,
+                data_schema=None,
                 errors=errors,
             )
 
         try:
-            await self._QolsysPanel.mqtt_connect_task(reconnect=False, run_forever=False)
+            await self._QolsysPanel.mqtt_connect_task(
+                reconnect=False, run_forever=False
+            )
         except QolsysSslError:
             _LOGGER.debug("Error connecting to panel - TLS Certificate Error")
             errors["base"] = "Error connecting to panel - TLS Certificate Error"
             self._QolsysPanel.stop_operation()
             return self.async_show_form(
                 step_id="pki_autodiscovery_2",
-                data_schema = None,
+                data_schema=None,
                 errors=errors,
             )
         finally:
@@ -261,17 +270,19 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             title=f"Qolsys Panel ({self._data[CONF_MAC]})",
             data=self._data,
         )
-    
+
+
 # Options Flow Handler
 class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
     """Handle Qolsys Panel options."""
+
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
-        
+
         options = self.config_entry.options
         return self.async_show_form(
             step_id="init",
@@ -279,11 +290,11 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                 {
                     vol.Required(
                         OPTION_MOTION_SENSOR_DELAY_ENABLED,
-                        default=options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED, False)
+                        default=options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED, False),
                     ): bool,
                     vol.Required(
                         OPTION_MOTION_SENSOR_DELAY,
-                        default=options.get(OPTION_MOTION_SENSOR_DELAY,310)
+                        default=options.get(OPTION_MOTION_SENSOR_DELAY, 310),
                     ): int,
                 }
             ),

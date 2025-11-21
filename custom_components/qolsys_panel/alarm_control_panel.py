@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import PartitionAlarmState, PartitionSystemStatus, PartitionArmingType
+from qolsys_controller.enum import (
+    PartitionAlarmState,
+    PartitionSystemStatus,
+    PartitionArmingType,
+)
 
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
@@ -49,10 +53,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     )
 
     def __init__(
-        self, 
-        QolsysPanel: qolsys_controller, 
-        partition_id: str, 
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, partition_id: str, unique_id: str
     ) -> None:
         """Initialise a Qolsys Alarm control panel entity."""
         super().__init__(QolsysPanel, partition_id, unique_id)
@@ -68,10 +69,17 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         if alarm_state == PartitionAlarmState.ALARM:
             return AlarmControlPanelState.TRIGGERED
 
-        if system_status == PartitionSystemStatus.DISARM and alarm_state != PartitionAlarmState.ALARM:
+        if (
+            system_status == PartitionSystemStatus.DISARM
+            and alarm_state != PartitionAlarmState.ALARM
+        ):
             return AlarmControlPanelState.DISARMED
 
-        if system_status in (PartitionSystemStatus.ARM_AWAY_EXIT_DELAY, PartitionSystemStatus.ARM_STAY_EXIT_DELAY,PartitionSystemStatus.ARM_NIGHT_EXIT_DELAY):
+        if system_status in (
+            PartitionSystemStatus.ARM_AWAY_EXIT_DELAY,
+            PartitionSystemStatus.ARM_STAY_EXIT_DELAY,
+            PartitionSystemStatus.ARM_NIGHT_EXIT_DELAY,
+        ):
             return AlarmControlPanelState.ARMING
 
         if system_status == PartitionSystemStatus.ARM_STAY:
@@ -79,10 +87,10 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
         if system_status == PartitionSystemStatus.ARM_AWAY:
             return AlarmControlPanelState.ARMED_AWAY
-        
+
         if system_status == PartitionSystemStatus.ARM_NIGHT:
             return AlarmControlPanelState.ARMED_NIGHT
-    
+
         return None
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
@@ -105,7 +113,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
             user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
-            entry_delay=entry_delay
+            entry_delay=entry_delay,
         )
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
@@ -117,13 +125,13 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         await self.QolsysPanel.command_arm(
             self._partition_id,
             arming_type=PartitionArmingType.ARM_AWAY,
-            user_code= "",
-            exit_sounds= exit_sounds,
-            instant_arm= arm_stay_instant,
-            entry_delay= entry_delay
+            user_code="",
+            exit_sounds=exit_sounds,
+            instant_arm=arm_stay_instant,
+            entry_delay=entry_delay,
         )
 
-    async def async_alarm_arm_night(self, code = None):
+    async def async_alarm_arm_night(self, code=None):
         """Send ARM-NIGHT command."""
         exit_sounds = self._partition.command_exit_sounds
         arm_stay_instant = self._partition.command_arm_stay_instant
@@ -135,5 +143,5 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
             user_code="",
             exit_sounds=exit_sounds,
             instant_arm=arm_stay_instant,
-            entry_delay=entry_delay
+            entry_delay=entry_delay,
         )

@@ -9,7 +9,11 @@ from datetime import datetime, timezone
 from qolsys_controller import qolsys_controller
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.components.weather import WeatherEntity, WeatherEntityFeature, Forecast
+from homeassistant.components.weather import (
+    WeatherEntity,
+    WeatherEntityFeature,
+    Forecast,
+)
 
 from .types import QolsysPanelConfigEntry
 from .entity import QolsysWeatherEntity
@@ -25,19 +29,16 @@ async def async_setup_entry(
     """Set up Weather."""
     entities: list[WeatherSensor] = []
     QolsysPanel = config_entry.runtime_data
-    entities.append(WeatherSensor(QolsysPanel,config_entry.unique_id))
+    entities.append(WeatherSensor(QolsysPanel, config_entry.unique_id))
     async_add_entities(entities)
 
-class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
+
+class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
     """An Weather Entity for Qolsys Panel."""
 
     _attr_has_entity_name = False
-    
-    def __init__(
-        self, 
-        QolsysPanel: qolsys_controller, 
-        unique_id: str
-    ) -> None:
+
+    def __init__(self, QolsysPanel: qolsys_controller, unique_id: str) -> None:
         """Initialise a Qolsys Weather entity."""
         super().__init__(QolsysPanel, unique_id)
         self._attr_unique_id = self._weather_unique_id
@@ -49,15 +50,15 @@ class WeatherSensor(QolsysWeatherEntity,WeatherEntity):
     def condition(self) -> str:
         if self._weather.current_weather():
             return self._weather.current_weather().condition
-    
+
         return ""
 
     async def async_forecast_daily(self) -> list[Forecast] | None:
         """Return the daily forecast in native units."""
         if self._weather:
-            if self._weather.forecasts: 
+            if self._weather.forecasts:
                 forecasts = []
-                
+
                 for daily in self._weather.forecasts:
                     timestamp = daily.current_weather_date
                     dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=timezone.utc)

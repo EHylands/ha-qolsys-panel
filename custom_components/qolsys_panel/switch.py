@@ -49,7 +49,9 @@ async def async_setup_entry(
 class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
     """A switch entity for partition exit sounds."""
 
-    def __init__(self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str) -> None:
+    def __init__(
+        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+    ) -> None:
         """Set up a switch entity for a partition exit sounds."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_arming_exit_sounds"
@@ -79,11 +81,13 @@ class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEnt
         """Turn the switch off."""
         self._partition.command_exit_sounds = False
 
+
 class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
     """A switch entity for partition entry_delay."""
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str) -> None:
+        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+    ) -> None:
         """Set up a switch entity for a partition entry_delay."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_command_arm_entry_delay"
@@ -111,13 +115,17 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
-        self._partition.command_arm_entry_delay= False
+        self._partition.command_arm_entry_delay = False
 
 
-class PartitionSwitch_ArmStayInstant( QolsysPartitionEntity, SwitchEntity, RestoreEntity):
+class PartitionSwitch_ArmStayInstant(
+    QolsysPartitionEntity, SwitchEntity, RestoreEntity
+):
     """A switch entity for partition exit sounds."""
 
-    def __init__(self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str) -> None:
+    def __init__(
+        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+    ) -> None:
         """Set up a switch entity for a partition exit sounds."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_arm_stay_instant"
@@ -137,7 +145,7 @@ class PartitionSwitch_ArmStayInstant( QolsysPartitionEntity, SwitchEntity, Resto
     @property
     def is_on(self) -> bool:
         """Return if the switch is on."""
-        return  self._partition.command_arm_stay_instant
+        return self._partition.command_arm_stay_instant
 
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
@@ -147,9 +155,15 @@ class PartitionSwitch_ArmStayInstant( QolsysPartitionEntity, SwitchEntity, Resto
         """Turn the switch off."""
         self._partition.command_arm_stay_instant = False
 
-class PartitionSwitch_SilentDisarming(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
+
+class PartitionSwitch_SilentDisarming(
+    QolsysPartitionEntity, SwitchEntity, RestoreEntity
+):
     """A switch entity for partition silent disarming."""
-    def __init__(self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str) -> None:
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+    ) -> None:
         """Set up a switch entity for a partition silent disarming."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = f"{self._partition_unique_id}_arm_stay_silent_disarming"
@@ -169,7 +183,7 @@ class PartitionSwitch_SilentDisarming(QolsysPartitionEntity, SwitchEntity, Resto
     @property
     def is_on(self) -> bool:
         """Return if the switch is on."""
-        return  self._partition.command_arm_stay_silent_disarming
+        return self._partition.command_arm_stay_silent_disarming
 
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""

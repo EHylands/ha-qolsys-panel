@@ -15,11 +15,7 @@ class QolsysPanelEntity(Entity):
 
     _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        unique_id: str
-    ) -> None:
+    def __init__(self, QolsysPanel: qolsys_controller, unique_id: str) -> None:
         """Set up a entity for a Qolsys Panel."""
         self.QolsysPanel = QolsysPanel
         self._attr_should_poll = False
@@ -35,15 +31,12 @@ class QolsysPanelEntity(Entity):
 
     async def async_added_to_hass(self) -> None:
         """Observe connection_status changes."""
-        self.QolsysPanel.connected_observer.register(
-            self.schedule_update_ha_state
-        )
+        self.QolsysPanel.connected_observer.register(self.schedule_update_ha_state)
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing connection_status changes."""
-        self.QolsysPanel.connected_observer.unregister(
-            self.schedule_update_ha_state
-        )
+        self.QolsysPanel.connected_observer.unregister(self.schedule_update_ha_state)
+
 
 class QolsysPartitionEntity(QolsysPanelEntity):
     """Qolsys Partiton Entity."""
@@ -77,14 +70,12 @@ class QolsysPartitionEntity(QolsysPanelEntity):
         await super().async_will_remove_from_hass()
         self._partition.unregister(self.schedule_update_ha_state)
 
+
 class QolsysZoneEntity(QolsysPanelEntity):
     """Qolsys Zone Entity."""
 
     def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        zone_id: str,
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up Qolsys Zone."""
         super().__init__(QolsysPanel, unique_id)
@@ -109,14 +100,12 @@ class QolsysZoneEntity(QolsysPanelEntity):
         await super().async_will_remove_from_hass()
         self._zone.unregister(self.schedule_update_ha_state)
 
+
 class QolsysPanelSensorEntity(QolsysPanelEntity):
     """Qolsys Panel Sensor Entity (Panel diagnostic sensors)."""
 
     def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        key: str,
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, key: str, unique_id: str
     ) -> None:
         """Set up a Qolsys Panel Sensor."""
         super().__init__(QolsysPanel, unique_id)
@@ -141,14 +130,12 @@ class QolsysPanelSensorEntity(QolsysPanelEntity):
             self.schedule_update_ha_state
         )
 
+
 class QolsysZwaveDimmerEntity(QolsysPanelEntity):
     """Z-Wave Dimmer Entity."""
 
     def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        node_id: str,
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
     ) -> None:
         """Set up a Qolsys Z-Wave Dimmer ."""
         super().__init__(QolsysPanel, unique_id)
@@ -172,14 +159,12 @@ class QolsysZwaveDimmerEntity(QolsysPanelEntity):
         await super().async_will_remove_from_hass()
         self._dimmer.unregister(self.schedule_update_ha_state)
 
+
 class QolsysZwaveLockEntity(QolsysPanelEntity):
     """Z-Wave Lock Entity."""
 
     def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        node_id: str,
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
     ) -> None:
         """Set up a z-wave lock ."""
         super().__init__(QolsysPanel, unique_id)
@@ -203,14 +188,12 @@ class QolsysZwaveLockEntity(QolsysPanelEntity):
         await super().async_will_remove_from_hass()
         self._lock.unregister(self.schedule_update_ha_state)
 
+
 class QolsysZwaveThermostatEntity(QolsysPanelEntity):
     """Z-Wave Thermostat Entity."""
 
     def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        node_id: str,
-        unique_id: str
+        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
     ) -> None:
         """Set up a Z-Wave Thermostat ."""
         super().__init__(QolsysPanel, unique_id)
@@ -234,14 +217,11 @@ class QolsysZwaveThermostatEntity(QolsysPanelEntity):
         await super().async_will_remove_from_hass()
         self._thermostat.unregister(self.schedule_update_ha_state)
 
+
 class QolsysWeatherEntity(QolsysPanelEntity):
     """Qolsys weather entity."""
 
-    def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        unique_id: str
-    ) -> None:
+    def __init__(self, QolsysPanel: qolsys_controller, unique_id: str) -> None:
         """Set up a Qolsys Weather Entity."""
         super().__init__(QolsysPanel, unique_id)
         self._weather_unique_id = f"{unique_id}_weather"
@@ -255,13 +235,9 @@ class QolsysWeatherEntity(QolsysPanelEntity):
     async def async_added_to_hass(self) -> None:
         """Observe changes."""
         await super().async_added_to_hass()
-        self.QolsysPanel.state.weather.register(
-            self.schedule_update_ha_state
-        )
+        self.QolsysPanel.state.weather.register(self.schedule_update_ha_state)
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
-        self.QolsysPanel.state.weather.unregister(
-            self.schedule_update_ha_state
-        )
+        self.QolsysPanel.state.weather.unregister(self.schedule_update_ha_state)
