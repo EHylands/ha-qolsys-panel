@@ -48,4 +48,4 @@ class QolsysPanelScene(Scene, QolsysPanelEntity):
 
     async def async_activate(self, **kwargs: Any) -> None:
         """Activate scene. Try to get entities into requested state."""
-        await self.QolsysPanel.plugin.command_execute_scene(self._scene_id)
+        await self.QolsysPanel.command_execute_scene(self._scene_id)
