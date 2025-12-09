@@ -116,7 +116,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         try:
-            await self._QolsysPanel.plugin.mqtt_connect_task(
+            await self._QolsysPanel.mqtt_connect_task(
                 reconnect=False, run_forever=False
             )
         except QolsysSslError:
