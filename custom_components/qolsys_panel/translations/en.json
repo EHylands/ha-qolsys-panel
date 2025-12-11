@@ -130,10 +130,7 @@
       "panel_auto_bypass": {
         "name": "Auto Bypass"
       },
-      "dimmer_node_status": {
-        "name": "Node Status"
-      },
-      "lock_node_status": {
+      "zwave_node_status": {
         "name": "Node Status"
       },
       "partition_exit_sounds": {
@@ -154,6 +151,46 @@
       "zone_ac_status": {
         "name": "AC Status"
       }
+    }
+  },
+  "services": {
+    "trigger_police": {
+      "description": "Trigger Police Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Trigger a silent alarm.",
+          "name": "Silent"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Police Alarm"
+    },
+    "trigger_auxilliary": {
+      "description": "Trigger Auxilliary Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Trigger a silent alarm.",
+          "name": "Silent"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Auxillary Alarm"
+    },
+    "trigger_fire": {
+      "description": "Trigger Fire Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Fire Alarm"
     }
   }
 }
