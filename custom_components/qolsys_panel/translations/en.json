@@ -32,10 +32,13 @@
       "step": {
         "init": {
           "title": "Qolsys Panel - Options",
-          "description": "Configure Motion Sensors Delay Pptions.",
           "data": {
-            "motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
-            "motion_sensor_delay": "Motion Sensors Delay (seconds)"
+            "option_arm_code": "User Code required to Arm and Disarm",
+            "option_trigger_police": "Enable Trigger Police Alarm",
+            "option_trigger_auxilliary": "Enable Trigger Auxiliary Alarm",
+            "option_trigger_fire": "Enable Trigger Fire Alarm",
+            "option_motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
+            "option_motion_sensor_delay": "Motion Sensors Delay (seconds)"       
           }
         }
       }

@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import voluptuous as vol
 
+import logging
+
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, callback
@@ -18,12 +20,20 @@ from homeassistant.helpers import service, entity_registry
 from custom_components.qolsys_panel import entity
 
 from .const import (
+    DEFAULT_TRIGGER_AUXILLIARY,
+    DEFAULT_TRIGGER_POLICE,
+    DEFAULT_TRIGGER_FIRE,
     DOMAIN,
+    OPTION_TRIGGER_AUXILLIARY,
+    OPTION_TRIGGER_FIRE,
+    OPTION_TRIGGER_POLICE,
     SERVICE_TRIGGER_POLICE,
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
 )
 from .types import QolsysPanelConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
@@ -33,6 +43,7 @@ async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
     entry = er.async_get(entity_id)
+
     if entry is None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
@@ -54,12 +65,16 @@ async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
             translation_placeholders={"target": config_entry.title},
         )
 
+    # Prevent service from running if option is disabled in inegratin options
+    if not config_entry.options.get(OPTION_TRIGGER_POLICE, DEFAULT_TRIGGER_POLICE):
+        raise HomeAssistantError(
+            "Trigger Police Alarm is disabled in integration options"
+        )
+
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data.get("silent")
-    await QolsysPanel.command_panel_trigger_police(
-        partition_id=partition_id, silent=silent
-    )
+    await QolsysPanel.command_panel_trigger_police(partition_id, silent)
 
 
 async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
@@ -90,12 +105,18 @@ async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
             translation_placeholders={"target": config_entry.title},
         )
 
+    # Prevent service from running if option is disabled in inegratin options
+    if not config_entry.options.get(
+        OPTION_TRIGGER_AUXILLIARY, DEFAULT_TRIGGER_AUXILLIARY
+    ):
+        raise HomeAssistantError(
+            "Trigger Auxilliary Alarm is disabled in integration options"
+        )
+
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data.get("silent")
-    await QolsysPanel.command_panel_trigger_auxilliary(
-        partition_id=partition_id, silent=silent
-    )
+    await QolsysPanel.command_panel_trigger_auxilliary(partition_id, silent)
 
 
 async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
@@ -105,6 +126,7 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
     entry = er.async_get(entity_id)
+
     if entry is None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
@@ -126,9 +148,15 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
             translation_placeholders={"target": config_entry.title},
         )
 
+    # Prevent service from running if option is disabled in inegratin options
+    if not config_entry.options.get(OPTION_TRIGGER_FIRE, DEFAULT_TRIGGER_FIRE):
+        raise HomeAssistantError(
+            "Trigger FIre Alarm is disabled in integration options"
+        )
+
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
-    await QolsysPanel.command_panel_trigger_fire(partition_id=partition_id)
+    await QolsysPanel.command_panel_trigger_fire(partition_id)
 
 
 @callback
