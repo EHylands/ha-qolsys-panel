@@ -20,7 +20,6 @@ from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import section
 
 
 from .types import QolsysPanelConfigEntry
@@ -29,7 +28,6 @@ from .const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
     DEFAULT_ARM_CODE_REQUIRED,
-    DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
@@ -37,7 +35,6 @@ from .const import (
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DOMAIN,
     OPTION_ARM_CODE,
-    OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
     OPTION_TRIGGER_POLICE,
