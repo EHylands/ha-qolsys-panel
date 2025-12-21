@@ -64,17 +64,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.log_mqtt_mesages = False
     QolsysPanel.settings.auto_discover_pki = False
 
+    user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
+    QolsysPanel.settings.check_user_code_on_arm = user_code_required
+    QolsysPanel.settings.check_user_code_on_disarm = user_code_required
+
     QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(
         OPTION_MOTION_SENSOR_DELAY, DEFAULT_MOTION_SENSOR_DELAY
     )
     QolsysPanel.settings.motion_sensor_delay = entry.options.get(
         OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
-    )
-    QolsysPanel.settings.check_user_code_on_disarm = entry.options.get(
-        OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED
-    )
-    QolsysPanel.settings.check_user_code_on_arm = entry.options.get(
-        OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED
     )
 
     # Configure controller

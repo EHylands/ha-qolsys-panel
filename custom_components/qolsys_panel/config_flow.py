@@ -335,8 +335,6 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
             extra=vol.PREVENT_EXTRA,
         )
 
-        _LOGGER.debug(data_schema)
-
         return self.async_show_form(
             step_id="init",
             data_schema=data_schema,

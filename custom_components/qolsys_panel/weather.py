@@ -61,6 +61,15 @@ class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
 
                 for daily in self._weather.forecasts:
                     timestamp = daily.current_weather_date
+
+                    try:
+                        timestamp = int(timestamp)
+                    except ValueError:
+                        _LOGGER.error(
+                            "Invalid timestamp '%s' in daily forecast", timestamp
+                        )
+                        continue
+
                     dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=timezone.utc)
 
                     forecast: Forecast = {
