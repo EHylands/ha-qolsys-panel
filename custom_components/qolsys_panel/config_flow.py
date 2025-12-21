@@ -21,14 +21,25 @@ from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.core import callback
 
+
 from .types import QolsysPanelConfigEntry
 
 from .const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
+    DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_TRIGGER_AUXILLIARY,
+    DEFAULT_TRIGGER_FIRE,
+    DEFAULT_TRIGGER_POLICE,
+    DEFAULT_MOTION_SENSOR_DELAY,
+    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DOMAIN,
+    OPTION_ARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_TRIGGER_POLICE,
+    OPTION_TRIGGER_AUXILLIARY,
+    OPTION_TRIGGER_FIRE,
 )
 
 from .utils import get_local_ip
@@ -284,18 +295,47 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
             return self.async_create_entry(data=user_input)
 
         options = self.config_entry.options
+
+        data_schema = vol.Schema(
+            {
+                vol.Required(
+                    OPTION_ARM_CODE,
+                    default=options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED),
+                ): bool,
+                vol.Required(
+                    OPTION_TRIGGER_POLICE,
+                    default=options.get(OPTION_TRIGGER_POLICE, DEFAULT_TRIGGER_POLICE),
+                ): bool,
+                vol.Required(
+                    OPTION_TRIGGER_AUXILLIARY,
+                    default=options.get(
+                        OPTION_TRIGGER_AUXILLIARY,
+                        DEFAULT_TRIGGER_AUXILLIARY,
+                    ),
+                ): bool,
+                vol.Required(
+                    OPTION_TRIGGER_FIRE,
+                    default=options.get(OPTION_TRIGGER_FIRE, DEFAULT_TRIGGER_FIRE),
+                ): bool,
+                vol.Required(
+                    OPTION_MOTION_SENSOR_DELAY_ENABLED,
+                    default=options.get(
+                        OPTION_MOTION_SENSOR_DELAY_ENABLED,
+                        DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
+                    ),
+                ): bool,
+                vol.Required(
+                    OPTION_MOTION_SENSOR_DELAY,
+                    default=options.get(
+                        OPTION_MOTION_SENSOR_DELAY,
+                        DEFAULT_MOTION_SENSOR_DELAY,
+                    ),
+                ): int,
+            },
+            extra=vol.PREVENT_EXTRA,
+        )
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Required(
-                        OPTION_MOTION_SENSOR_DELAY_ENABLED,
-                        default=options.get(OPTION_MOTION_SENSOR_DELAY_ENABLED, False),
-                    ): bool,
-                    vol.Required(
-                        OPTION_MOTION_SENSOR_DELAY,
-                        default=options.get(OPTION_MOTION_SENSOR_DELAY, 310),
-                    ): int,
-                }
-            ),
+            data_schema=data_schema,
         )

@@ -17,11 +17,16 @@ from homeassistant.helpers import config_validation as cv
 
 from .const import (
     CONF_RANDOM_MAC,
+    DOMAIN,
+    DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
+    DEFAULT_MOTION_SENSOR_DELAY,
+    OPTION_ARM_CODE,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
     OPTION_MOTION_SENSOR_DELAY,
-    DOMAIN,
 )
 
+from .services import async_setup_services
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
@@ -44,42 +49,41 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Qolsys Panel services."""
+    async_setup_services(hass)
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) -> bool:
     """Set up Qolsys Panel from a config entry."""
-
-    _LOGGER.debug("Setting up entry: %s", entry)
-
     QolsysPanel = qolsys_controller()
     QolsysPanel.settings.config_directory = hass.config.config_dir + "/qolsys_panel/"
     QolsysPanel.settings.plugin_ip = await get_local_ip(hass=hass)
-    QolsysPanel.settings.mqtt_timeout = 30
-    QolsysPanel.settings.mqtt_ping = 600
-    QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(
-        OPTION_MOTION_SENSOR_DELAY, 310
-    )
-    QolsysPanel.settings.motion_sensor_delay = entry.options.get(
-        OPTION_MOTION_SENSOR_DELAY_ENABLED, False
-    )
     QolsysPanel.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
-    QolsysPanel.settings.check_user_code_on_disarm = False
-    QolsysPanel.settings.check_user_code_on_arm = False
     QolsysPanel.settings.log_mqtt_mesages = False
     QolsysPanel.settings.auto_discover_pki = False
 
-    # Configure remote plugin
+    user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
+    QolsysPanel.settings.check_user_code_on_arm = user_code_required
+    QolsysPanel.settings.check_user_code_on_disarm = user_code_required
+
+    QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(
+        OPTION_MOTION_SENSOR_DELAY, DEFAULT_MOTION_SENSOR_DELAY
+    )
+    QolsysPanel.settings.motion_sensor_delay = entry.options.get(
+        OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
+    )
+
+    # Configure controller
     if not await QolsysPanel.config(start_pairing=False):
-        _LOGGER.error("Error Configuring remote plugin")
+        _LOGGER.error("Error Configuring Controller")
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN,
             translation_key="cannot_configure",
         )
 
-    # Start plugin operation
+    # Start controller operation
     try:
         await QolsysPanel.start_operation()
 

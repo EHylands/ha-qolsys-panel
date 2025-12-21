@@ -195,9 +195,10 @@ The integration will be cleanly removed from your system.
 |                        | Alarm State                          | ✅     |
 |                        | Home Instant Arming                  | ✅     |
 |                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
+|                        | Trigger Alarm                         | ✅     |
+|                        | Enable or Disable User Code           | ✅     |
 |                        | Set Exit Sounds                      | ✅     |
-|                        | Set Entry Delay                      | ✅            |
-|                        | Disarm Photos                        | 🛠️     |
+|                        | Set Entry Delay                      | ✅     |
 |                        | TTS                                  | 🛠️     |
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |

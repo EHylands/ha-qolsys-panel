@@ -1,0 +1,38 @@
+trigger_police:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          multiple: false
+          filter:
+            - integration: qolsys_panel
+              domain: alarm_control_panel
+    silent:
+      required: true
+      selector:
+        boolean:
+trigger_auxilliary:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          multiple: false
+          filter:
+            - integration: qolsys_panel
+              domain: alarm_control_panel
+    silent:
+      required: true
+      selector:
+        boolean:
+trigger_fire:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          multiple: false
+          filter:
+            - integration: qolsys_panel
+              domain: alarm_control_panel

@@ -2,23 +2,31 @@
 
 from __future__ import annotations
 
+import logging
+
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum import (
     PartitionAlarmState,
     PartitionSystemStatus,
     PartitionArmingType,
 )
+from qolsys_controller.errors import QolsysUserCodeError
 
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
     AlarmControlPanelEntityFeature,
     AlarmControlPanelState,
+    CodeFormat,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.exceptions import HomeAssistantError
+
 
 from .entity import QolsysPartitionEntity
 from .types import QolsysPanelConfigEntry
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -43,13 +51,11 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     """An alarm control panel entity for a Qolsys Panel."""
 
     _attr_has_entity_name = True
-    _attr_code_arm_required = False
     _attr_name = None
     _attr_supported_features = (
         AlarmControlPanelEntityFeature.ARM_HOME
         | AlarmControlPanelEntityFeature.ARM_AWAY
         | AlarmControlPanelEntityFeature.ARM_NIGHT
-        | AlarmControlPanelEntityFeature.TRIGGER
     )
 
     def __init__(
@@ -58,6 +64,9 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         """Initialise a Qolsys Alarm control panel entity."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = self._partition_unique_id
+        self._attr_code_arm_required = QolsysPanel.settings.check_user_code_on_arm
+        if QolsysPanel.settings.check_user_code_on_arm:
+            self._attr_code_format = CodeFormat.NUMBER
 
     @property
     def alarm_state(self) -> AlarmControlPanelState | None:
@@ -97,9 +106,16 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         """Disarm this panel."""
         silent_disarming = self._partition.command_arm_stay_silent_disarming
 
-        await self.QolsysPanel.command_disarm(
-            self._partition_id, user_code="", silent_disarming=silent_disarming
-        )
+        try:
+            await self.QolsysPanel.command_disarm(
+                self._partition_id, user_code=code, silent_disarming=silent_disarming
+            )
+        except QolsysUserCodeError as err:
+            _LOGGER.error(
+                "Failed to disarm partition%s due to invalid user code",
+                self._partition_id,
+            )
+            raise HomeAssistantError("DISARM: Invalid user code") from err
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send ARM-STAY command."""
@@ -107,14 +123,21 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.command_arm(
-            partition_id=self._partition_id,
-            arming_type=PartitionArmingType.ARM_STAY,
-            user_code="",
-            exit_sounds=exit_sounds,
-            instant_arm=arm_stay_instant,
-            entry_delay=entry_delay,
-        )
+        try:
+            await self.QolsysPanel.command_arm(
+                partition_id=self._partition_id,
+                arming_type=PartitionArmingType.ARM_STAY,
+                user_code=code,
+                exit_sounds=exit_sounds,
+                instant_arm=arm_stay_instant,
+                entry_delay=entry_delay,
+            )
+        except QolsysUserCodeError as err:
+            _LOGGER.error(
+                "Failed to arm partition%s due to invalid user code",
+                self._partition_id,
+            )
+            raise HomeAssistantError("ARM HOME: Invalid user code") from err
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send ARM-AWAY command."""
@@ -122,14 +145,21 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.command_arm(
-            self._partition_id,
-            arming_type=PartitionArmingType.ARM_AWAY,
-            user_code="",
-            exit_sounds=exit_sounds,
-            instant_arm=arm_stay_instant,
-            entry_delay=entry_delay,
-        )
+        try:
+            await self.QolsysPanel.command_arm(
+                self._partition_id,
+                arming_type=PartitionArmingType.ARM_AWAY,
+                user_code=code,
+                exit_sounds=exit_sounds,
+                instant_arm=arm_stay_instant,
+                entry_delay=entry_delay,
+            )
+        except QolsysUserCodeError as err:
+            _LOGGER.error(
+                "Failed to arm partition%s due to invalid user code",
+                self._partition_id,
+            )
+            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
 
     async def async_alarm_arm_night(self, code=None):
         """Send ARM-NIGHT command."""
@@ -137,11 +167,18 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         arm_stay_instant = self._partition.command_arm_stay_instant
         entry_delay = self._partition.command_arm_entry_delay
 
-        await self.QolsysPanel.command_arm(
-            self._partition_id,
-            arming_type=PartitionArmingType.ARM_NIGHT,
-            user_code="",
-            exit_sounds=exit_sounds,
-            instant_arm=arm_stay_instant,
-            entry_delay=entry_delay,
-        )
+        try:
+            await self.QolsysPanel.command_arm(
+                self._partition_id,
+                arming_type=PartitionArmingType.ARM_NIGHT,
+                user_code=code,
+                exit_sounds=exit_sounds,
+                instant_arm=arm_stay_instant,
+                entry_delay=entry_delay,
+            )
+        except QolsysUserCodeError as err:
+            _LOGGER.error(
+                "Failed to arm partition%s due to invalid user code",
+                self._partition_id,
+            )
+            raise HomeAssistantError("ARM NIGHT: Invalid user code") from err

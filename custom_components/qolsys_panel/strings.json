@@ -32,10 +32,13 @@
       "step": {
         "init": {
           "title": "Qolsys Panel - Options",
-          "description": "Configure Motion Sensors Delay Pptions.",
           "data": {
-            "motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
-            "motion_sensor_delay": "Motion Sensors Delay (seconds)"
+            "option_arm_code": "User Code required to Arm",
+            "option_trigger_police": "Enable Trigger Police Alarm",
+            "option_trigger_auxilliary": "Enable Trigger Auxiliary Alarm",
+            "option_trigger_fire": "Enable Trigger Fire Alarm",
+            "option_motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
+            "option_motion_sensor_delay": "Motion Sensors Delay (seconds)"       
           }
         }
       }
@@ -151,6 +154,46 @@
       "zone_ac_status": {
         "name": "AC Status"
       }
+    }
+  },
+  "services": {
+    "trigger_police": {
+      "description": "Trigger Police Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Trigger a silent alarm.",
+          "name": "Silent"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Police Alarm"
+    },
+    "trigger_auxilliary": {
+      "description": "Trigger Auxilliary Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Trigger a silent alarm.",
+          "name": "Silent"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Auxillary Alarm"
+    },
+    "trigger_fire": {
+      "description": "Trigger Fire Alarm on the panel.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        }
+      },
+      "name": "Qolsys Panel - Trigger Fire Alarm"
     }
   }
 }

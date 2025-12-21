@@ -111,11 +111,7 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
-        try:
-            return int(self._zone.latestdBm)
-        except ValueError:
-            return None
-
+        return self._zone.latestdBm
 
 class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     """A sensor entity for the average DBM of a zone."""
@@ -137,10 +133,7 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
-        try:
-            return int(self._zone.averagedBm)
-        except ValueError:
-            return None
+        return self._zone.averagedBm
 
 
 class ZoneSensor_PowerG_Temperature(QolsysZoneEntity, SensorEntity):
@@ -186,10 +179,7 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the latest Zone PowerG Light."""
-        try:
-            return int(self._zone.powerg_light)
-        except ValueError:
-            return None
+        return self._zone.powerg_light
 
 
 class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
