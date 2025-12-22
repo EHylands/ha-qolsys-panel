@@ -154,11 +154,7 @@ class ZoneSensor_PowerG_Temperature(QolsysZoneEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         """Return the latest Zone PowerG Temperature."""
-        try:
-            temp = float(self._zone.powerg_temperature)
-            return round(temp, 1)
-        except ValueError:
-            return None
+        return self._zone.powerg_temperature
 
 
 class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
@@ -200,15 +196,7 @@ class DimmerSensor_BatteryValue(QolsysZwaveDimmerEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return dimmer battery value."""
-        try:
-            value = int(self._dimmer.node_battery_level_value)
-            if value >= 0 and value <= 100:
-                return value
-            else:
-                return None
-
-        except ValueError:
-            return None
+        return self._dimmer.node_battery_level_value
 
 
 class LockSensor_BatteryValue(QolsysZwaveLockEntity, SensorEntity):
@@ -229,15 +217,7 @@ class LockSensor_BatteryValue(QolsysZwaveLockEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return lock battery value."""
-        try:
-            value = int(self._lock.node_battery_level_value)
-            if value >= 0 and value <= 100:
-                return value
-            else:
-                return None
-
-        except ValueError:
-            return None
+        return self._lock.node_battery_level_value
 
 
 class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
@@ -258,12 +238,5 @@ class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         """Return thermostat battery value."""
-        try:
-            value = int(self._thermostat.node_battery_level_value)
-            if value >= 0 and value <= 100:
-                return value
-            else:
-                return None
+        return self._thermostat.node_battery_level_value
 
-        except ValueError:
-            return None
