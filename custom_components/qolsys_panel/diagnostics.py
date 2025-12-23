@@ -95,6 +95,9 @@ async def async_get_config_entry_diagnostics(
                 "zwave_nodes": [
                     device.to_dict_base() for device in QolsysPanel.state.zwave_devices
                 ],
+                "virtual_adc_devices": [
+                    device.to_dict_adc() for device in QolsysPanel.state.adc_devices
+                ],
             },
             TO_REDACT,
         ),

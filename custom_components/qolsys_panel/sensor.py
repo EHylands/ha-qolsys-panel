@@ -113,6 +113,7 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
         """Return the latest dBm value of the zone."""
         return self._zone.latestdBm
 
+
 class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     """A sensor entity for the average DBM of a zone."""
 
@@ -239,4 +240,3 @@ class ThermostatSensor_BatteryValue(QolsysZwaveThermostatEntity, SensorEntity):
     def native_value(self) -> int | None:
         """Return thermostat battery value."""
         return self._thermostat.node_battery_level_value
-
