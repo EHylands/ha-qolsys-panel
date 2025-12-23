@@ -35,12 +35,12 @@ _LOGGER = logging.getLogger(__name__)
 PLATFORMS: list[Platform] = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.BINARY_SENSOR,
-    Platform.COVER,
     Platform.SENSOR,
     Platform.LIGHT,
     Platform.SWITCH,
     Platform.LOCK,
     Platform.CLIMATE,
+    Platform.COVER,
     Platform.SCENE,
     Platform.WEATHER,
 ]
