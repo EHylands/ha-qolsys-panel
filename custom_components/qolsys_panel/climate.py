@@ -407,7 +407,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
                 return HVACMode.DRY
 
             case ThermostatMode.AUTO_CHANGEOVER:
-                return HVACMode.HEAT_COOL
+                return HVACMode.AUTO
 
         return None
 
@@ -424,7 +424,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
                 return ThermostatMode.COOL
 
             case HVACMode.HEAT_COOL:
-                return ThermostatMode.AUTO_CHANGEOVER
+                return ThermostatMode.AUTO
 
             case HVACMode.AUTO:
                 return ThermostatMode.AUTO

@@ -80,6 +80,5 @@ class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
                         "precipitation_probability": daily.precipitation,
                     }
                     forecasts.append(forecast)
-                _LOGGER.debug(forecasts)
                 return forecasts
         return None

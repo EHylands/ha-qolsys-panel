@@ -91,7 +91,7 @@ async def async_setup_entry(
             )
 
     # Add Z-Wave Thermometer Sensors
-    for thermometer in QolsysPanel.state.zwave_thermometer:
+    for thermometer in QolsysPanel.state.zwave_thermometers:
         entities.append(
             ThermometerSensor_Value(
                 QolsysPanel, thermometer.node_id, config_entry.unique_id
@@ -106,6 +106,19 @@ async def async_setup_entry(
             )
 
     # Add Z-Wave Power Meter Sensors
+    for powermeter in QolsysPanel.state.zwave_powermeters:
+        entities.append(
+            PowerMeterSensor_Value(
+                QolsysPanel, powermeter.node_id, config_entry.unique_id
+            )
+        )
+
+        if powermeter.is_battery_enabled():
+            entities.append(
+                PowerMeterSensor_BatteryValue(
+                    QolsysPanel, powermeter.node_id, config_entry.unique_id
+                )
+            )
 
     async_add_entities(entities)
 
