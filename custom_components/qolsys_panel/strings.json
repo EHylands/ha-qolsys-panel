@@ -80,6 +80,12 @@
       "powerg_light": {
         "name": "Light"
       },
+      "temperature":{
+        "name": "Temperature"
+      },
+      "power":{
+        "name": "Power"
+      },
       "dimmer_battery": {
         "name": "Battery"
       },
@@ -88,7 +94,13 @@
       },
       "thermostat_battery": {
         "name": "Battery"
-      } 
+      },
+      "thermometer_battery":{
+        "name": "Battery"
+      },
+      "powermeter_battery":{
+        "name": "Battery"
+      }
     },
     "binary_sensor": {
       "panel_ac_status": {

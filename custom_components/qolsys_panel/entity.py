@@ -218,6 +218,64 @@ class QolsysZwaveThermostatEntity(QolsysPanelEntity):
         self._thermostat.unregister(self.schedule_update_ha_state)
 
 
+class QolsysZwavePowerMeterEntity(QolsysPanelEntity):
+    """Z-Wave PowerMeter Entity."""
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
+    ) -> None:
+        """Set up a Qolsys Z-Wave Power Meter ."""
+        super().__init__(QolsysPanel, unique_id)
+        self._zwave_powermeter_unique_id = f"{unique_id}_zwave_powermeter{node_id}"
+        self._powermeter = QolsysPanel.state.zwave_device(node_id)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._zwave_powermeter_unique_id)},
+            manufacturer="Johnson Controls",
+            name=f"Z-Wave{node_id} - PowerMeter - {self._powermeter.node_name}",
+            model="Qolsys Z-Wave PowerMeter",
+            via_device=(DOMAIN, unique_id),
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Observe changes."""
+        await super().async_added_to_hass()
+        self._powermeter.register(self.schedule_update_ha_state)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing changes."""
+        await super().async_will_remove_from_hass()
+        self._powermeter.unregister(self.schedule_update_ha_state)
+
+
+class QolsysZwaveThermometerEntity(QolsysPanelEntity):
+    """Z-Wave Thermometer Entity."""
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
+    ) -> None:
+        """Set up a Qolsys Z-Wave Thermometer ."""
+        super().__init__(QolsysPanel, unique_id)
+        self._zwave_thermometer_unique_id = f"{unique_id}_zwave_thermometer{node_id}"
+        self._thermometer = QolsysPanel.state.zwave_device(node_id)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._zwave_thermometer_unique_id)},
+            manufacturer="Johnson Controls",
+            name=f"Z-Wave{node_id} - Thermometer - {self._thermometer.node_name}",
+            model="Qolsys Z-Wave Thermometer",
+            via_device=(DOMAIN, unique_id),
+        )
+
+    async def async_added_to_hass(self) -> None:
+        """Observe changes."""
+        await super().async_added_to_hass()
+        self._thermometer.register(self.schedule_update_ha_state)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing changes."""
+        await super().async_will_remove_from_hass()
+        self._thermometer.unregister(self.schedule_update_ha_state)
+
+
 class QolsysWeatherEntity(QolsysPanelEntity):
     """Qolsys weather entity."""
 

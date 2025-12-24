@@ -92,6 +92,14 @@ async def async_get_config_entry_diagnostics(
                     thermostat.to_dict_thermostat()
                     for thermostat in QolsysPanel.state.zwave_thermostats
                 ],
+                "zwave_thermometer":[
+                    thermometer.to_dict_thermometer()
+                    for thermometer in QolsysPanel.state.zwave_thermometer
+                ],
+                "zwave_powerometer":[
+                    powermeter.to_dict_power()
+                    for powermeter in QolsysPanel.state.zwave_power
+                ],
                 "zwave_nodes": [
                     device.to_dict_base() for device in QolsysPanel.state.zwave_devices
                 ],
