@@ -70,9 +70,6 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
             ClimateEntityFeature.TARGET_TEMPERATURE
             | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
         )
-        self._last_sent_mode = (
-            None  # Track last commanded mode (panel doesn't send updates)
-        )
 
         # Add turn off attribute
         if ThermostatMode.OFF in available_thermostat_modes:
@@ -99,19 +96,16 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature (mode-aware)."""
-        # Use tracked mode instead of panel mode (panel doesn't send state updates)
-        mode = self.hvac_mode
-
         # In AUTO mode, return None so dual sliders appear
-        if mode == HVACMode.AUTO:
+        if self.hvac_mode == HVACMode.AUTO:
             return None
 
         # In OFF mode, return None (no slider needed)
-        if mode == HVACMode.OFF:
+        if self.hvac_mode == HVACMode.OFF:
             return None
 
         # For HEAT mode, return heat setpoint
-        if mode == HVACMode.HEAT:
+        if self.hvac_mode == HVACMode.HEAT:
             temp = self._thermostat.thermostat_target_heat_temp
             try:
                 return float(temp) if temp else 72.0
@@ -122,7 +116,7 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
                 return 72.0
 
         # For COOL mode, return cool setpoint
-        if mode == HVACMode.COOL:
+        if self.hvac_mode == HVACMode.COOL:
             temp = self._thermostat.thermostat_target_cool_temp
             try:
                 return float(temp) if temp else 72.0
@@ -206,10 +200,6 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
     @property
     def hvac_mode(self) -> HVACMode:
         """Return current HVAC mode."""
-        # Return tracked mode if we have one (panel doesn't send updates)
-        if self._last_sent_mode is not None:
-            return self._last_sent_mode
-
         qolsys_thermostat_mode = self._thermostat.thermostat_mode
         return self._qolsys_to_hass_thermostat_mode(qolsys_thermostat_mode)
 
@@ -232,11 +222,6 @@ class ZWaveThermostat(QolsysZwaveThermostatEntity, ClimateEntity):
         _LOGGER.debug(
             f"Setting HVAC mode to {hvac_mode} (node_id: {self._thermostat.thermostat_node_id})"
         )
-
-        # Update mode tracking FIRST (before await that might hang)
-        # This provides optimistic UI update since panel doesn't send state changes
-        self._last_sent_mode = hvac_mode
-        self.async_write_ha_state()
 
         # Then send the command (await might hang, but UI is already updated)
         qolsys_thermostat_mode = self._hass_to_qolsys_thermostat_mode(hvac_mode)

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.enum_zwave import MeterType, ZWaveElectricMeterScale
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -12,13 +13,14 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from zmq import IntEnum
 
 from . import QolsysPanelConfigEntry
 from .entity import (
     QolsysZoneEntity,
     QolsysZwaveDimmerEntity,
     QolsysZwaveLockEntity,
-    QolsysZwavePowerMeterEntity,
+    QolsysZwaveMeterEntity,
     QolsysZwaveThermometerEntity,
     QolsysZwaveThermostatEntity,
 )
@@ -105,18 +107,24 @@ async def async_setup_entry(
                 )
             )
 
-    # Add Z-Wave Power Meter Sensors
-    for powermeter in QolsysPanel.state.zwave_powermeters:
-        entities.append(
-            PowerMeterSensor_Value(
-                QolsysPanel, powermeter.node_id, config_entry.unique_id
-            )
-        )
+    # Add Z-Wave Meter Sensors
+    for meter in QolsysPanel.state.zwave_meters:
+        for meter_sensor in meter.meters:
+            if meter_sensor.meter_type == MeterType.ELECTRIC_METER:
+                entities.append(
+                    MeterSensor_Value(
+                        QolsysPanel,
+                        meter.node_id,
+                        meter_sensor.meter_type,
+                        meter_sensor.scale,
+                        config_entry.unique_id,
+                    )
+                )
 
-        if powermeter.is_battery_enabled():
+        if meter.is_battery_enabled():
             entities.append(
                 PowerMeterSensor_BatteryValue(
-                    QolsysPanel, powermeter.node_id, config_entry.unique_id
+                    QolsysPanel, meter.node_id, config_entry.unique_id
                 )
             )
 
@@ -316,28 +324,86 @@ class ThermometerSensor_BatteryValue(QolsysZwaveThermometerEntity, SensorEntity)
         return self._thermometer.node_battery_level_value
 
 
-class PowerMeterSensor_Value(QolsysZwavePowerMeterEntity, SensorEntity):
-    """A sensor entity for a power meter value."""
+class MeterSensor_Value(QolsysZwaveMeterEntity, SensorEntity):
+    """A sensor entity for a meter value."""
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
+        self,
+        QolsysPanel: qolsys_controller,
+        node_id: int,
+        meter_type: MeterType,
+        scale: IntEnum,
+        unique_id: str,
     ) -> None:
-        """Set up a sensor entity for a power meter value."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = self._zwave_powermeter_unique_id
-        self._attr_translation_key = "power"
-        self._attr_native_unit_of_measurement = "kW"
-        self._attr_device_class = SensorDeviceClass.POWER
+        """Set up a sensor entity for a meter value."""
+        super().__init__(QolsysPanel, node_id, meter_type, scale, unique_id)
+        scale_type = self._meter.scale_for_meter_type(self._meter_type)
+
+        self._attr_unique_id = (
+            f"{self._zwave_meter_unique_id}_{scale_type(self._scale).name}"
+        )
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
+    def native_unit_of_measurement(self) -> str:
+        scale_type = self._meter.scale_for_meter_type(self._meter_type)
+
+        if self._meter_type == MeterType.ELECTRIC_METER:
+            match scale_type(self._scale):
+                case ZWaveElectricMeterScale.WATTS:
+                    return "W"
+                case ZWaveElectricMeterScale.KWH:
+                    return "kWh"
+                case ZWaveElectricMeterScale.POWER_FACTOR:
+                    return "%"
+                case ZWaveElectricMeterScale.KVAR:
+                    return "kvar"
+                case ZWaveElectricMeterScale.VOLTS:
+                    return "V"
+                case ZWaveElectricMeterScale.KVARH:
+                    return "kvarh"
+                case ZWaveElectricMeterScale.KVAH:
+                    return "Wh"
+                case ZWaveElectricMeterScale.AMPS:
+                    return "A"
+                case ZWaveElectricMeterScale.PULSE_COUNT:
+                    return "Hz"
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        scale_type = self._meter.scale_for_meter_type(self._meter_type)
+
+        if self._meter_type == MeterType.ELECTRIC_METER:
+            match scale_type(self._scale):
+                case ZWaveElectricMeterScale.WATTS:
+                    return SensorDeviceClass.POWER
+                case ZWaveElectricMeterScale.KWH:
+                    return SensorDeviceClass.ENERGY
+                case ZWaveElectricMeterScale.POWER_FACTOR:
+                    return SensorDeviceClass.POWER_FACTOR
+                case ZWaveElectricMeterScale.KVAR:
+                    return SensorDeviceClass.REACTIVE_POWER
+                case ZWaveElectricMeterScale.VOLTS:
+                    return SensorDeviceClass.VOLTAGE
+                case ZWaveElectricMeterScale.KVARH:
+                    return SensorDeviceClass.REACTIVE_POWER  # Should be reactive_energy
+                case ZWaveElectricMeterScale.KVAH:
+                    return SensorDeviceClass.ENERGY
+                case ZWaveElectricMeterScale.AMPS:
+                    return SensorDeviceClass.POWER
+                case ZWaveElectricMeterScale.PULSE_COUNT:
+                    return SensorDeviceClass.FREQUENCY
+
+            return None
+
+    @property
     def native_value(self) -> int | None:
         """Return powermeter value."""
-        return 9999
+        return self._meter_sensor.value
 
 
-class PowerMeterSensor_BatteryValue(QolsysZwavePowerMeterEntity, SensorEntity):
+class PowerMeterSensor_BatteryValue(QolsysZwaveMeterEntity, SensorEntity):
     """A sensor entity for a power meter battery value."""
 
     def __init__(
@@ -345,7 +411,7 @@ class PowerMeterSensor_BatteryValue(QolsysZwavePowerMeterEntity, SensorEntity):
     ) -> None:
         """Set up a sensor entity for a power meter battery value."""
         super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_powermeter_unique_id}_battery_value"
+        self._attr_unique_id = f"{self._zwave_meter_unique_id}_battery_value"
         self._attr_translation_key = "powermeter_battery"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
