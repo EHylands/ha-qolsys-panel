@@ -9,7 +9,7 @@ from qolsys_controller.zwave_thermostat import QolsysThermostat
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
-from zmq import IntEnum
+from enum import IntEnum
 
 from .const import DOMAIN
 
@@ -243,9 +243,9 @@ class QolsysZwaveMeterEntity(QolsysPanelEntity):
         self._meter_sensor = self._meter.meter(meter_type, scale)
 
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._zwave_powermeter_unique_id)},
+            identifiers={(DOMAIN, self._zwave_meter_unique_id)},
             manufacturer="Johnson Controls",
-            name=f"Z-Wave{node_id} - Meter - {self._powermeter.node_name}",
+            name=f"Z-Wave{node_id} - Meter - {self._meter.node_name}",
             model="Qolsys Z-Wave Meter",
             via_device=(DOMAIN, unique_id),
         )

@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import logging
+
+
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_zwave import MeterType, ZWaveElectricMeterScale
 
@@ -13,7 +16,7 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from zmq import IntEnum
+from enum import IntEnum
 
 from . import QolsysPanelConfigEntry
 from .entity import (
@@ -24,6 +27,8 @@ from .entity import (
     QolsysZwaveThermometerEntity,
     QolsysZwaveThermostatEntity,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
