@@ -4,6 +4,58 @@ from __future__ import annotations
 
 import logging
 
+# Apply monkey patch to fix ValueError: bytes must be in range(0, 256)
+# This fixes an issue in qolsys_controller where bitmask values outside 0-255 cause errors
+try:
+    from qolsys_controller import zwave_thermostat
+    from qolsys_controller.zwave_thermostat import (
+        BITMASK_SUPPORTED_THERMOSTAT_MODE,
+        BITMASK_SUPPORTED_THERMOSTAT_FAN_MODE,
+        BITMASK_SUPPORTED_THERMOSTAT_SETPOINT,
+    )
+    
+    def _patched_available_thermostat_mode(self):
+        """Patched version that clamps values to valid byte range."""
+        int_list = [max(0, min(255, int(x))) for x in self._thermostat_mode_bitmask.strip("[]").split(",")]
+        byte_array = bytes(int_list)
+        bitmask = int.from_bytes(byte_array, byteorder="little")
+        supported = []
+        for bit, mode in BITMASK_SUPPORTED_THERMOSTAT_MODE.items():
+            if bitmask & (1 << bit):
+                supported.append(mode)
+        return supported
+    
+    def _patched_available_thermostat_fan_mode(self):
+        """Patched version that clamps values to valid byte range."""
+        int_list = [max(0, min(255, int(x))) for x in self._thermostat_fan_mode_bitmask.strip("[]").split(",")]
+        byte_array = bytes(int_list)
+        bitmask = int.from_bytes(byte_array, byteorder="little")
+        supported = []
+        for bit, mode in BITMASK_SUPPORTED_THERMOSTAT_FAN_MODE.items():
+            if bitmask & (1 << bit):
+                supported.append(mode)
+        return supported
+    
+    def _patched_available_thermostat_set_point_mode(self):
+        """Patched version that clamps values to valid byte range."""
+        int_list = [max(0, min(255, int(x))) for x in self._thermostat_set_point_mode_bitmask.strip("[]").split(",")]
+        byte_array = bytes(int_list)
+        bitmask = int.from_bytes(byte_array, byteorder="little")
+        supported = []
+        for bit, mode in BITMASK_SUPPORTED_THERMOSTAT_SETPOINT.items():
+            if bitmask & (1 << bit):
+                supported.append(mode)
+        return supported
+    
+    # Apply patches
+    zwave_thermostat.QolsysThermostat.available_thermostat_mode = _patched_available_thermostat_mode
+    zwave_thermostat.QolsysThermostat.available_thermostat_fan_mode = _patched_available_thermostat_fan_mode
+    zwave_thermostat.QolsysThermostat.available_thermostat_set_point_mode = _patched_available_thermostat_set_point_mode
+    
+except ImportError:
+    # If the module can't be imported, the patch will be skipped
+    pass
+
 from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysSslError, QolsysMqttError
 
