@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Type
 
 
 from qolsys_controller import qolsys_controller
@@ -10,6 +11,7 @@ from qolsys_controller.enum_zwave import (
     MeterType,
     ZWaveElectricMeterScale,
     ZWaveMultilevelSensorScale,
+    ZWaveUnknownMeterScale,
 )
 from qolsys_controller.zwave_service_meter import (
     QolsysZwaveServiceMeter,
@@ -82,6 +84,22 @@ async def async_setup_entry(
 
     # Add Z-Wave Dimmer Sensors
     for dimmer in QolsysPanel.state.zwave_dimmers:
+        # Add Meter Values
+        if dimmer.is_service_meter_enabled():
+            for meter_endpoint in dimmer.meter_endpoints:
+                for meter_sensor in meter_endpoint.sensors:
+                    if meter_endpoint._meter_type == MeterType.ELECTRIC_METER:
+                        entities.append(
+                            DimmerSensor_MeterValue(
+                                QolsysPanel,
+                                dimmer.node_id,
+                                meter_endpoint.endpoint,
+                                meter_endpoint._meter_type,
+                                meter_sensor.scale,
+                                config_entry.unique_id,
+                            )
+                        )
+
         # Add Battery Value if battery present
         if dimmer.is_battery_enabled():
             entities.append(
@@ -126,18 +144,29 @@ async def async_setup_entry(
     # Add Z-Wave Energy Clamp Sensors
     for meter in QolsysPanel.state.zwave_meters:
         for meter_endpoint in meter.meter_endpoints:
-            for meter_sensor in meter_endpoint.meters:
-                if meter_sensor.meter_type == MeterType.ELECTRIC_METER:
+            for meter_sensor in meter_endpoint.sensors:
+                if meter_endpoint._meter_type == MeterType.ELECTRIC_METER:
                     entities.append(
                         EnergyClamp_MeterValue(
                             QolsysPanel,
                             meter.node_id,
                             meter_endpoint.endpoint,
-                            meter_sensor.meter_type,
+                            meter_endpoint._meter_type,
                             meter_sensor.scale,
                             config_entry.unique_id,
                         )
                     )
+        for sensor_endpoint in meter.multilevelsensor_endpoints:
+            for sensor_sensor in sensor_endpoint.sensors:
+                entities.append(
+                    EnergyClamp_MultilevelSensorValue(
+                        QolsysPanel,
+                        meter.node_id,
+                        sensor_endpoint.endpoint,
+                        sensor_sensor.unit,
+                        config_entry.unique_id,
+                    )
+                )
 
         if meter.is_battery_enabled():
             entities.append(
@@ -272,26 +301,26 @@ class DimmerSensor_MeterValue(QolsysZwaveDimmerEntity, SensorEntity):
     ) -> None:
         """Set up a sensor entity for a dimmer meter value."""
         super().__init__(QolsysPanel, node_id, endpoint, meter_type, scale, unique_id)
-        scale_type = self._meter._scale_type
-        self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_{meter_type.name}_{endpoint}_{scale_type(self._scale).name}"
-        self._attr_suggested_display_precision = 0
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-
         self._meter_type: MeterType = meter_type
         self._endpoint: str = endpoint
         self._scale: IntEnum = scale
+        self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_{meter_type.name}_{endpoint}_{self._scale.name}"
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._meter: QolsysZwaveServiceMeter | None = None
         self._meter_sensor: QolsysZwaveMeterSensor | None = None
+        self._scale_type: Type[IntEnum] = ZWaveUnknownMeterScale
 
         for meter_endpoint in self._dimmer.meter_endpoints:
             if meter_endpoint.endpoint == endpoint:
                 self._meter = meter_endpoint
+                self._scale_type = self._meter._scale_type
                 self._meter_sensor = self._meter.get_sensor(scale)
                 break
 
     @property
     def native_unit_of_measurement(self) -> str:
-        scale_type = self._meter._scale_type
+        scale_type: Type[IntEnum] = self._meter._scale_type
 
         if self._meter_type == MeterType.ELECTRIC_METER:
             match scale_type(self._scale):
@@ -318,7 +347,7 @@ class DimmerSensor_MeterValue(QolsysZwaveDimmerEntity, SensorEntity):
 
     @property
     def device_class(self) -> SensorDeviceClass | None:
-        scale_type = self._meter.scale_for_meter_type(self._meter_type)
+        scale_type = self._meter._scale_type
 
         if self._meter_type == MeterType.ELECTRIC_METER:
             match scale_type(self._scale):
@@ -405,7 +434,7 @@ class ThermostatSensor_MultilevelSensorValue(QolsysZwaveThermostatEntity, Sensor
         unique_id: str,
     ) -> None:
         """Set up a sensor entity for a dimmer multilevelsensor value."""
-        super().__init__(QolsysPanel, node_id, node_id, unique_id)
+        super().__init__(QolsysPanel, node_id, unique_id)
         self._attr_unique_id = f"{self._zwave_thermostat_unique_id}_multilevelsensor_{endpoint}_{unit.name}"
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
@@ -418,7 +447,7 @@ class ThermostatSensor_MultilevelSensorValue(QolsysZwaveThermostatEntity, Sensor
         for sensor_endpoint in self._thermostat.multilevelsensor_endpoints:
             if sensor_endpoint.endpoint == endpoint:
                 self._multilevel_endpoint = sensor_endpoint
-                self._multilevel_sensor = self._multilevel_sensor.get_sensor(unit)
+                self._multilevel_sensor = self._multilevel_endpoint.get_sensor(unit)
                 break
 
     @property
@@ -452,7 +481,6 @@ class ThermostatSensor_MultilevelSensorValue(QolsysZwaveThermostatEntity, Sensor
         """Return sensor value."""
         if self._multilevel_sensor is None:
             return None
-
         return self._multilevel_sensor.value
 
 
@@ -511,21 +539,21 @@ class EnergyClamp_MeterValue(QolsysZwaveEnergyClampEntity, SensorEntity):
         unique_id: str,
     ) -> None:
         """Set up a sensor entity for a meter value."""
-        super().__init__(QolsysPanel, node_id, endpoint, meter_type, scale, unique_id)
-        scale_type = self._meter._scale_type
-        self._attr_unique_id = f"{self._zwave_energyclamp_unique_id}_{meter_type.name}_{endpoint}_{scale_type(self._scale).name}"
-        self._attr_suggested_display_precision = 0
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-
+        super().__init__(QolsysPanel, node_id, unique_id)
         self._meter_type: MeterType = meter_type
         self._endpoint: str = endpoint
         self._scale: IntEnum = scale
+        self._attr_unique_id = f"{self._zwave_energyclamp_unique_id}_{meter_type.name}_{endpoint}_{self._scale.name}"
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._scale_type: Type[IntEnum] = ZWaveUnknownMeterScale
         self._meter: QolsysZwaveServiceMeter | None = None
         self._meter_sensor: QolsysZwaveMeterSensor | None = None
 
         for meter_endpoint in self._energyclamp.meter_endpoints:
             if meter_endpoint.endpoint == endpoint:
                 self._meter = meter_endpoint
+                self._scale_type = self._meter._scale_type
                 self._meter_sensor = self._meter.get_sensor(scale)
                 break
 
@@ -558,7 +586,7 @@ class EnergyClamp_MeterValue(QolsysZwaveEnergyClampEntity, SensorEntity):
 
     @property
     def device_class(self) -> SensorDeviceClass | None:
-        scale_type = self._meter.scale_for_meter_type(self._meter_type)
+        scale_type = self._scale_type
 
         if self._meter_type == MeterType.ELECTRIC_METER:
             match scale_type(self._scale):
@@ -587,6 +615,69 @@ class EnergyClamp_MeterValue(QolsysZwaveEnergyClampEntity, SensorEntity):
     def native_value(self) -> int | None:
         """Return powermeter value."""
         return self._meter_sensor.value
+
+
+class EnergyClamp_MultilevelSensorValue(QolsysZwaveEnergyClampEntity, SensorEntity):
+    """A sensor entity for a dimmer meter value."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        node_id: int,
+        endpoint: str,
+        unit: ZWaveMultilevelSensorScale,
+        unique_id: str,
+    ) -> None:
+        """Set up a sensor entity for a energyclamp multilevelsensor value."""
+        super().__init__(QolsysPanel, node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_energyclamp_unique_id}_multilevelsensor_{endpoint}_{unit.name}"
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._unit = unit
+        self._endpoint: str = endpoint
+        self._scale: ZWaveElectricMeterScale = unit
+        self._multilevel_endpoint: QolsysZwaveServiceMultilevelSensor | None = None
+        self._multilevel_sensor: QolsysZwaveServiceMultilevelSensor | None = None
+
+        for sensor_endpoint in self._energyclamp.multilevelsensor_endpoints:
+            if sensor_endpoint.endpoint == endpoint:
+                self._multilevel_endpoint = sensor_endpoint
+                self._multilevel_sensor = self._multilevel_endpoint.get_sensor(unit)
+                break
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        match self._unit:
+            case ZWaveMultilevelSensorScale.TEMPERATURE_FAHRENHEIT:
+                return "°F"
+            case ZWaveMultilevelSensorScale.TEMPERATURE_CELSIUS:
+                return "°C"
+            case ZWaveMultilevelSensorScale.RELATIVE_HUMIDITY:
+                return "%"
+
+        return None
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        match self._unit:
+            case ZWaveMultilevelSensorScale.TEMPERATURE_CELSIUS:
+                return SensorDeviceClass.TEMPERATURE
+
+            case ZWaveMultilevelSensorScale.TEMPERATURE_FAHRENHEIT:
+                return SensorDeviceClass.TEMPERATURE
+
+            case ZWaveMultilevelSensorScale.RELATIVE_HUMIDITY:
+                return SensorDeviceClass.HUMIDITY
+
+        return None
+
+    @property
+    def native_value(self) -> float | None:
+        """Return sensor value."""
+        if self._multilevel_sensor is None:
+            return None
+
+        return self._multilevel_sensor.value
 
 
 class EnergyClamp_BatteryValue(QolsysZwaveEnergyClampEntity, SensorEntity):
