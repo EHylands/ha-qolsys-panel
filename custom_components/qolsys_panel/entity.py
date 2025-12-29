@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_zwave import MeterType
-from qolsys_controller.zwave_meter import QolsysMeterDevice
 from qolsys_controller.zwave_thermostat import QolsysThermostat
+from qolsys_controller.zwave_energy_clamp import QolsysEnergyClamp
+from qolsys_controller.zwave_service_meter import (
+    QolsysZwaveMeterSensor,
+    QolsysZwaveServiceMeter,
+)
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -222,43 +226,37 @@ class QolsysZwaveThermostatEntity(QolsysPanelEntity):
         self._thermostat.unregister(self.schedule_update_ha_state)
 
 
-class QolsysZwaveMeterEntity(QolsysPanelEntity):
+class QolsysZwaveEnergyClampEntity(QolsysPanelEntity):
     """Z-Wave Meter Entity."""
 
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
         node_id: str,
-        meter_type: MeterType,
-        scale: IntEnum,
         unique_id: str,
     ) -> None:
-        """Set up a Qolsys Z-Wave Meter ."""
+        """Set up a Qolsys Z-Wave Energy Clamp ."""
         super().__init__(QolsysPanel, unique_id)
-        self._zwave_meter_unique_id = f"{unique_id}_zwave_meter{node_id}"
-        self._meter_type = meter_type
-        self._scale = scale
-
-        self._meter: QolsysMeterDevice = QolsysPanel.state.zwave_device(node_id)
-        self._meter_sensor = self._meter.meter(meter_type, scale)
+        self._zwave_energyclamp_unique_id = f"{unique_id}_zwave_energyclamp{node_id}"
+        self._energyclamp: QolsysEnergyClamp = QolsysPanel.state.zwave_device(node_id)
 
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._zwave_meter_unique_id)},
+            identifiers={(DOMAIN, self._zwave_energyclamp_unique_id)},
             manufacturer="Johnson Controls",
-            name=f"Z-Wave{node_id} - Meter - {self._meter.node_name}",
-            model="Qolsys Z-Wave Meter",
+            name=f"Z-Wave{node_id} - Energy Clamp - {self._energyclamp.node_name}",
+            model="Qolsys Z-Wave Energy Clamp",
             via_device=(DOMAIN, unique_id),
         )
 
     async def async_added_to_hass(self) -> None:
         """Observe changes."""
         await super().async_added_to_hass()
-        self._meter.register(self.schedule_update_ha_state)
+        self._energyclamp.register(self.schedule_update_ha_state)
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
-        self._meter.unregister(self.schedule_update_ha_state)
+        self._energyclamp.unregister(self.schedule_update_ha_state)
 
 
 class QolsysZwaveThermometerEntity(QolsysPanelEntity):
