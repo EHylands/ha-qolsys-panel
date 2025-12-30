@@ -3,17 +3,12 @@
 from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_zwave import MeterType
 from qolsys_controller.zwave_thermostat import QolsysThermostat
 from qolsys_controller.zwave_energy_clamp import QolsysEnergyClamp
-from qolsys_controller.zwave_service_meter import (
-    QolsysZwaveMeterSensor,
-    QolsysZwaveServiceMeter,
-)
+
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
-from enum import IntEnum
 
 from .const import DOMAIN
 

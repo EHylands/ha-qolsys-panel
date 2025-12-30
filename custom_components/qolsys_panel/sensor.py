@@ -300,13 +300,12 @@ class DimmerSensor_MeterValue(QolsysZwaveDimmerEntity, SensorEntity):
         unique_id: str,
     ) -> None:
         """Set up a sensor entity for a dimmer meter value."""
-        super().__init__(QolsysPanel, node_id, endpoint, meter_type, scale, unique_id)
+        super().__init__(QolsysPanel, node_id, unique_id)
         self._meter_type: MeterType = meter_type
         self._endpoint: str = endpoint
         self._scale: IntEnum = scale
         self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_{meter_type.name}_{endpoint}_{self._scale.name}"
         self._attr_suggested_display_precision = 0
-        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._meter: QolsysZwaveServiceMeter | None = None
         self._meter_sensor: QolsysZwaveMeterSensor | None = None
         self._scale_type: Type[IntEnum] = ZWaveUnknownMeterScale
@@ -317,6 +316,32 @@ class DimmerSensor_MeterValue(QolsysZwaveDimmerEntity, SensorEntity):
                 self._scale_type = self._meter._scale_type
                 self._meter_sensor = self._meter.get_sensor(scale)
                 break
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the state class of this entity."""
+
+        match self._scale_type(self._scale):
+            case ZWaveElectricMeterScale.WATTS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KWH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.POWER_FACTOR:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KVAR:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.VOLTS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KVARH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.KVAH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.AMPS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.PULSE_COUNT:
+                return SensorStateClass.MEASUREMENT
+
+        return SensorStateClass.MEASUREMENT
 
     @property
     def native_unit_of_measurement(self) -> str:
@@ -545,7 +570,6 @@ class EnergyClamp_MeterValue(QolsysZwaveEnergyClampEntity, SensorEntity):
         self._scale: IntEnum = scale
         self._attr_unique_id = f"{self._zwave_energyclamp_unique_id}_{meter_type.name}_{endpoint}_{self._scale.name}"
         self._attr_suggested_display_precision = 0
-        self._attr_state_class = SensorStateClass.MEASUREMENT
         self._scale_type: Type[IntEnum] = ZWaveUnknownMeterScale
         self._meter: QolsysZwaveServiceMeter | None = None
         self._meter_sensor: QolsysZwaveMeterSensor | None = None
@@ -556,6 +580,32 @@ class EnergyClamp_MeterValue(QolsysZwaveEnergyClampEntity, SensorEntity):
                 self._scale_type = self._meter._scale_type
                 self._meter_sensor = self._meter.get_sensor(scale)
                 break
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the state class of this entity."""
+
+        match self._scale_type(self._scale):
+            case ZWaveElectricMeterScale.WATTS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KWH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.POWER_FACTOR:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KVAR:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.VOLTS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.KVARH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.KVAH:
+                return SensorStateClass.TOTAL
+            case ZWaveElectricMeterScale.AMPS:
+                return SensorStateClass.MEASUREMENT
+            case ZWaveElectricMeterScale.PULSE_COUNT:
+                return SensorStateClass.MEASUREMENT
+
+        return SensorStateClass.MEASUREMENT
 
     @property
     def native_unit_of_measurement(self) -> str:
