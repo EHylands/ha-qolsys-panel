@@ -27,7 +27,8 @@ from homeassistant.components.climate.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .entity import QolsysZwaveEntity, QolsysZwaveThermostatEntity
+from custom_components.qolsys_panel.entity import QolsysZwaveEntity
+
 from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ async def async_setup_entry(
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
 
-    entities: list[QolsysZwaveThermostatEntity] = []
+    entities: list[QolsysZwaveEntity] = []
 
     for thermostat in QolsysPanel.state.zwave_thermostats:
         entities.append(
