@@ -19,9 +19,7 @@ from .entity import (
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
     QolsysZoneEntity,
-    QolsysZwaveDimmerEntity,
-    QolsysZwaveLockEntity,
-    QolsysZwaveThermostatEntity,
+    QolsysZwaveEntity,
 )
 
 PANEL_SENSOR = [
@@ -144,23 +142,10 @@ async def async_setup_entry(
             PartitionEntryDelaySensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
 
-    for dimmer in QolsysPanel.state.zwave_dimmers:
+    # Add Z-Wave device status sensor
+    for device in QolsysPanel.state.zwave_devices:
         entities.append(
-            DimmerSensor_Status(
-                QolsysPanel, dimmer.dimmer_node_id, config_entry.unique_id
-            )
-        )
-
-    for lock in QolsysPanel.state.zwave_locks:
-        entities.append(
-            LockSensor_Status(QolsysPanel, lock.lock_node_id, config_entry.unique_id)
-        )
-
-    for thermostat in QolsysPanel.state.zwave_thermostats:
-        entities.append(
-            ThermostatSensor_Status(
-                QolsysPanel, thermostat.thermostat_node_id, config_entry.unique_id
-            )
+            ZwaveDevice_Status(QolsysPanel, device.node_id, config_entry.unique_id)
         )
 
     async_add_entities(entities)
@@ -478,61 +463,21 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         return None
 
 
-class DimmerSensor_Status(QolsysZwaveDimmerEntity, BinarySensorEntity):
-    """A binary sensor entity for a z-wave dimmer status."""
+class ZwaveDevice_Status(QolsysZwaveEntity, BinarySensorEntity):
+    """A binary sensor entity for a z-wave device status."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
     ) -> None:
-        """Set up a binary sensor entity for a z-wave dimmer status."""
+        """Set up a binary sensor entity for a z-wave device status."""
         super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_dimmer_unique_id}_status"
+        self._attr_unique_id = f"{self._zwave_unique_id}_status"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
         self._attr_translation_key = "zwave_node_status"
 
     @property
     def is_on(self) -> bool:
-        """Return if this z-wave dimmer status."""
-        return self._dimmer.node_status != "Normal"
-
-
-class LockSensor_Status(QolsysZwaveLockEntity, BinarySensorEntity):
-    """A binary sensor entity for a z-wave lock status."""
-
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
-    ) -> None:
-        """Set up a binary sensor entity for a z-wave lock status."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_lock_unique_id}_status"
-        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_translation_key = "zwave_node_status"
-
-    @property
-    def is_on(self) -> bool:
-        """Return if this z-wave lock status."""
-        return self._lock.node_status != "Normal"
-
-
-class ThermostatSensor_Status(QolsysZwaveThermostatEntity, BinarySensorEntity):
-    """A binary sensor entity for a z-wave thermostat status."""
-
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
-    ) -> None:
-        """Set up a binary sensor entity for a z-wave thermostat status."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_thermostat_unique_id}_status"
-        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_translation_key = "zwave_node_status"
-
-    @property
-    def is_on(self) -> bool:
-        """Return if this z-wave thermostat status."""
-        return self._thermostat.node_status != "Normal"
+        """Return this z-wave device status."""
+        return self._node.node_status != "Normal"

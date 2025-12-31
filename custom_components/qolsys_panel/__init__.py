@@ -15,6 +15,7 @@ from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
 
+
 from .const import (
     CONF_RANDOM_MAC,
     DOMAIN,

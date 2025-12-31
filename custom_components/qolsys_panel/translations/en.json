@@ -86,6 +86,9 @@
       "power":{
         "name": "Power"
       },
+      "battery": {
+        "name": "Battery"
+      },
       "dimmer_battery": {
         "name": "Battery"
       },
