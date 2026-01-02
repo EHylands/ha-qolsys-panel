@@ -1,4 +1,4 @@
-"""Support for Qolsys Z-Wave Thermostats."""
+"""Support for Qolsys Thermostats."""
 
 from __future__ import annotations
 
@@ -8,8 +8,7 @@ from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.zwave_thermostat import QolsysThermostat
-
-from qolsys_controller.enum_zwave import ThermostatFanMode, ThermostatMode
+from qolsys_controller.enum_zwave import ThermostatFanMode, ThermostatMode, ThermostatSetpointMode
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
@@ -95,8 +94,11 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
 
     @property
     def current_temperature(self) -> float:
-        """Return the current temperature."""
         return float(self._node.thermostat_current_temp)
+    
+    @property
+    def current_humidity(self) -> float | None:
+        return self._node.thermostat_current_humidity
 
     @property
     def target_temperature(self) -> float | None:
@@ -271,7 +273,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
             # Add error callback to log failures
             task = asyncio.create_task(
                 self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id, mode=ThermostatMode.COOL, setpoint=temp
+                    node_id=node_id, mode=ThermostatSetpointMode.COOLING, setpoint=temp
                 )
             )
             task.add_done_callback(lambda t: self._handle_setpoint_error(t, "COOL"))
@@ -283,7 +285,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
             # Add error callback to log failures
             task = asyncio.create_task(
                 self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id, mode=ThermostatMode.HEAT, setpoint=temp
+                    node_id=node_id, mode=ThermostatSetpointMode.HEATING, setpoint=temp
                 )
             )
             task.add_done_callback(lambda t: self._handle_setpoint_error(t, "HEAT"))
@@ -294,12 +296,16 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
             current_thermostat_mode =  self._hass_to_qolsys_thermostat_mode(self.hvac_mode)
             if current_thermostat_mode is None:
                 current_thermostat_mode = ThermostatMode.HEAT
+            
+            setpoint_mode = ThermostatSetpointMode.HEATING
+            if current_thermostat_mode == ThermostatMode.COOL:
+                setpoint_mode = ThermostatSetpointMode.COOLING
 
             _LOGGER.debug(
                 f"Setting {current_thermostat_mode} setpoint to {temp} (node_id: {node_id})"
             )
             await self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                node_id=node_id, mode=current_thermostat_mode, setpoint=temp
+                node_id=node_id, mode=setpoint_mode, setpoint=temp
             )
 
     def _qolsys_to_hass_fan_mode(self, qolsys_fan_mode: ThermostatFanMode):
