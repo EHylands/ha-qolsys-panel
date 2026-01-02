@@ -291,7 +291,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
         # Handle single slider mode (HEAT or COOL mode)
         if value := kwargs.get(ATTR_TEMPERATURE):
             temp = int(value)
-            current_thermostat_mode = self.hvac_mode
+            current_thermostat_mode =  self._hass_to_qolsys_thermostat_mode(self.hvac_mode)
             if current_thermostat_mode is None:
                 current_thermostat_mode = ThermostatMode.HEAT
 
