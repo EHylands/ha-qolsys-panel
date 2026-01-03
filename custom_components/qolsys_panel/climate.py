@@ -8,7 +8,11 @@ from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.zwave_thermostat import QolsysThermostat
-from qolsys_controller.enum_zwave import ThermostatFanMode, ThermostatMode, ThermostatSetpointMode
+from qolsys_controller.enum_zwave import (
+    ThermostatFanMode,
+    ThermostatMode,
+    ThermostatSetpointMode,
+)
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
@@ -95,7 +99,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
     @property
     def current_temperature(self) -> float:
         return float(self._node.thermostat_current_temp)
-    
+
     @property
     def current_humidity(self) -> float | None:
         return self._node.thermostat_current_humidity
@@ -293,10 +297,10 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
         # Handle single slider mode (HEAT or COOL mode)
         if value := kwargs.get(ATTR_TEMPERATURE):
             temp = int(value)
-            current_thermostat_mode =  self._hass_to_qolsys_thermostat_mode(self.hvac_mode)
-            if current_thermostat_mode is None:
-                current_thermostat_mode = ThermostatMode.HEAT
-            
+            current_thermostat_mode = self._hass_to_qolsys_thermostat_mode(
+                self.hvac_mode
+            )
+
             setpoint_mode = ThermostatSetpointMode.HEATING
             if current_thermostat_mode == ThermostatMode.COOL:
                 setpoint_mode = ThermostatSetpointMode.COOLING
