@@ -302,7 +302,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
                 setpoint_mode = ThermostatSetpointMode.COOLING
 
             _LOGGER.debug(
-                f"Setting {current_thermostat_mode} setpoint to {temp} (node_id: {node_id})"
+                f"Setting {setpoint_mode.name} setpoint to {temp} (node_id: {node_id})"
             )
             await self.QolsysPanel.command_zwave_thermostat_setpoint_set(
                 node_id=node_id, mode=setpoint_mode, setpoint=temp

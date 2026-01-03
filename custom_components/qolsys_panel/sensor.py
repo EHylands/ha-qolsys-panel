@@ -269,7 +269,7 @@ class ZwaveDevice_MeterValue(QolsysZwaveEntity, SensorEntity):
             case ZWaveElectricMeterScale.WATTS:
                 return SensorStateClass.MEASUREMENT
             case ZWaveElectricMeterScale.KWH:
-                return SensorStateClass.TOTAL
+                return SensorStateClass.TOTAL_INCREASING
             case ZWaveElectricMeterScale.POWER_FACTOR:
                 return SensorStateClass.MEASUREMENT
             case ZWaveElectricMeterScale.KVAR:
