@@ -69,12 +69,12 @@ class AdcGarageDoor(QolsysAdcEntity, CoverEntity):
         self.device_class = CoverDeviceClass.GARAGE
 
     async def async_open_cover(self, **kwargs):
-        """Open the cover."""
-        raise HomeAssistantError("Not Implemented")
+        """Open cover."""
+        self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 1)
 
     async def async_close_cover(self, **kwargs):
         """Close cover."""
-        raise HomeAssistantError("Not Implemented")
+        self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 0)
 
     @property
     def is_closed(self) -> bool | None:
