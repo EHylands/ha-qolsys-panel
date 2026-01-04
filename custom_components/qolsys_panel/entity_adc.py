@@ -28,8 +28,8 @@ class QolsysAdcEntity(QolsysPanelEntity):
         self._device = QolsysPanel.state.adc_device(self._device_id)
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._adc_unique_id)},
-            name=f"ADC{self._device_id} - {self._device.name}",
-            model="ADC Device",
+            name=f"Virtual{self._device_id} - {self._device.name}",
+            model="Virtual Device",
             manufacturer="Johnson Controls",
             via_device=(DOMAIN, unique_id),
         )
