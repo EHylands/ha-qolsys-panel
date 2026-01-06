@@ -103,7 +103,7 @@ async def async_setup_entry(
                             config_entry.unique_id,
                         )
                     )
-        # Z-Wace Multilevel Sensor
+        # Z-Wave Multilevel Sensor
         if device.is_service_multilevelsensor_enabled():
             for sensor_endpoint in device.multilevelsensor_endpoints:
                 for sensor in sensor_endpoint.sensors:
@@ -118,6 +118,18 @@ async def async_setup_entry(
                     )
 
     async_add_entities(entities)
+
+    # Add new Z-Wave Device Multilevel Sensor - Dynamic1
+    async def _zwave_multilevel_sensor_add(
+        node_id: str, endpoint: str, unit: ZWaveMultilevelSensorScale
+    ):
+        new_sensor = ZwaveDevice_MultilevelSensorValue(QolsysPanel,node_id,endpoint,unit,config_entry.unique_id)
+        entities.append(new_sensor)
+        async_add_entities([new_sensor])
+
+    QolsysPanel.state.state_observer.subscribe(
+        "EVENT_ZWAVE_MULTILEVELSENSOR_ADD", _zwave_multilevel_sensor_add
+    )
 
 
 class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
