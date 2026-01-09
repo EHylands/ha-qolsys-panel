@@ -219,5 +219,5 @@ The integration will be cleanly removed from your system.
 | **Z-Wave Garage Doors**|                                      | 🛠️     |
 | **Z-Wave Outlets**     |                                      | 🛠️     |
 | **Alarm.com Devices**  |                                      |        |
-| **Garage Door**.       | Read Only                            |        |
+| **Garage Door**.       | Read Only                            | 🛠️     |
 
