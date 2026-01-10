@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from homeassistant.exceptions import HomeAssistantError
 
 from homeassistant.components.cover import (
     CoverEntity,

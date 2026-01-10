@@ -2,25 +2,38 @@
 
 from __future__ import annotations
 
+import time
+
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import PartitionAlarmType, ZoneSensorType, ZoneStatus
+from qolsys_controller.enum import (
+    PartitionAlarmType,
+    ZoneSensorType,
+    ZoneStatus,
+    QolsysEvent,
+)
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
+from homeassistant.helpers.event import async_call_later
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
 from .entity import (
+    QolsysPanelEntity,
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
     QolsysZoneEntity,
     QolsysZwaveEntity,
 )
+from custom_components import qolsys_panel
+
+PRESS_RESET_SECONDS = 0.5
+DEBOUNCE_SECONDS = 0.3
 
 PANEL_SENSOR = [
     BinarySensorEntityDescription(
@@ -95,6 +108,13 @@ async def async_setup_entry(
     entities: list[BinarySensorEntity] = []
     QolsysPanel = config_entry.runtime_data
 
+    # Add Doorbell Binary Sensor
+    entities.append(QolsysDoorbellSensor(hass, QolsysPanel, config_entry.unique_id))
+
+    # Add Chime Binary Sensor
+    entities.append(QolsysChimeSensor(hass, qolsys_panel, config_entry.unique_id))
+
+    # Add Zones Binary Sensor (status)
     for zone in QolsysPanel.state.zones:
         entities.append(ZonesSensor(QolsysPanel, zone.zone_id, config_entry.unique_id))
         entities.append(
@@ -481,3 +501,105 @@ class ZwaveDevice_Status(QolsysZwaveEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return this z-wave device status."""
         return self._node.node_status != "Normal"
+
+
+class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
+    """Binary sensor for a Qolsys doorbell."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Doorbell"
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_icon = "mdi:doorbell"
+
+    def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
+        super.init(QolsysPanel, unique_id)
+        self.hass = hass
+        self._attr_is_on = False
+        self._last_press = 0.0
+        self._cancel_reset = None
+
+        # Subscribe to Qolsys doorbell events
+        QolsysPanel.state.state_observer.subscribe(
+            QolsysEvent.EVENT_PANEL_DOORBELL, self._handle_doorbell_event
+        )
+
+    def _handle_doorbell_event(self, event_dict):
+        """Called when Qolsys doorbell is pressed."""
+        now = time.monotonic()
+
+        # Debounce: ignore rapid presses
+        if now - self._last_press < DEBOUNCE_SECONDS:
+            return
+        self._last_press = now
+
+        # Valid press: update sensor state
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+        # Cancel previous reset if exists
+        if self._cancel_reset:
+            self._cancel_reset()
+
+        # Schedule auto-reset to OFF
+        self._cancel_reset = async_call_later(
+            self.hass,
+            PRESS_RESET_SECONDS,
+            self._async_reset,
+        )
+
+    async def _async_reset(self, _):
+        """Reset the sensor to OFF after pulse."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        self._cancel_reset = None
+
+
+class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
+    """Binary sensor for a Qolsys chime."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Chime"
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_icon = "mdi:bell-ring"
+
+    def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
+        super.init(QolsysPanel, unique_id)
+        self.hass = hass
+        self._attr_is_on = False
+        self._last_press = 0.0
+        self._cancel_reset = None
+
+        # Subscribe to Qolsys doorbell events
+        QolsysPanel.state.state_observer.subscribe(
+            QolsysEvent.EVENT_PANEL_CHIME, self._handle_chime_event
+        )
+
+    def _handle_chime_event(self, event_dict):
+        """Called when Qolsys chime is called."""
+        now = time.monotonic()
+
+        # Debounce: ignore rapid presses
+        if now - self._last_press < DEBOUNCE_SECONDS:
+            return
+        self._last_press = now
+
+        # Valid press: update sensor state
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+        # Cancel previous reset if exists
+        if self._cancel_reset:
+            self._cancel_reset()
+
+        # Schedule auto-reset to OFF
+        self._cancel_reset = async_call_later(
+            self.hass,
+            PRESS_RESET_SECONDS,
+            self._async_reset,
+        )
+
+    async def _async_reset(self, _):
+        """Reset the sensor to OFF after pulse."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        self._cancel_reset = None

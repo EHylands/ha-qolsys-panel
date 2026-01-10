@@ -13,6 +13,8 @@ from qolsys_controller.enum_zwave import (
     ZWaveMultilevelSensorScale,
     ZWaveUnknownMeterScale,
 )
+from qolsys_controller.enum import QolsysEvent
+
 from qolsys_controller.zwave_service_meter import (
     QolsysZwaveServiceMeter,
     QolsysZwaveMeterSensor,
@@ -118,6 +120,29 @@ async def async_setup_entry(
                     )
 
     async_add_entities(entities)
+
+    # Add new Z-Wave Device Multilevel Sensor - Dynamic
+    async def _zwave_multilevel_sensor_add(**kwargs) -> None:
+        node_id = kwargs["node_id"]
+        endpoint = kwargs["endpoint"]
+        unit = kwargs["unit"]
+
+        _LOGGER.debug(
+            "EVENT_ZWAVE_MULTILEVELSENSOR_ADD - node_id:%s, endpoint:%s, unit:%s",
+            node_id,
+            endpoint,
+            unit,
+        )
+
+        new_sensor = ZwaveDevice_MultilevelSensorValue(
+            QolsysPanel, node_id, endpoint, unit, config_entry.unique_id
+        )
+        async_add_entities([new_sensor])
+
+    _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD)
+    QolsysPanel.state.state_observer.subscribe(
+        QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD, _zwave_multilevel_sensor_add
+    )
 
 
 class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
