@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from enum import unique
 import time
 
 from qolsys_controller import qolsys_controller
@@ -31,7 +30,6 @@ from .entity import (
     QolsysZoneEntity,
     QolsysZwaveEntity,
 )
-from custom_components import qolsys_panel
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
