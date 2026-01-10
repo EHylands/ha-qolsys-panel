@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from enum import unique
 import time
 
 from qolsys_controller import qolsys_controller
@@ -511,12 +512,15 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
     _attr_icon = "mdi:doorbell"
 
+
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
         super().__init__(QolsysPanel, unique_id)
         self.hass = hass
         self._attr_is_on = False
         self._last_press = 0.0
         self._cancel_reset = None
+        self._attr_unique_id = f"{unique_id}_panel_doorbell"
+
 
         # Subscribe to Qolsys doorbell events
         QolsysPanel.state.state_observer.subscribe(
@@ -568,6 +572,7 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self._attr_is_on = False
         self._last_press = 0.0
         self._cancel_reset = None
+        self._attr_unique_id = f"{unique_id}_panel_chime"
 
         # Subscribe to Qolsys doorbell events
         QolsysPanel.state.state_observer.subscribe(
