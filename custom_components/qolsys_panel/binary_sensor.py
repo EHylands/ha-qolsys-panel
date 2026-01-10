@@ -512,7 +512,7 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
     _attr_icon = "mdi:doorbell"
 
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
-        super.init(QolsysPanel, unique_id)
+        super().__init__(QolsysPanel, unique_id)
         self.hass = hass
         self._attr_is_on = False
         self._last_press = 0.0
@@ -563,7 +563,7 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
     _attr_icon = "mdi:bell-ring"
 
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
-        super.init(QolsysPanel, unique_id)
+        super().__init__(QolsysPanel, unique_id)
         self.hass = hass
         self._attr_is_on = False
         self._last_press = 0.0
