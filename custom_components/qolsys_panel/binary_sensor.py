@@ -113,7 +113,7 @@ async def async_setup_entry(
     entities.append(QolsysDoorbellSensor(hass, QolsysPanel, config_entry.unique_id))
 
     # Add Chime Binary Sensor
-    entities.append(QolsysChimeSensor(hass, qolsys_panel, config_entry.unique_id))
+    entities.append(QolsysChimeSensor(hass, QolsysPanel, config_entry.unique_id))
 
     # Add Zones Binary Sensor (status)
     for zone in QolsysPanel.state.zones:
