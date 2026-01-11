@@ -286,7 +286,7 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
         self._attr_translation_key = "powerg_battery_voltage"
         self._attr_native_unit_of_measurement = "V"
         self._attr_device_class = SensorDeviceClass.VOLTAGE
-        self._attr_suggested_display_precision = 2
+        self._attr_suggested_display_precision = 3
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
