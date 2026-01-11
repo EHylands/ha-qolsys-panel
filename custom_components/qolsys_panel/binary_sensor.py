@@ -123,7 +123,7 @@ async def async_setup_entry(
             ZoneSensor_Tamper(QolsysPanel, zone.zone_id, config_entry.unique_id)
         )
 
-        if zone.is_battery_enabled():
+        if zone.is_battery_enabled() and not zone.is_powerg_battery_level_enabled():
             entities.append(
                 ZoneSensor_BatteryStatus(
                     QolsysPanel, zone.zone_id, config_entry.unique_id
@@ -510,7 +510,6 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
     _attr_icon = "mdi:doorbell"
 
-
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
         super().__init__(QolsysPanel, unique_id)
         self.hass = hass
@@ -518,7 +517,6 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
         self._last_press = 0.0
         self._cancel_reset = None
         self._attr_unique_id = f"{unique_id}_panel_doorbell"
-
 
         # Subscribe to Qolsys doorbell events
         QolsysPanel.state.state_observer.subscribe(

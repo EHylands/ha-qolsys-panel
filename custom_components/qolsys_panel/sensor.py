@@ -48,7 +48,7 @@ async def async_setup_entry(
     config_entry: QolsysPanelConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up binary sensors."""
+    """Set up sensors."""
     QolsysPanel = config_entry.runtime_data
 
     entities: list[SensorEntity] = []
@@ -77,6 +77,22 @@ async def async_setup_entry(
         if zone.is_powerg_light_enabled():
             entities.append(
                 ZoneSensor_PowerG_Light(
+                    QolsysPanel, zone.zone_id, config_entry.unique_id
+                )
+            )
+
+        # Add PowerG+ Battery Level Sensor if enabled
+        if zone.is_powerg_battery_level_enabled():
+            entities.append(
+                ZoneSensor_BatteryLevel(
+                    QolsysPanel, zone.zone_id, config_entry.unique_id
+                )
+            )
+
+        # Add PowerG+ Battery Voltage if enabled
+        if zone.is_powerg_battery_voltage_enabled():
+            entities.append(
+                ZoneSensor_BatteryVoltage(
                     QolsysPanel, zone.zone_id, config_entry.unique_id
                 )
             )
@@ -233,8 +249,56 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
         return self._zone.powerg_light
 
 
+class ZoneSensor_BatteryLevel(QolsysZoneEntity, SensorEntity):
+    """A sensor entity for a zone battery level value."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+    ) -> None:
+        """Set up a sensor entity for a zone device battery level value."""
+        super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_unique_id = f"{self._zone_unique_id}_powerg_battery_level"
+        self._attr_translation_key = "powerg_battery_level"
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> int | None:
+        """Return zone device battery level value."""
+        return self._zone.powerg_battery_level
+
+
+class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
+    """A sensor entity for a zone battery voltage value."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+    ) -> None:
+        """Set up a sensor entity for a zone device battery voltage value."""
+        super().__init__(QolsysPanel, zone_id, unique_id)
+        self._attr_unique_id = f"{self._zone_unique_id}_powerg_battery_voltage"
+        self._attr_translation_key = "powerg_battery_voltage"
+        self._attr_native_unit_of_measurement = "V"
+        self._attr_device_class = SensorDeviceClass.VOLTAGE
+        self._attr_suggested_display_precision = 2
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def native_value(self) -> float | None:
+        """Return zone device battery voltage value."""
+        return self._zone.powerg_battery_voltage
+
+
 class ZwaveDevice_BatteryValue(QolsysZwaveEntity, SensorEntity):
     """A sensor entity for a dimmer battery value."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
