@@ -103,6 +103,12 @@
       },
       "powermeter_battery":{
         "name": "Battery"
+      },
+      "powerg_battery_voltage":{
+        "name": "Battery Voltage"
+      },
+      "powerg_battery_level":{
+        "name": "Battery Level"
       }
     },
     "binary_sensor": {
