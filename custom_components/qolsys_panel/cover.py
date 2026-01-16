@@ -12,9 +12,13 @@ from homeassistant.components.cover import (
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.adc_service_garagedoor import QolsysAdcGarageDoorService
+from qolsys_controller.zwave_garagedoor import QolsysGarageDoor
+from qolsys_controller.enum_zwave import ZwaveCommandClass
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+from custom_components.qolsys_panel.entity import QolsysZwaveEntity
 
 from .types import QolsysPanelConfigEntry
 from .entity_adc import QolsysAdcEntity
@@ -44,6 +48,12 @@ async def async_setup_entry(
                         config_entry.unique_id,
                     )
                 )
+    for garage_door in QolsysPanel.state.zwave_garage_doors:
+        entities.append(
+            ZwaveDevice_GarageDoor(
+                QolsysPanel, garage_door.node_id, config_entry.unique_id
+            )
+        )
 
     async_add_entities(entities)
 
@@ -83,4 +93,38 @@ class AdcGarageDoor(QolsysAdcEntity, CoverEntity):
         if isinstance(service, QolsysAdcGarageDoorService):
             return service.is_open()
 
+        return None
+
+
+class ZwaveDevice_GarageDoor(QolsysZwaveEntity, CoverEntity):
+    """Z-Wave Garage Door Cover entity"""
+
+    _attr_name = None
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        node_id: str,
+        unique_id: str,
+    ) -> None:
+        """Initialise a Z-Wace GarageDoor."""
+        super().__init__(QolsysPanel, node_id, unique_id)
+        self._attr_unique_id = f"{self._zwave_unique_id}_garagedoor"
+        self.device_class = CoverDeviceClass.GARAGE
+
+        # if ZwaveCommandClass.BarrierOperator:
+        self._attr_supported_features |= (
+            CoverEntityFeature.CLOSE | CoverEntityFeature.OPEN
+        )
+
+    async def async_open_cover(self, **kwargs):
+        """Open cover."""
+        _LOGGER.debug("Open - Available Commands: %s", self._node.command_class_list)
+
+    async def async_close_cover(self, **kwargs):
+        """Close cover."""
+        _LOGGER.debug("Close - Available Commands: %s", self._node.command_class_list)
+
+    @property
+    def is_closed(self) -> bool | None:
         return None
