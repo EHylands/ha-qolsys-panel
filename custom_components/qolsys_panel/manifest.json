@@ -11,7 +11,7 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/EHylands/ha-qolsys-panel/issues",
   "loggers": ["qolsys_panel", "qolsys-controller"],
-  "requirements": ["qolsys-controller==0.3.1"],
-  "version": "0.3.0-beta.1"
+  "requirements": ["qolsys-controller==0.3.2"],
+  "version": "0.3.0-beta.2"
 }
 
