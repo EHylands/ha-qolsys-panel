@@ -16,6 +16,8 @@ from qolsys_controller.enum_zwave import ZwaveCommandClass
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.exceptions import HomeAssistantError
+
 
 from custom_components.qolsys_panel.entity import QolsysZwaveEntity
 
@@ -66,15 +68,19 @@ class ZwaveDevice_Valve(QolsysZwaveEntity, ValveEntity):
             )
 
     async def async_open_valve(self) -> None:
-        """Open the valve."""
         _LOGGER.debug("Open - Available Commands: %s", self._node.command_class_list)
-        await self.QolsysPanel.command_zwave_switch_binary_set(self._node_id, True)
+        if not isinstance(self._node, QolsysWaterValve):
+            raise HomeAssistantError("Z-Wave device is not a Water Valve")
+        await self._node.open_valve()
 
     async def async_close_valve(self) -> None:
-        """Close valve."""
         _LOGGER.debug("Close - Available Commands: %s", self._node.command_class_list)
-        await self.QolsysPanel.command_zwave_switch_binary_set(self._node_id, False)
+        if not isinstance(self._node, QolsysWaterValve):
+            raise HomeAssistantError("Z-Wave device is not a Water Valve")
+        await self._node.close_valve()
 
     @property
     def is_closed(self) -> bool | None:
-        return None
+        if not isinstance(self._node, QolsysWaterValve):
+            raise HomeAssistantError("Z-Wave device is not a Water Valve")
+        return self._node.is_closed()

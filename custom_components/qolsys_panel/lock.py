@@ -13,6 +13,7 @@ from qolsys_controller.zwave_lock import QolsysLock
 from homeassistant.components.lock import LockEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.exceptions import HomeAssistantError
 
 from .entity import QolsysZwaveEntity
 from .types import QolsysPanelConfigEntry
@@ -60,7 +61,9 @@ class ZWaveLock(QolsysZwaveEntity, LockEntity):
 
     @property
     def is_locked(self) -> bool:
-        return self._node.lock_status == "Locked"
+        if not isinstance(self._node, QolsysLock):
+            raise HomeAssistantError("Z-Wave device is not a Lock")
+        return self._node.is_locked()
 
     @property
     def is_locking(self) -> bool:
@@ -71,21 +74,21 @@ class ZWaveLock(QolsysZwaveEntity, LockEntity):
         return self._value_is_unlocking
 
     async def async_lock(self, **kwargs: Any):
-        locked = True
+        if not isinstance(self._node, QolsysLock):
+            raise HomeAssistantError("Z-Wave device is not a Lock")
+
         self._value_is_locking = True
         self._value_is_unlocking = False
         self.async_schedule_update_ha_state()
-        await self.QolsysPanel.command_zwave_doorlock_set(
-            node_id=self._node_id, locked=locked
-        )
+        await self._node.lock()
         self._value_is_locking = False
 
     async def async_unlock(self, **kwargs: Any):
-        locked = False
+        if not isinstance(self._node, QolsysLock):
+            raise HomeAssistantError("Z-Wave device is not a Lock")
+
         self._value_is_unlocking = True
         self._value_is_locking = False
         self.async_schedule_update_ha_state()
-        await self.QolsysPanel.command_zwave_doorlock_set(
-            node_id=self._node_id, locked=locked
-        )
+        await self._node.unlock()
         self._value_is_unlocking = False

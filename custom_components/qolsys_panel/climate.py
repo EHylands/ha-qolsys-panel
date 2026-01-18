@@ -238,7 +238,9 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
 
         try:
             await self.QolsysPanel.command_zwave_thermostat_mode_set(
-                node_id=self._node.thermostat_node_id, mode=qolsys_thermostat_mode
+                node_id=self._node.thermostat_node_id,
+                endpoint="0",
+                mode=qolsys_thermostat_mode,
             )
             _LOGGER.debug(f"HVAC mode set to {hvac_mode} successfully")
         except Exception as e:
@@ -247,14 +249,16 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
     async def async_turn_off(self):
         """Turn the entity off."""
         await self.QolsysPanel.command_zwave_thermostat_mode_set(
-            node_id=self._node.thermostat_node_id, mode=ThermostatMode.OFF
+            node_id=self._node.thermostat_node_id, endpoint="0", mode=ThermostatMode.OFF
         )
 
     async def async_set_fan_mode(self, fan_mode):
         """Set new target fan mode."""
         qolsys_fan_mode = self._hass_to_qolsys_fan_mode(fan_mode)
         await self.QolsysPanel.command_zwave_thermostat_fan_mode_set(
-            node_id=self._node.thermostat_node_id, fan_mode=qolsys_fan_mode
+            node_id=self._node.thermostat_node_id,
+            endpoint="0",
+            fan_mode=qolsys_fan_mode,
         )
 
     def _handle_setpoint_error(self, task: asyncio.Task, mode_name: str):
@@ -277,7 +281,10 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
             # Add error callback to log failures
             task = asyncio.create_task(
                 self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id, mode=ThermostatSetpointMode.COOLING, setpoint=temp
+                    node_id=node_id,
+                    endpoint="0",
+                    mode=ThermostatSetpointMode.COOLING,
+                    setpoint=temp,
                 )
             )
             task.add_done_callback(lambda t: self._handle_setpoint_error(t, "COOL"))
@@ -289,7 +296,10 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
             # Add error callback to log failures
             task = asyncio.create_task(
                 self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id, mode=ThermostatSetpointMode.HEATING, setpoint=temp
+                    node_id=node_id,
+                    endpoint="0",
+                    mode=ThermostatSetpointMode.HEATING,
+                    setpoint=temp,
                 )
             )
             task.add_done_callback(lambda t: self._handle_setpoint_error(t, "HEAT"))
@@ -309,7 +319,7 @@ class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
                 f"Setting {setpoint_mode.name} setpoint to {temp} (node_id: {node_id})"
             )
             await self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                node_id=node_id, mode=setpoint_mode, setpoint=temp
+                node_id=node_id, endpoint="0", mode=setpoint_mode, setpoint=temp
             )
 
     def _qolsys_to_hass_fan_mode(self, qolsys_fan_mode: ThermostatFanMode):

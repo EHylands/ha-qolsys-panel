@@ -89,11 +89,11 @@ class ZwaveDimmer(QolsysZwaveEntity, LightEntity):
             ZwaveDeviceClass.RemoteSwitchBinary,
         ):
             await self.QolsysPanel.command_zwave_switch_binary_set(
-                self._node.node_id, True
+                self._node.node_id, "0", True
             )
         else:
             await self.QolsysPanel.command_zwave_switch_multilevel_set(
-                self._node.node_id, brightness
+                self._node.node_id, "0", brightness
             )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
@@ -103,11 +103,11 @@ class ZwaveDimmer(QolsysZwaveEntity, LightEntity):
             ZwaveDeviceClass.RemoteSwitchBinary,
         ):
             await self.QolsysPanel.command_zwave_switch_binary_set(
-                self._node.node_id, False
+                self._node.node_id, "0", False
             )
         else:
             await self.QolsysPanel.command_zwave_switch_multilevel_set(
-                self._node.node_id, 0
+                self._node.node_id, "0", 0
             )
 
     @property

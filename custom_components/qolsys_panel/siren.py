@@ -10,7 +10,7 @@ from homeassistant.components.siren import (
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.zwave_extenal_siren import QolsysExternalSiren
-from qolsys_controller.enum_zwave import ZwaveCommandClass
+from homeassistant.exceptions import HomeAssistantError
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -57,17 +57,19 @@ class ZwaveDevice_Siren(QolsysZwaveEntity, SirenEntity):
         self._attr_unique_id = f"{self._zwave_unique_id}_external_siren"
 
     async def async_turn_on(self, **kwargs) -> None:
-        """Turn the device on."""
         _LOGGER.debug("Turn On - Commands: %s", self._node.command_class_list)
-        if ZwaveCommandClass.SwitchBinary in self._node.command_class_list:
-            await self.QolsysPanel.command_zwave_switch_binary_set(self._node_id, True)
+        if not isinstance(self._node, QolsysExternalSiren):
+            raise HomeAssistantError("Z-Wave device is not an External Siren")
+        self._node.turn_on()
 
     async def async_turn_off(self, **kwargs):
-        """Turn the device off."""
         _LOGGER.debug("Turn Off - Commands: %s", self._node.command_class_list)
-        if ZwaveCommandClass.SwitchBinary in self._node.command_class_list:
-            await self.QolsysPanel.command_zwave_switch_binary_set(self._node_id, False)
+        if not isinstance(self._node, QolsysExternalSiren):
+            raise HomeAssistantError("Z-Wave device is not an External Siren")
+        self._node.turn_off()
 
     @property
     def is_on(self) -> bool | None:
-        return None
+        if not isinstance(self._node, QolsysExternalSiren):
+            raise HomeAssistantError("Z-Wave device is not an External Siren")
+        return self._node.is_on()
