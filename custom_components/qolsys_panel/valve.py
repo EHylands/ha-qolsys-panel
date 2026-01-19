@@ -69,18 +69,12 @@ class ZwaveDevice_Valve(QolsysZwaveEntity, ValveEntity):
 
     async def async_open_valve(self) -> None:
         _LOGGER.debug("Open - Available Commands: %s", self._node.command_class_list)
-        if not isinstance(self._node, QolsysWaterValve):
-            raise HomeAssistantError("Z-Wave device is not a Water Valve")
         await self._node.open_valve()
 
     async def async_close_valve(self) -> None:
         _LOGGER.debug("Close - Available Commands: %s", self._node.command_class_list)
-        if not isinstance(self._node, QolsysWaterValve):
-            raise HomeAssistantError("Z-Wave device is not a Water Valve")
         await self._node.close_valve()
 
     @property
     def is_closed(self) -> bool | None:
-        if not isinstance(self._node, QolsysWaterValve):
-            raise HomeAssistantError("Z-Wave device is not a Water Valve")
         return self._node.is_closed()

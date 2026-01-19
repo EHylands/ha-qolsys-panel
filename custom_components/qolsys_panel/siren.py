@@ -58,18 +58,12 @@ class ZwaveDevice_Siren(QolsysZwaveEntity, SirenEntity):
 
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.debug("Turn On - Commands: %s", self._node.command_class_list)
-        if not isinstance(self._node, QolsysExternalSiren):
-            raise HomeAssistantError("Z-Wave device is not an External Siren")
         self._node.turn_on()
 
     async def async_turn_off(self, **kwargs):
         _LOGGER.debug("Turn Off - Commands: %s", self._node.command_class_list)
-        if not isinstance(self._node, QolsysExternalSiren):
-            raise HomeAssistantError("Z-Wave device is not an External Siren")
         self._node.turn_off()
 
     @property
     def is_on(self) -> bool | None:
-        if not isinstance(self._node, QolsysExternalSiren):
-            raise HomeAssistantError("Z-Wave device is not an External Siren")
         return self._node.is_on()

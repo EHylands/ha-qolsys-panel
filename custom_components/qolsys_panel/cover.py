@@ -114,11 +114,9 @@ class ZwaveDevice_GarageDoor(QolsysZwaveEntity, CoverEntity):
         )
 
     async def async_open_cover(self, **kwargs):
-        """Open cover."""
         _LOGGER.debug("Open - Available Commands: %s", self._node.command_class_list)
 
     async def async_close_cover(self, **kwargs):
-        """Close cover."""
         _LOGGER.debug("Close - Available Commands: %s", self._node.command_class_list)
 
     @property
