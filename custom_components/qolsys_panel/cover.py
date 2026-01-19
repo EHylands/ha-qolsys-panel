@@ -76,10 +76,10 @@ class AdcGarageDoor(QolsysAdcEntity, CoverEntity):
         self.device_class = CoverDeviceClass.GARAGE
 
     async def async_open_cover(self, **kwargs):
-        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 0)
+        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 1)
 
     async def async_close_cover(self, **kwargs):
-        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 1)
+        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 0)
 
     @property
     def is_closed(self) -> bool | None:
@@ -87,7 +87,7 @@ class AdcGarageDoor(QolsysAdcEntity, CoverEntity):
             self._service_id
         )
         if isinstance(service, QolsysAdcGarageDoorService):
-            return service.is_open()
+            return service.is_closed()
 
         return None
 
