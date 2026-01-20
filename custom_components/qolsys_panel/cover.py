@@ -12,6 +12,7 @@ from homeassistant.components.cover import (
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.adc_service_garagedoor import QolsysAdcGarageDoorService
+from qolsys_controller.enum_adc import vdFuncState
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -46,6 +47,7 @@ async def async_setup_entry(
                         config_entry.unique_id,
                     )
                 )
+
     for garage_door in QolsysPanel.state.zwave_garage_doors:
         entities.append(
             ZwaveDevice_GarageDoor(
@@ -74,12 +76,34 @@ class AdcGarageDoor(QolsysAdcEntity, CoverEntity):
         self._attr_unique_id = f"{self._adc_unique_id}_garagedoor_{service_id}"
         self._service_id = service_id
         self.device_class = CoverDeviceClass.GARAGE
+        self._value_is_closing = False
+        self._value_is_opening = False
+
+    @property
+    def is_closing(self) -> bool:
+        return self._value_is_closing
+
+    @property
+    def is_openning(self) -> bool:
+        return self._value_is_opening
 
     async def async_open_cover(self, **kwargs):
-        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 1)
+        self._value_is_opening = True
+        self._vaue_is_closing = False
+        self.async_schedule_update_ha_state()
+        await self.QolsysPanel.command_panel_virtual_device_action(
+            self._device_id, self._service_id, vdFuncState.ON
+        )
+        self._value_is_opening = False
 
     async def async_close_cover(self, **kwargs):
-        await self.QolsysPanel.command_panel_virtual_device_action(self._device_id, 0)
+        self._value_is_closing = True
+        self._value_is_opening = False
+        self.async_schedule_update_ha_state()
+        await self.QolsysPanel.command_panel_virtual_device_action(
+            self._device_id, self._service_id, vdFuncState.OFF
+        )
+        self._value_is_closing = False
 
     @property
     def is_closed(self) -> bool | None:
