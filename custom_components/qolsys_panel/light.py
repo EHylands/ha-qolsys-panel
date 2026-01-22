@@ -69,7 +69,8 @@ class AdcLight(QolsysAdcEntity, LightEntity):
     """ADC Light entity"""
 
     _attr_name = None
-    _attr_supported_color_modes = ColorMode.ONOFF
+    _attr_color_mode = ColorMode.ONOFF
+    _attr_supported_color_modes = {ColorMode.ONOFF}
 
     def __init__(
         self,
@@ -91,12 +92,12 @@ class AdcLight(QolsysAdcEntity, LightEntity):
         return None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        self.QolsysPanel.command_panel_virtual_device_action(
+        await self.QolsysPanel.command_panel_virtual_device_action(
             self._device_id, self._service_id, vdFuncState.ON
         )
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        self.QolsysPanel.command_panel_virtual_device_action(
+        await self.QolsysPanel.command_panel_virtual_device_action(
             self._device_id, self._service_id, vdFuncState.OFF
         )
 

@@ -8,12 +8,10 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.zwave_lock import QolsysLock
 
 from homeassistant.components.lock import LockEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.exceptions import HomeAssistantError
 
 from .entity import QolsysZwaveEntity
 from .types import QolsysPanelConfigEntry
