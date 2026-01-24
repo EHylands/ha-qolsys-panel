@@ -11,12 +11,10 @@ from homeassistant.components.valve import (
 )
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.zwave_water_valve import QolsysWaterValve
 from qolsys_controller.enum_zwave import ZwaveCommandClass
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.exceptions import HomeAssistantError
 
 
 from custom_components.qolsys_panel.entity import QolsysZwaveEntity

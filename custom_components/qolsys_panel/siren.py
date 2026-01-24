@@ -9,8 +9,6 @@ from homeassistant.components.siren import (
 )
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.zwave_extenal_siren import QolsysExternalSiren
-from homeassistant.exceptions import HomeAssistantError
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
