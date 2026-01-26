@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.zwave_thermostat import QolsysThermostat
+from qolsys_controller.protocol_zwave.thermostat import QolsysThermostat
 from qolsys_controller.enum_zwave import (
     ThermostatFanMode,
     ThermostatMode,

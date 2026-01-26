@@ -15,11 +15,11 @@ from qolsys_controller.enum_zwave import (
 )
 from qolsys_controller.enum import QolsysEvent
 
-from qolsys_controller.zwave_service_meter import (
+from qolsys_controller.protocol_zwave.service_meter import (
     QolsysZwaveServiceMeter,
     QolsysZwaveMeterSensor,
 )
-from qolsys_controller.zwave_service_multilevelsensor import (
+from qolsys_controller.protocol_zwave.service_multilevelsensor import (
     QolsysZwaveServiceMultilevelSensor,
 )
 

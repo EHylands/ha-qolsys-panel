@@ -11,7 +11,7 @@ from qolsys_controller.enum import (
     ZoneStatus,
     QolsysEvent,
 )
-from qolsys_controller.adc_service_malfunction import QolsysAdcMalfunctionService
+from qolsys_controller.protocol_adc.service_malfunction import QolsysAdcMalfunctionService
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,

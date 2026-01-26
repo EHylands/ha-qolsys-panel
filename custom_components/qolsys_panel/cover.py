@@ -11,7 +11,7 @@ from homeassistant.components.cover import (
 )
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.adc_service_garagedoor import QolsysAdcGarageDoorService
+from qolsys_controller.protocol_adc.service_garagedoor import QolsysAdcGarageDoorService
 from qolsys_controller.enum_adc import vdFuncState
 
 from homeassistant.core import HomeAssistant

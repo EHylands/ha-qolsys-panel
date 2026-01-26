@@ -9,8 +9,8 @@ from typing import Any
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_zwave import ZwaveDeviceClass
 from qolsys_controller.enum_adc import vdFuncState
-from qolsys_controller.zwave_dimmer import QolsysDimmer
-from qolsys_controller.adc_service_light import QolsysAdcLightService
+from qolsys_controller.protocol_zwave.dimmer import QolsysDimmer
+from qolsys_controller.protocol_adc.service_light import QolsysAdcLightService
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.core import HomeAssistant
