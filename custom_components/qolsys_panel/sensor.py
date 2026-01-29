@@ -15,11 +15,11 @@ from qolsys_controller.enum_zwave import (
 )
 from qolsys_controller.enum import QolsysEvent
 
-from qolsys_controller.zwave_service_meter import (
+from qolsys_controller.protocol_zwave.service_meter import (
     QolsysZwaveServiceMeter,
     QolsysZwaveMeterSensor,
 )
-from qolsys_controller.zwave_service_multilevelsensor import (
+from qolsys_controller.protocol_zwave.service_multilevelsensor import (
     QolsysZwaveServiceMultilevelSensor,
 )
 
@@ -333,6 +333,7 @@ class ZwaveDevice_MeterValue(QolsysZwaveEntity, SensorEntity):
         """Set up a sensor entity for a z-wave meter value."""
         super().__init__(QolsysPanel, node_id, unique_id)
         self._meter_type: MeterType = meter_type
+        self._attr_suggested_display_precision = 2
         self._endpoint: str = endpoint
         self._scale: IntEnum = scale
         self._attr_unique_id = (

@@ -11,6 +11,7 @@ from qolsys_controller.enum import (
     ZoneStatus,
     QolsysEvent,
 )
+from qolsys_controller.protocol_adc.service_malfunction import QolsysAdcMalfunctionService
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -30,6 +31,7 @@ from .entity import (
     QolsysZoneEntity,
     QolsysZwaveEntity,
 )
+from .entity_adc import QolsysAdcEntity
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
@@ -138,6 +140,7 @@ async def async_setup_entry(
     for sensor in PANEL_SENSOR:
         entities.append(PanelSensor(QolsysPanel, config_entry.unique_id, sensor))
 
+    # Add Partition Binary Sensors
     for partition in QolsysPanel.state.partitions:
         entities.append(
             PartitionAlarmSensor(
@@ -166,6 +169,19 @@ async def async_setup_entry(
         entities.append(
             ZwaveDevice_Status(QolsysPanel, device.node_id, config_entry.unique_id)
         )
+
+    # Add ADC Binary Sensors
+    for adc_device in QolsysPanel.state.adc_devices:
+        for service in adc_device.services:
+            if isinstance(service, QolsysAdcMalfunctionService):
+                entities.append(
+                    AdcSensor_Malfunction(
+                        QolsysPanel,
+                        adc_device.device_id,
+                        service.id,
+                        config_entry.unique_id,
+                    )
+                )
 
     async_add_entities(entities)
 
@@ -604,3 +620,26 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
         self._cancel_reset = None
+
+
+class AdcSensor_Malfunction(QolsysAdcEntity, BinarySensorEntity):
+    _attr_name = None
+    _attr_name = "Malfunction"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        device_id: str,
+        service_id: int,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, device_id, unique_id)
+        self._attr_unique_id = f"{self._adc_unique_id}_malfunction_{service_id}"
+        self._service_id = service_id
+
+    @property
+    def is_on(self) -> bool:
+        light_service = self._device.get_adc_service(self._service_id)
+        return light_service.is_malfunctionning()
