@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import logging
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum import (
@@ -14,6 +15,7 @@ from qolsys_controller.enum import (
 from qolsys_controller.protocol_adc.service_malfunction import (
     QolsysAdcMalfunctionService,
 )
+from qolsys_controller.automation.protocol_status import StatusProtocol
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -27,6 +29,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
 from .entity import (
+    QolsysAutomationDeviceEntity,
     QolsysPanelEntity,
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
@@ -34,6 +37,9 @@ from .entity import (
     QolsysZwaveEntity,
 )
 from .entity_adc import QolsysAdcEntity
+
+_LOGGER = logging.getLogger(__name__)
+
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
@@ -184,6 +190,17 @@ async def async_setup_entry(
                         config_entry.unique_id,
                     )
                 )
+    # Add Automation Device Status Sensors
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(StatusProtocol):
+            entities.append(
+                AutomationDevice_Status(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
 
     async_add_entities(entities)
 
@@ -645,3 +662,35 @@ class AdcSensor_Malfunction(QolsysAdcEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         light_service = self._device.get_adc_service(self._service_id)
         return light_service.is_malfunctionning()
+
+
+class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
+    """A binary sensor entity for an Automation Device service status."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        """Set up a binary sensor entity for a automation device service status."""
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_status_{endpoint}"
+        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
+        self._attr_name = f"Status{virtual_node_id} - Service {endpoint}"
+
+        self._service = self._autdev.service_get(StatusProtocol, endpoint)
+        if not self._service:
+            _LOGGER.error(
+                "Invalid AutDev status service for virtual_node_id:%s endpoint:%d",
+                virtual_node_id,
+                endpoint,
+            )
+
+    @property
+    def is_on(self) -> bool:
+        """Return this automation device service status."""
+        return self._service.malfunction

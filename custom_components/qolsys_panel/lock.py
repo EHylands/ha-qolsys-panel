@@ -8,13 +8,16 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.protocol_lock import LockProtocol
+from qolsys_controller.automation.service_lock import LockService
 
-from homeassistant.components.lock import LockEntity
+from homeassistant.components.lock import LockEntity, LockEntityFeature
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .entity import QolsysZwaveEntity
+from .entity import QolsysAutomationDeviceEntity, QolsysZwaveEntity
 from .types import QolsysPanelConfigEntry
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -28,8 +31,21 @@ async def async_setup_entry(
     QolsysPanel = config_entry.runtime_data
     entities: list[QolsysZwaveEntity] = []
 
+    # Append Z-Wave Locks
     for lock in QolsysPanel.state.zwave_locks:
         entities.append(ZWaveLock(QolsysPanel, lock.node_id, config_entry.unique_id))
+
+    # Append Automation Device Locks
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(LockProtocol):
+            entities.append(
+                AutomationDeviceLock(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
 
     async_add_entities(entities)
 
@@ -74,3 +90,68 @@ class ZWaveLock(QolsysZwaveEntity, LockEntity):
         self.async_schedule_update_ha_state()
         await self._node.unlock()
         self._value_is_unlocking = False
+
+
+class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
+    """An Automation Device Lock entity for a qolsys panel."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        """Initialise a Qolsys Automation Device Lock entity."""
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_lock"
+
+        self._lock = self._autdev.service_get(LockProtocol, endpoint)
+
+        if not isinstance(self._lock, LockService):
+            _LOGGER.error(
+                "Invalid LockService for AutDev virtual_node_id:%s endpoint:%d",
+                virtual_node_id,
+                endpoint,
+            )
+
+        self._attr_name = f"Lock{endpoint} - {self._lock.device_name}"
+
+        if self._lock.is_open_supported():
+            self._attr_supported_features |= LockEntityFeature.OPEN
+
+    @property
+    def is_locked(self) -> bool:
+        return self._lock.locked
+
+    @property
+    def is_locking(self) -> bool:
+        return self._lock.locking
+
+    @property
+    def is_unlocking(self) -> bool:
+        return self._lock.unlocking
+
+    @property
+    def is_jammed(self) -> bool:
+        return self._lock.jammed
+
+    @property
+    def is_opening(self) -> bool:
+        return self._lock.openning
+
+    @property
+    def is_open(self) -> bool:
+        return self._lock.openned
+
+    async def async_lock(self, **kwargs: Any):
+        await self._lock.lock()
+
+    async def async_unlock(self, **kwargs: Any):
+        await self._lock.unlock()
+
+    async def async_open(self, **kwargs: Any):
+        await self._lock.open()

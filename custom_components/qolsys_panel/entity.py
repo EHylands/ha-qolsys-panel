@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.protocol_status import StatusProtocol
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -143,6 +144,50 @@ class QolsysZwaveEntity(QolsysPanelEntity):
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self._node.unregister(self.schedule_update_ha_state)
+
+
+class QolsysAutomationDeviceEntity(QolsysPanelEntity):
+    """Qolsys Automation Device Entity."""
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, virtual_node_id: str, unique_id: str
+    ) -> None:
+        """Set up Qolsys Automation Device Entity."""
+        super().__init__(QolsysPanel, unique_id)
+        self._virtual_node_id = virtual_node_id
+        self._autdev_unique_id = f"{unique_id}_autdev_{virtual_node_id}"
+        self._autdev = QolsysPanel.state.automation_device(virtual_node_id)
+
+        if self._autdev is None:
+            _LOGGER.error("Invalid AutDev virtual_node_id:%s", virtual_node_id)
+
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._zwave_unique_id)},
+            name=f"AutDev{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
+            model="Qolsys Automation Device [%s]" % self._autdev.protocol,
+            manufacturer="Johnson Controls",
+            via_device=(DOMAIN, unique_id),
+        )
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        status_services = self._autdev.service_get_protocol(StatusProtocol)
+        for service in status_services:
+            if service.malfunction:
+                return False
+
+        return self.QolsysPanel.connected
+
+    async def async_added_to_hass(self) -> None:
+        """Observe changes."""
+        await super().async_added_to_hass()
+        self._autdev.register(self.schedule_update_ha_state)
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing changes."""
+        await super().async_will_remove_from_hass()
+        self._autdev.unregister(self.schedule_update_ha_state)
 
 
 class QolsysPanelSensorEntity(QolsysPanelEntity):
