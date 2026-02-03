@@ -105,7 +105,9 @@ async def async_get_config_entry_diagnostics(
                 "virtual_adc_devices": [
                     device.to_dict_adc() for device in QolsysPanel.state.adc_devices
                 ],
-                "automation_content_provider": [QolsysPanel.panel.db.get_automations()],
+                "automation_content_provider": [
+                    QolsysPanel.panel.db.get_automation_devices()
+                ],
                 "powerg_devices": "",
             },
             TO_REDACT,
