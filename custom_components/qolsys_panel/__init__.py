@@ -6,6 +6,7 @@ import logging
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysSslError, QolsysMqttError
+from qolsys_controller.automation.protocol_lock import LockProtocol
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
@@ -14,6 +15,9 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
 from homeassistant.helpers import config_validation as cv
+
+from qolsys_controller.automation.device import QolsysAutomationDevice
+
 
 
 from .const import (

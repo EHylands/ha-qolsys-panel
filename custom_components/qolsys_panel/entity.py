@@ -162,9 +162,9 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
             _LOGGER.error("Invalid AutDev virtual_node_id:%s", virtual_node_id)
 
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._zwave_unique_id)},
-            name=f"AutDev{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
-            model="Qolsys Automation Device [%s]" % self._autdev.protocol,
+            identifiers={(DOMAIN, self._autdev_unique_id)},
+            name=f"Device{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
+            model="Automation Device [%s]" % self._autdev.protocol,
             manufacturer="Johnson Controls",
             via_device=(DOMAIN, unique_id),
         )

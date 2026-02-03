@@ -118,7 +118,7 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
                 endpoint,
             )
 
-        self._attr_name = f"Lock{endpoint} - {self._lock.device_name}"
+        self._attr_name = f"Lock{endpoint} - {self._lock.automation_device.device_name}"
 
         if self._lock.is_open_supported():
             self._attr_supported_features |= LockEntityFeature.OPEN
