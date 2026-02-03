@@ -19,7 +19,6 @@ from homeassistant.helpers import config_validation as cv
 from qolsys_controller.automation.device import QolsysAutomationDevice
 
 
-
 from .const import (
     CONF_RANDOM_MAC,
     DOMAIN,

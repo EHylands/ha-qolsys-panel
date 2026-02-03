@@ -125,15 +125,15 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
 
     @property
     def is_locked(self) -> bool:
-        return self._lock.locked
+        return self._lock.is_locked
 
     @property
     def is_locking(self) -> bool:
-        return self._lock.locking
+        return self._lock.is_locking
 
     @property
     def is_unlocking(self) -> bool:
-        return self._lock.unlocking
+        return self._lock.is_unlocking
 
     @property
     def is_jammed(self) -> bool:
