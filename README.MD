@@ -209,15 +209,18 @@ The integration will be cleanly removed from your system.
 |                        | Latest dBm                           | ✅     |
 | **Z-Wave Devices**     | Battery Level                        | ✅     |
 |                        | Node Status                          | ✅     |
-|                        | Control Generic Devices              | TBD    |
-| **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
-| **Z-Wave Door Locks**  | Lock, Unlock                         | ✅     |
-| **Z-Wave Powermeters** | Read device status                   | 🛠️     |
-| **Z-Wave Thermometers**| Read device status                   | 🛠️     |
-| **Z-Wave Thermostats** | Read device status                   | ✅     |
-|                        | Write device status                  | ✅     |
+|                        | Control Generic Devices              | ✅     |
+| **Z-Wave Dimmers**     |                                      | ✅     |
+| **Z-Wave Door Locks**  |                                      | ✅     |
+| **Z-Wave Meters**      |                                      | ✅     |
+| **Z-Wave Sensors**.    |                                      | ✅     |
 | **Z-Wave Garage Doors**|                                      | 🛠️     |
 | **Z-Wave Outlets**     |                                      | 🛠️     |
 | **Alarm.com Devices**  |                                      |        |
-| **Garage Door**.       | Read Only                            | 🛠️     |
+| **Garage Door**        |                                      | ✅     |
+| **Lights**.            |                                      | ✅     |
+| **PowerG Devices**  |                                         |        |
+| **Door Locks.**        |                                      | 🛠️     |
+| **Lights**.            |                                      | 🛠️     |
+
 

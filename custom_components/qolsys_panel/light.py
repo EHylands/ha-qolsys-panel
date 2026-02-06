@@ -11,6 +11,7 @@ from qolsys_controller.enum_zwave import ZwaveDeviceClass
 from qolsys_controller.enum_adc import vdFuncState
 from qolsys_controller.protocol_zwave.dimmer import QolsysDimmer
 from qolsys_controller.protocol_adc.service_light import QolsysAdcLightService
+from qolsys_controller.automation.service_light import LightService
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.core import HomeAssistant
@@ -18,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 
 from .types import QolsysPanelConfigEntry
-from .entity import QolsysZwaveEntity
+from .entity import QolsysAutomationDeviceEntity, QolsysZwaveEntity
 from .entity_adc import QolsysAdcEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,6 +52,18 @@ async def async_setup_entry(
                         config_entry.unique_id,
                     )
                 )
+
+    # Add Automation Device Lights
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(LightService):
+            entities.append(
+                AutomationDeviceLight(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
 
     async_add_entities(entities)
 
@@ -173,3 +186,52 @@ class ZwaveDimmer(QolsysZwaveEntity, LightEntity):
     def brightness(self) -> int | None:
         """Return the brightness of the light."""
         return to_hass_level(int(self._node.dimmer_level))
+
+
+class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
+    """Automation Device light entity."""
+
+    _attr_name = None
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_light{endpoint}"
+        self._service = self._autdev.service_get(LightService, endpoint)
+
+        self._attr_name = (
+            f"Light{endpoint} - {self._lock.automation_device.device_name}"
+        )
+
+        if self._service.is_level_supported():
+            self._attr_color_mode = ColorMode.BRIGHTNESS
+            self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+        else:
+            self._attr_color_mode = ColorMode.ONOFF
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        _LOGGER.debug("Turn_On: %s", kwargs)
+
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = to_qolsys_level(kwargs[ATTR_BRIGHTNESS])
+            await self._service.set_level(brightness)
+            return
+
+        await self._service.turn_on()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        self._service.turn_off()
+
+    @property
+    def is_on(self) -> bool:
+        return self._service.is_on
+
+    @property
+    def brightness(self) -> int | None:
+        return to_hass_level(self._service.level)

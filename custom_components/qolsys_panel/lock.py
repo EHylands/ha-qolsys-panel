@@ -107,7 +107,7 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
     ) -> None:
         """Initialise a Qolsys Automation Device Lock entity."""
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
-        self._attr_unique_id = f"{self._autdev_unique_id}_lock"
+        self._attr_unique_id = f"{self._autdev_unique_id}_lock{endpoint}"
 
         self._lock = self._autdev.service_get(LockProtocol, endpoint)
 

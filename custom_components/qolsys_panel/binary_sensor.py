@@ -677,21 +677,18 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
         endpoint: int,
         unique_id: str,
     ) -> None:
-        """Set up a binary sensor entity for a automation device service status."""
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_status_{endpoint}"
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_name = f"Status{virtual_node_id} - Service{endpoint}"
+
+        self._attr_name = (
+            f"Status{virtual_node_id}"
+            if endpoint == 0
+            else f"Status{virtual_node_id} - Service{endpoint}"
+        )
 
         self._service = self._autdev.service_get(StatusProtocol, endpoint)
-        if not self._service:
-            _LOGGER.error(
-                "Invalid AutDev status service for virtual_node_id:%s endpoint:%d",
-                virtual_node_id,
-                endpoint,
-            )
 
     @property
     def is_on(self) -> bool:
-        """Return this automation device service status."""
         return self._service.malfunction
