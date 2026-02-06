@@ -682,9 +682,9 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
         self._attr_device_class = BinarySensorDeviceClass.PROBLEM
 
         self._attr_name = (
-            f"Status{virtual_node_id}"
+            "Node Status"
             if endpoint == 0
-            else f"Status{virtual_node_id} - Service{endpoint}"
+            else f"Node Status{virtual_node_id} - Service{endpoint}"
         )
 
         self._service = self._autdev.service_get(StatusProtocol, endpoint)

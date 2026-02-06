@@ -204,9 +204,7 @@ class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
         self._attr_unique_id = f"{self._autdev_unique_id}_light{endpoint}"
         self._service = self._autdev.service_get(LightService, endpoint)
 
-        self._attr_name = (
-            f"Light{endpoint} - {self._lock.automation_device.device_name}"
-        )
+        self._attr_name = f"Light{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
         if self._service.is_level_supported():
             self._attr_color_mode = ColorMode.BRIGHTNESS
@@ -216,8 +214,6 @@ class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
             self._attr_supported_color_modes = {ColorMode.ONOFF}
 
     async def async_turn_on(self, **kwargs: Any) -> None:
-        _LOGGER.debug("Turn_On: %s", kwargs)
-
         if ATTR_BRIGHTNESS in kwargs:
             brightness = to_qolsys_level(kwargs[ATTR_BRIGHTNESS])
             await self._service.set_level(brightness)
@@ -226,7 +222,7 @@ class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
         await self._service.turn_on()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
-        self._service.turn_off()
+        await self._service.turn_off()
 
     @property
     def is_on(self) -> bool:
