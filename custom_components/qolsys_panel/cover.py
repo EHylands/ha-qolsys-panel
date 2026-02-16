@@ -11,6 +11,7 @@ from homeassistant.components.cover import (
 )
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_cover import CoverService
 from qolsys_controller.protocol_adc.service_garagedoor import QolsysAdcGarageDoorService
 from qolsys_controller.enum_adc import vdFuncState
 
@@ -21,6 +22,7 @@ from custom_components.qolsys_panel.entity import QolsysZwaveEntity
 
 from .types import QolsysPanelConfigEntry
 from .entity_adc import QolsysAdcEntity
+from .entity import QolsysAutomationDeviceEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +37,7 @@ async def async_setup_entry(
 
     entities: list[CoverEntity] = []
 
-    # Add Virtual ADC Garage Door
+    # Add Virtual ADC Garage Door - Legacy
     for adc_device in QolsysPanel.state.adc_devices:
         for service in adc_device.services:
             if isinstance(service, QolsysAdcGarageDoorService):
@@ -47,13 +49,23 @@ async def async_setup_entry(
                         config_entry.unique_id,
                     )
                 )
-
+    # Add Z-Wave Garage Doors - Legacy
     for garage_door in QolsysPanel.state.zwave_garage_doors:
         entities.append(
             ZwaveDevice_GarageDoor(
                 QolsysPanel, garage_door.node_id, config_entry.unique_id
             )
         )
+    # Add Automation Device Covers
+    for device in QolsysPanel.state.automation_devices(CoverService):
+            entities.append(
+                AutomationDeviceCover(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
 
     async_add_entities(entities)
 
@@ -146,3 +158,47 @@ class ZwaveDevice_GarageDoor(QolsysZwaveEntity, CoverEntity):
     @property
     def is_closed(self) -> bool | None:
         return None
+
+
+class AutomationDeviceCover(QolsysAutomationDeviceEntity, CoverEntity):
+    """Automation Device Garage Door Cover entity"""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_cover{endpoint}"
+        self.device_class = CoverDeviceClass.GARAGE
+        self._cover = self._autdev.service_get(CoverService, endpoint)
+        self._attr_name = f"GarageDoor{'' if endpoint == 0 else endpoint} - {self._cover.automation_device.device_name}"
+
+        if self._cover.supports_open():
+            self._attr_supported_features |= CoverEntityFeature.OPEN
+
+        if self._cover.supports_close():
+            self._attr_supported_features |= CoverEntityFeature.CLOSE
+
+        if self._cover.supports_stop():
+            self._attr_supported_features |= CoverEntityFeature.STOP
+
+        if self._cover.supports_position():
+            self._attr_supported_features |= CoverEntityFeature.SET_POSITION
+
+    async def async_open_cover(self, **kwargs):
+        await self._cover.open()
+
+    async def async_close_cover(self, **kwargs):
+        await self._cover.close()
+
+    async def set_current_position(self, **kwargs):
+        position = kwargs.get("position")
+        if position is not None:
+            await self._cover.set_position(position)
+
+    @property
+    def is_closed(self) -> bool | None:
+        return self._cover.is_closed()

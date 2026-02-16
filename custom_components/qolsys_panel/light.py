@@ -189,9 +189,7 @@ class ZwaveDimmer(QolsysZwaveEntity, LightEntity):
 
 
 class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
-    """Automation Device light entity."""
-
-    _attr_name = None
+    """An Automation Device Light entity for a qolsys panel."""
 
     def __init__(
         self,
@@ -203,7 +201,6 @@ class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_light{endpoint}"
         self._service = self._autdev.service_get(LightService, endpoint)
-
         self._attr_name = f"Light{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
         if self._service.is_level_supported():

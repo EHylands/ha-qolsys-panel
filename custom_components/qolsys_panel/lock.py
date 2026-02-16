@@ -105,53 +105,43 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
         endpoint: int,
         unique_id: str,
     ) -> None:
-        """Initialise a Qolsys Automation Device Lock entity."""
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_lock{endpoint}"
+        self._service = self._autdev.service_get(LockService, endpoint)
+        self._attr_name = f"Lock{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
-        self._lock = self._autdev.service_get(LockProtocol, endpoint)
-
-        if not isinstance(self._lock, LockService):
-            _LOGGER.error(
-                "Invalid LockService for AutDev virtual_node_id:%s endpoint:%d",
-                virtual_node_id,
-                endpoint,
-            )
-
-        self._attr_name = f"Lock{endpoint} - {self._lock.automation_device.device_name}"
-
-        if self._lock.is_open_supported():
+        if self._service.is_open_supported():
             self._attr_supported_features |= LockEntityFeature.OPEN
 
     @property
     def is_locked(self) -> bool:
-        return self._lock.is_locked
+        return self._service.is_locked
 
     @property
     def is_locking(self) -> bool:
-        return self._lock.is_locking
+        return self._service.is_locking
 
     @property
     def is_unlocking(self) -> bool:
-        return self._lock.is_unlocking
+        return self._service.is_unlocking
 
     @property
     def is_jammed(self) -> bool:
-        return self._lock.jammed
+        return self._service.is_jammed
 
     @property
     def is_opening(self) -> bool:
-        return self._lock.openning
+        return self._service.is_openning
 
     @property
     def is_open(self) -> bool:
-        return self._lock.openned
+        return self._service.is_open
 
     async def async_lock(self, **kwargs: Any):
-        await self._lock.lock()
+        await self._service.lock()
 
     async def async_unlock(self, **kwargs: Any):
-        await self._lock.unlock()
+        await self._service.unlock()
 
     async def async_open(self, **kwargs: Any):
-        await self._lock.open()
+        await self._service.open()
