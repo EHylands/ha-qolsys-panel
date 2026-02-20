@@ -110,6 +110,7 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
         self._service = self._autdev.service_get(LockService, endpoint)
         self._attr_name = f"Lock{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
+        self._attr_supported_features = 0
         if self._service.supports_open():
             self._attr_supported_features |= LockEntityFeature.OPEN
 

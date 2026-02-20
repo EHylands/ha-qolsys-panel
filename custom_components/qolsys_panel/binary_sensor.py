@@ -192,7 +192,6 @@ async def async_setup_entry(
                 )
     # Add Automation Device Status Sensors
     for device in QolsysPanel.state.automation_devices:
-        _LOGGER.debug(device.service_get_protocol(StatusProtocol))
         for service in device.service_get_protocol(StatusProtocol):
             entities.append(
                 AutomationDevice_Status(

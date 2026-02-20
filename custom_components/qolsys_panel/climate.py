@@ -354,6 +354,7 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
         self._attr_name = f"Thermostat{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_target_temperature_step = self._service.target_temperature_step
 
+        self._attr_supported_features = 0
         if self._service.supports_target_temperature():
             self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
 
