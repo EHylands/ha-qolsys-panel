@@ -174,7 +174,7 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
         """Return True if entity is available."""
         status_services = self._autdev.service_get_protocol(StatusProtocol)
         for service in status_services:
-            if service.malfunction:
+            if service.is_malfunctioning:
                 return False
 
         return self.QolsysPanel.connected

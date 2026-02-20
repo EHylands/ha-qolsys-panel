@@ -661,8 +661,8 @@ class AdcSensor_Malfunction(QolsysAdcEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        light_service = self._device.get_adc_service(self._service_id)
-        return light_service.is_malfunctionning()
+        service = self._device.get_adc_service(self._service_id)
+        return service.is_malfunctionning()
 
 
 class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
@@ -691,4 +691,4 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        return self._service.malfunction
+        return self._service.is_malfunctioning

@@ -203,7 +203,7 @@ class AutomationDeviceLight(QolsysAutomationDeviceEntity, LightEntity):
         self._service = self._autdev.service_get(LightService, endpoint)
         self._attr_name = f"Light{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
-        if self._service.is_level_supported():
+        if self._service.supports_level():
             self._attr_color_mode = ColorMode.BRIGHTNESS
             self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
         else:

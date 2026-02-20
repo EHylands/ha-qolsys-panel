@@ -57,7 +57,8 @@ async def async_setup_entry(
             )
         )
     # Add Automation Device Covers
-    for device in QolsysPanel.state.automation_devices(CoverService):
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(CoverService):
             entities.append(
                 AutomationDeviceCover(
                     QolsysPanel,
@@ -176,6 +177,7 @@ class AutomationDeviceCover(QolsysAutomationDeviceEntity, CoverEntity):
         self._cover = self._autdev.service_get(CoverService, endpoint)
         self._attr_name = f"GarageDoor{'' if endpoint == 0 else endpoint} - {self._cover.automation_device.device_name}"
 
+        self._attr_supported_features = 0
         if self._cover.supports_open():
             self._attr_supported_features |= CoverEntityFeature.OPEN
 
@@ -201,4 +203,4 @@ class AutomationDeviceCover(QolsysAutomationDeviceEntity, CoverEntity):
 
     @property
     def is_closed(self) -> bool | None:
-        return self._cover.is_closed()
+        return self._cover.is_closed
