@@ -7,6 +7,8 @@ from typing import Type
 
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_sensor import SensorService, QolsysSensor
+from qolsys_controller.enum import QolsysSensorScale
 from qolsys_controller.enum_zwave import (
     MeterType,
     ZWaveElectricMeterScale,
@@ -138,8 +140,9 @@ async def async_setup_entry(
                         )
                     )
 
-    # Add Automation Device Battery Level Sensor
+    # Add Automation Device Sensors
     for device in QolsysPanel.state.automation_devices:
+        # Battery Level Value
         for service in device.service_get_protocol(BatteryService):
             if service.supports_battery_level():
                 entities.append(
@@ -151,7 +154,38 @@ async def async_setup_entry(
                     )
                 )
 
+        # Multilevel Sensors
+        for service in device.service_get_protocol(SensorService):
+            for sensor in service.sensors:
+                entities.append(
+                    AutomationDevice_Sensor(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        sensor.unit,
+                        config_entry.unique_id,
+                    )
+                )
+
     async_add_entities(entities)
+
+    # Add new Automation Device Sensor - Dynamic
+    async def _automation_device_sensor_add(**kwargs) -> None:
+        virtual_node_id = kwargs["virtual_node_id"]
+        endpoint = kwargs["endpoint"]
+        unit = kwargs["unit"]
+
+        _LOGGER.debug(
+            "EVENT_AUTDEV_SENSOR_ADD - virtual_node_id:%s, endpoint:%s, unit:%s",
+            virtual_node_id,
+            endpoint,
+            unit,
+        )
+
+        new_sensor = AutomationDevice_Sensor(
+            QolsysPanel, virtual_node_id, endpoint, unit, config_entry.unique_id
+        )
+        async_add_entities([new_sensor])
 
     # Add new Z-Wave Device Multilevel Sensor - Dynamic
     async def _zwave_multilevel_sensor_add(**kwargs) -> None:
@@ -174,6 +208,11 @@ async def async_setup_entry(
     _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD)
     QolsysPanel.state.state_observer.subscribe(
         QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD, _zwave_multilevel_sensor_add
+    )
+
+    _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_AUTDEV_SENSOR_ADD)
+    QolsysPanel.state.state_observer.subscribe(
+        QolsysEvent.EVENT_AUTDEV_SENSOR_ADD, _automation_device_sensor_add
     )
 
 
@@ -543,3 +582,55 @@ class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
     @property
     def native_value(self) -> int | None:
         return self._service.battery_level
+
+
+class AutomationDevice_Sensor(QolsysAutomationDeviceEntity, SensorEntity):
+    """An Automation Device sensor entity."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unit: QolsysSensorScale,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_sensor_{endpoint}_{unit.name}"
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._unit = unit
+        self._endpoint: int = endpoint
+        self._unit: QolsysSensorScale = unit
+        self._service = self._autdev.service_get(SensorService, endpoint)
+        self._sensor: QolsysSensor = self._service.sensor(unit)
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        match self._unit:
+            case QolsysSensorScale.TEMPERATURE_FAHRENHEIT:
+                return "°F"
+            case QolsysSensorScale.TEMPERATURE_CELSIUS:
+                return "°C"
+            case QolsysSensorScale.RELATIVE_HUMIDITY:
+                return "%"
+
+        return None
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        match self._unit:
+            case QolsysSensorScale.TEMPERATURE_FAHRENHEIT:
+                return SensorDeviceClass.TEMPERATURE
+
+            case QolsysSensorScale.TEMPERATURE_CELSIUS:
+                return SensorDeviceClass.TEMPERATURE
+
+            case QolsysSensorScale.RELATIVE_HUMIDITY:
+                return SensorDeviceClass.HUMIDITY
+
+        return None
+
+    @property
+    def native_value(self) -> float | None:
+        return self._sensor.value
