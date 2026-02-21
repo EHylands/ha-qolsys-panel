@@ -430,6 +430,7 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
 
     @property
     def hvac_action(self):
+        _LOGGER.debug(f"Getting HVAC action: {self._service.hvac_action}")
         return self._service.hvac_action
 
     @property
@@ -455,19 +456,19 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
         await self._service.turn_off()
 
     async def async_set_fan_mode(self, fan_mode):
-        await self._service().set_fan_mode(fan_mode)
+        await self._service.set_fan_mode(fan_mode)
 
     async def async_set_temperature(self, **kwargs: Any):
         _LOGGER.debug(f"Setting temperature with kwargs: {kwargs}")
 
         if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
-            self._service.set_temperature(value, QolsysHvacMode.COOL)
+            await self._service.set_temperature(value, QolsysHvacMode.COOL)
 
         if value := kwargs.get(ATTR_TARGET_TEMP_LOW):
-            self._service.set_temperature(value, QolsysHvacMode.HEAT)
+            await self._service.set_temperature(value, QolsysHvacMode.HEAT)
 
         if value := kwargs.get(ATTR_TEMPERATURE):
-            self._service.set_temperature(value, self._service.hvac_mode)
+            await self._service.set_temperature(value, self._service.hvac_mode)
 
     def _qolsys_to_hass_fan_mode(self, qolsys_fan_mode: ThermostatFanMode):
         """Convert Qolsys fan mode to Home Assistant fan mode."""

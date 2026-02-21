@@ -15,6 +15,8 @@ from qolsys_controller.enum_zwave import (
 )
 from qolsys_controller.enum import QolsysEvent
 
+from qolsys_controller.automation.service_battery import BatteryService
+
 from qolsys_controller.protocol_zwave.service_meter import (
     QolsysZwaveServiceMeter,
     QolsysZwaveMeterSensor,
@@ -36,6 +38,7 @@ from enum import IntEnum
 
 from . import QolsysPanelConfigEntry
 from .entity import (
+    QolsysAutomationDeviceEntity,
     QolsysZoneEntity,
     QolsysZwaveEntity,
 )
@@ -134,6 +137,19 @@ async def async_setup_entry(
                             config_entry.unique_id,
                         )
                     )
+
+    # Add Automation Device Battery Level Sensor
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(BatteryService):
+            if service.supports_battery_level():
+                entities.append(
+                    AutomationDevice_BatteryValue(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        config_entry.unique_id,
+                    )
+                )
 
     async_add_entities(entities)
 
@@ -500,3 +516,30 @@ class ZwaveDevice_MultilevelSensorValue(QolsysZwaveEntity, SensorEntity):
             return None
 
         return self._multilevel_sensor.value
+
+
+class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
+    """A sensor entity for an Automation Device battery level value."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: int,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        """Set up a sensor entity for an automation device battery level value."""
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_battery_value{endpoint}"
+        self._attr_translation_key = "battery"
+        self._attr_native_unit_of_measurement = "%"
+        self._attr_device_class = SensorDeviceClass.BATTERY
+        self._attr_suggested_display_precision = 0
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._service = self._autdev.service_get(BatteryService, endpoint)
+
+    @property
+    def native_value(self) -> int | None:
+        return self._service.battery_level

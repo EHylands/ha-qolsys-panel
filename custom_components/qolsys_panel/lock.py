@@ -1,4 +1,4 @@
-"""Support for Qolsys Z-Wave Locks."""
+"""Support for Qolsys Locks."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.protocol_lock import LockProtocol
 from qolsys_controller.automation.service_lock import LockService
 
 from homeassistant.components.lock import LockEntity, LockEntityFeature
@@ -37,7 +36,7 @@ async def async_setup_entry(
 
     # Append Automation Device Locks
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(LockProtocol):
+        for service in device.service_get_protocol(LockService):
             entities.append(
                 AutomationDeviceLock(
                     QolsysPanel,
