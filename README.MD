@@ -4,8 +4,6 @@
 
 This is a custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allowing local pairing and control via Home Assistant.
 
-![Qolsys01](https://github.com/EHylands/ha-qolsys-panel/blob/main/assets/qolsys01.jpg)
-
 ## 🧩 Installation
 
 This integration is not yet part of the official HACS store. You must add it manually as a custom repository.
@@ -101,8 +99,10 @@ The following entities are provided by this integration:
 - Light
 - Lock
 - Sensor
+- Siren
 - Switch
 - Scene
+- Valve
 - Weather
 
 
@@ -190,37 +190,28 @@ The integration will be cleanly removed from your system.
 | **Panel**              | Diagnostic Sensors                   | ✅     |
 |                        | Panel Scenes                         | ✅     |
 |                        | Weather Forecast                     | ✅     |
-|                        | (Alarm.com Weather to Panel)         |        |
 | **Partition**          | Arming Status                        | ✅     |
 |                        | Alarm State                          | ✅     |
 |                        | Home Instant Arming                  | ✅     |
 |                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
 |                        | Trigger Alarm                         | ✅     |
 |                        | Enable or Disable User Code           | ✅     |
-|                        | Set Exit Sounds                      | ✅     |
-|                        | Set Entry Delay                      | ✅     |
-|                        | TTS                                  | 🛠️     |
+|                        | Set Exit Sounds and Entry Delay       | ✅     |
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
 |                        | Temperature (supported PowerG device)| ✅     |
 |                        | Light (supported PowerG device)      | ✅     |
-|                        | Average dBm                          | ✅     |
-|                        | Latest dBm                           | ✅     |
-| **Z-Wave Devices**     | Battery Level                        | ✅     |
-|                        | Node Status                          | ✅     |
-|                        | Control Generic Devices              | ✅     |
-| **Z-Wave Dimmers**     |                                      | ✅     |
-| **Z-Wave Door Locks**  |                                      | ✅     |
-| **Z-Wave Meters**      |                                      | ✅     |
-| **Z-Wave Sensors**.    |                                      | ✅     |
-| **Z-Wave Garage Doors**|                                      | 🛠️     |
-| **Z-Wave Outlets**     |                                      | 🛠️     |
-| **Alarm.com Devices**  |                                      |        |
-| **Garage Door**        |                                      | ✅     |
-| **Lights**.            |                                      | ✅     |
-| **PowerG Devices**  |                                         |        |
-| **Door Locks.**        |                                      | 🛠️     |
-| **Lights**.            |                                      | 🛠️     |
+|                        | Average and Latest dBm               | ✅     |
 
-
+| Automation Devices| Z-Wave | PowerG | Alarm.com |
+|-----------------|--------|--------|-------|
+| Door Lock        | ✅     | ✅     | ❌    |
+| Energy Clamp     | ✅     | ❌     | ❌    |
+| External Siren   | 🛠️     | ❌     | ❌    |
+| Garage Door      | 🛠️     | ❌     | ✅    |
+| Lights           | ✅     | 🛠️     | ✅    |
+| Smart Outlet     | 🛠️     | ❌     | ❌    |
+| Thermometer      | ✅     | ❌     | ❌    |
+| Thermostat       | ✅     | ❌     | ❌    |
+| Water Valve      | 🛠️     | ❌     | ❌    |
