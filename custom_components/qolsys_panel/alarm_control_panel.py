@@ -1,4 +1,4 @@
-"""Support for Qolsys Panel Partition Control."""
+"""Support for Qolsys Panel Partition."""
 
 from __future__ import annotations
 
@@ -37,14 +37,18 @@ async def async_setup_entry(
     """Set up alarm control panels for each partition."""
     QolsysPanel = config_entry.runtime_data
 
-    async_add_entities(
-        PartitionAlarmControlPanel(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id,
+    entities: list[AlarmControlPanelEntity] = []
+
+    for partition in QolsysPanel.state.partitions:
+        entities.append(
+            PartitionAlarmControlPanel(
+                QolsysPanel,
+                partition.id,
+                config_entry.unique_id,
+            )
         )
-        for partition in QolsysPanel.state.partitions
-    )
+
+    async_add_entities(entities)
 
 
 class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity):

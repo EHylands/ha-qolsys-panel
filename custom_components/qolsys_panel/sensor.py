@@ -8,7 +8,11 @@ from typing import Type
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_sensor import SensorService, QolsysSensor
-from qolsys_controller.enum import QolsysSensorScale
+from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
+from qolsys_controller.enum import (
+    QolsysSensorScale,
+    QolsysMeterScale,
+)
 from qolsys_controller.enum_zwave import (
     MeterType,
     ZWaveElectricMeterScale,
@@ -163,6 +167,19 @@ async def async_setup_entry(
                         device.virtual_node_id,
                         service.endpoint,
                         sensor.unit,
+                        config_entry.unique_id,
+                    )
+                )
+
+        # Meters
+        for service in device.service_get_protocol(MeterService):
+            for meter in service.meters:
+                entities.append(
+                    AutomationDevice_Meter(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        meter.unit,
                         config_entry.unique_id,
                     )
                 )
@@ -634,3 +651,92 @@ class AutomationDevice_Sensor(QolsysAutomationDeviceEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         return self._sensor.value
+
+
+class AutomationDevice_Meter(QolsysAutomationDeviceEntity, SensorEntity):
+    """An Automation Device Meter entity."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unit: QolsysMeterScale,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_meter{endpoint}_{unit.name}"
+        self._attr_suggested_display_precision = 2
+        self._unit: QolsysMeterScale = unit
+        self._endpoint: int = endpoint
+        self._service = self._autdev.service_get(MeterService, endpoint)
+        self._meter: QolsysMeter = self._service.meter(unit)
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        return self._unit.value
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        match self._unit:
+            case QolsysMeterScale.KWH:
+                return SensorDeviceClass.ENERGY
+            case QolsysMeterScale.KVAH:
+                return SensorDeviceClass.ENERGY
+            case QolsysMeterScale.WATTS:
+                return SensorDeviceClass.POWER
+            case QolsysMeterScale.PULSE_COUNT:
+                return SensorDeviceClass.FREQUENCY
+            case QolsysMeterScale.VOLTS:
+                return SensorDeviceClass.VOLTAGE
+            case QolsysMeterScale.AMPS:
+                return SensorDeviceClass.CURRENT
+            case QolsysMeterScale.POWER_FACTOR:
+                return SensorDeviceClass.POWER_FACTOR
+            case QolsysMeterScale.KVAR:
+                return SensorDeviceClass.REACTIVE_POWER
+            case QolsysMeterScale.KVARH:
+                return SensorDeviceClass.REACTIVE_POWER  # Should be reactive_energy
+            case QolsysMeterScale.CUBIC_METERS:
+                return SensorDeviceClass.VOLUME
+            case QolsysMeterScale.CUBIC_FEET:
+                return SensorDeviceClass.VOLUME
+            case QolsysMeterScale.US_GALLONS:
+                return SensorDeviceClass.VOLUME
+
+        return None
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the state class of this entity."""
+        match self._unit:
+            case QolsysMeterScale.KWH:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.KVAH:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.WATTS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.PULSE_COUNT:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.VOLTS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.AMPS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.POWER_FACTOR:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.KVAR:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.KVARH:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.CUBIC_METERS:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.CUBIC_FEET:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.US_GALLONS:
+                return SensorStateClass.TOTAL_INCREASING
+
+        return SensorStateClass.TOTAL
+
+    @property
+    def native_value(self) -> float | None:
+        return self._meter.value

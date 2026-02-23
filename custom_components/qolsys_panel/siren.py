@@ -9,12 +9,12 @@ from homeassistant.components.siren import (
 )
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_siren import SirenService
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from custom_components.qolsys_panel.entity import QolsysZwaveEntity
-
+from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,38 +30,44 @@ async def async_setup_entry(
 
     entities: list[SirenEntity] = []
 
-    # Add Z-Wave Sirens
-    for siren in QolsysPanel.state.zwave_external_sirens:
-        entities.append(
-            ZwaveDevice_Siren(QolsysPanel, siren.node_id, config_entry.unique_id)
-        )
+    # Append Automation Device Sirens
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(SirenService):
+            entities.append(
+                AutomationDevice_Siren(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
 
     async_add_entities(entities)
 
 
-class ZwaveDevice_Siren(QolsysZwaveEntity, SirenEntity):
-    """Z-Wave Siren Entity"""
-
-    _attr_name = None
+class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
+    """Automation Device Siren entity"""
 
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
-        node_id: str,
+        virtual_node_id: str,
+        endpoint: int,
         unique_id: str,
     ) -> None:
-        """Initialise a Z-Wave External Siren."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_unique_id}_external_siren"
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_siren{endpoint}"
+        self._service = self._autdev.service_get(SirenService, endpoint)
+        self._attr_name = f"Siren{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
     async def async_turn_on(self, **kwargs) -> None:
         _LOGGER.debug("Turn On - Commands: %s", self._node.command_class_list)
-        self._node.turn_on()
+        self._service.turn_on()
 
     async def async_turn_off(self, **kwargs):
         _LOGGER.debug("Turn Off - Commands: %s", self._node.command_class_list)
-        self._node.turn_off()
+        self._service.turn_off()
 
     @property
     def is_on(self) -> bool | None:
-        return self._node.is_on()
+        return self._service.is_on()

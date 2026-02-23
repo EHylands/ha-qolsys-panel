@@ -2,29 +2,17 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum import QolsysTemperatureUnit, QolsysHvacMode
 from qolsys_controller.automation.service_thermostat import ThermostatService
-from qolsys_controller.protocol_zwave.thermostat import QolsysThermostat
-from qolsys_controller.enum_zwave import (
-    ThermostatFanMode,
-    ThermostatMode,
-    ThermostatSetpointMode,
-)
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
     HVACMode,
-    FAN_AUTO,
-    FAN_ON,
-    FAN_HIGH,
-    FAN_LOW,
-    FAN_MEDIUM,
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
 )
@@ -32,10 +20,7 @@ from homeassistant.components.climate.const import (
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from custom_components.qolsys_panel.entity import (
-    QolsysAutomationDeviceEntity,
-    QolsysZwaveEntity,
-)
+from custom_components.qolsys_panel.entity import QolsysAutomationDeviceEntity
 
 from .types import QolsysPanelConfigEntry
 
@@ -52,16 +37,11 @@ async def async_setup_entry(
 
     entities: list[ClimateEntity] = []
 
-    for thermostat in QolsysPanel.state.zwave_thermostats:
-        entities.append(
-            ZwaveThermostat(QolsysPanel, thermostat.node_id, config_entry.unique_id)
-        )
-
     # Add Automation Device Thermostats
     for device in QolsysPanel.state.automation_devices:
         for service in device.service_get_protocol(ThermostatService):
             entities.append(
-                AutomationDeviceClimate(
+                AutomationDevice_Climate(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
@@ -72,275 +52,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class ZwaveThermostat(QolsysZwaveEntity, ClimateEntity):
-    """A Z-Wave Thermostat entity for a qolsys panel."""
-
-    _attr_has_entity_name = True
-    _attr_name = None
-
-    def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
-    ) -> None:
-        """Initialise a Qolsys Z-Wave Thermostat entity."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = self._zwave_unique_id
-
-        # check if z-wave node is a QolsysThermostat
-        if not isinstance(self._node, QolsysThermostat):
-            _LOGGER.error(
-                f"ZWave{self._node_id} is not a QolsysThermostat:{type(self._node)}"
-            )
-            return
-
-        self._attr_target_temperature_step = 1
-        available_thermostat_modes = self._node.available_thermostat_mode()
-        available_fan_modes = self._node.available_thermostat_fan_mode()
-
-        self._attr_supported_features = (
-            ClimateEntityFeature.TARGET_TEMPERATURE
-            | ClimateEntityFeature.TARGET_TEMPERATURE_RANGE
-        )
-
-        # Add turn off attribute
-        if ThermostatMode.OFF in available_thermostat_modes:
-            self._attr_supported_features = (
-                self._attr_supported_features | ClimateEntityFeature.TURN_OFF
-            )
-
-        # Add fan attribute
-        if available_fan_modes != 0:
-            self._attr_supported_features = (
-                self._attr_supported_features | ClimateEntityFeature.FAN_MODE
-            )
-
-    @property
-    def current_temperature(self) -> float:
-        return float(self._node.thermostat_current_temp)
-
-    @property
-    def current_humidity(self) -> float | None:
-        return self._node.thermostat_current_humidity
-
-    @property
-    def target_temperature(self) -> float | None:
-        """Return the target temperature (mode-aware)."""
-        # In AUTO mode, return None so dual sliders appear
-        if self.hvac_mode == HVACMode.AUTO:
-            return None
-
-        # In OFF mode, return None (no slider needed)
-        if self.hvac_mode == HVACMode.OFF:
-            return None
-
-        # For HEAT mode, return heat setpoint
-        if self.hvac_mode == HVACMode.HEAT:
-            temp = self._node.thermostat_target_heat_temp
-            try:
-                return float(temp) if temp else 72.0
-            except (ValueError, TypeError):
-                _LOGGER.warning(
-                    f"Invalid heat temperature value '{temp}', using default 72.0"
-                )
-                return 72.0
-
-        # For COOL mode, return cool setpoint
-        if self.hvac_mode == HVACMode.COOL:
-            temp = self._node.thermostat_target_cool_temp
-            try:
-                return float(temp) if temp else 72.0
-            except (ValueError, TypeError):
-                _LOGGER.warning(
-                    f"Invalid cool temperature value '{temp}', using default 72.0"
-                )
-                return 72.0
-
-        # Default: no slider
-        return None
-
-    @property
-    def temperature_unit(self) -> str:
-        """Return the temperature unit."""
-        panel_temp_unit = self._node.thermostat_device_temp_unit
-
-        if panel_temp_unit == "F":
-            return UnitOfTemperature.FAHRENHEIT
-
-        if panel_temp_unit == "C":
-            return UnitOfTemperature.CELSIUS
-
-    @property
-    def target_temperature_high(self) -> float | None:
-        """Return the upper target temperature for AUTO mode."""
-        # Only return a value in AUTO mode
-        if self.hvac_mode != HVACMode.AUTO:
-            return None
-
-        try:
-            temp = self._node.thermostat_target_cool_temp
-            return float(temp) if temp else 74.0
-        except (ValueError, TypeError):
-            _LOGGER.warning(
-                "Invalid cool temperature value in AUTO mode, using default 74.0"
-            )
-            return 74.0
-
-    @property
-    def target_temperature_low(self) -> float | None:
-        """Return the lower target temperature for AUTO mode."""
-        # Only return a value in AUTO mode
-        if self.hvac_mode != HVACMode.AUTO:
-            return None
-
-        try:
-            temp = self._node.thermostat_target_heat_temp
-            return float(temp) if temp else 68.0
-        except (ValueError, TypeError):
-            _LOGGER.warning(
-                "Invalid heat temperature value in AUTO mode, using default 68.0"
-            )
-            return 68.0
-
-    @property
-    def fan_mode(self):
-        """Return the fan mode."""
-        qolsys_fan_mode = self._node.thermostat_fan_mode
-        return self._qolsys_to_hass_fan_mode(qolsys_fan_mode)
-
-    @property
-    def fan_modes(self):
-        """Return available fan modes."""
-        hass_fan_modes: list[str] = []
-        qolsys_fan_modes: list[ThermostatFanMode] = (
-            self._node.available_thermostat_fan_mode()
-        )
-        for qolsys_fan_mode in qolsys_fan_modes:
-            fan_mode = self._qolsys_to_hass_fan_mode(qolsys_fan_mode)
-            if fan_mode not in hass_fan_modes and fan_mode is not None:
-                hass_fan_modes.append(fan_mode)
-
-        return hass_fan_modes
-
-    @property
-    def hvac_action(self):
-        """Return current HVAC action."""
-        return None
-
-    @property
-    def hvac_mode(self) -> HVACMode:
-        """Return current HVAC mode."""
-        qolsys_thermostat_mode = self._node.thermostat_mode
-        return self._qolsys_to_hass_thermostat_mode(qolsys_thermostat_mode)
-
-    @property
-    def hvac_modes(self):
-        """Return available HVAC modes."""
-        hass_hvac_modes: list[HVACMode] = []
-        qolsys_thermostat_modes: list[ThermostatMode] = (
-            self._node.available_thermostat_mode()
-        )
-        for qolsys_mode in qolsys_thermostat_modes:
-            hvac_mode = self._qolsys_to_hass_thermostat_mode(qolsys_mode)
-            if hvac_mode not in hass_hvac_modes and hvac_mode is not None:
-                hass_hvac_modes.append(hvac_mode)
-
-        return hass_hvac_modes
-
-    async def async_set_hvac_mode(self, hvac_mode):
-        """Set new target hvac mode."""
-        _LOGGER.debug(
-            f"Setting HVAC mode to {hvac_mode.name} (node_id: {self._node.thermostat_node_id})"
-        )
-
-        qolsys_thermostat_mode = self._hass_to_qolsys_thermostat_mode(hvac_mode)
-
-        try:
-            await self.QolsysPanel.command_zwave_thermostat_mode_set(
-                node_id=self._node.thermostat_node_id,
-                endpoint="0",
-                mode=qolsys_thermostat_mode,
-            )
-            _LOGGER.debug(f"HVAC mode set to {hvac_mode} successfully")
-        except Exception as e:
-            _LOGGER.error(f"Failed to set HVAC mode to {hvac_mode}: {e}")
-
-    async def async_turn_off(self):
-        """Turn the entity off."""
-        await self.QolsysPanel.command_zwave_thermostat_mode_set(
-            node_id=self._node.thermostat_node_id, endpoint="0", mode=ThermostatMode.OFF
-        )
-
-    async def async_set_fan_mode(self, fan_mode):
-        """Set new target fan mode."""
-        qolsys_fan_mode = self._hass_to_qolsys_fan_mode(fan_mode)
-        await self.QolsysPanel.command_zwave_thermostat_fan_mode_set(
-            node_id=self._node.thermostat_node_id,
-            endpoint="0",
-            fan_mode=qolsys_fan_mode,
-        )
-
-    def _handle_setpoint_error(self, task: asyncio.Task, mode_name: str):
-        """Handle errors from setpoint command tasks."""
-        try:
-            task.result()  # Raises exception if task failed
-        except Exception as e:
-            _LOGGER.error(f"Failed to set {mode_name} setpoint: {e}")
-
-    async def async_set_temperature(self, **kwargs: Any):
-        """Set new target temperature."""
-        _LOGGER.debug(f"Setting temperature with kwargs: {kwargs}")
-        node_id = self._node.thermostat_node_id
-
-        # Handle dual slider mode (AUTO mode - both high and low)
-        if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
-            temp = int(value)
-            _LOGGER.debug(f"Setting COOL setpoint to {temp} (node_id: {node_id})")
-            # Fire-and-forget to avoid blocking (panel might sleep)
-            # Add error callback to log failures
-            task = asyncio.create_task(
-                self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id,
-                    endpoint="0",
-                    mode=ThermostatSetpointMode.COOLING,
-                    setpoint=temp,
-                )
-            )
-            task.add_done_callback(lambda t: self._handle_setpoint_error(t, "COOL"))
-
-        if value := kwargs.get(ATTR_TARGET_TEMP_LOW):
-            temp = int(value)
-            _LOGGER.debug(f"Setting HEAT setpoint to {temp} (node_id: {node_id})")
-            # Fire-and-forget to avoid blocking (panel might sleep)
-            # Add error callback to log failures
-            task = asyncio.create_task(
-                self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                    node_id=node_id,
-                    endpoint="0",
-                    mode=ThermostatSetpointMode.HEATING,
-                    setpoint=temp,
-                )
-            )
-            task.add_done_callback(lambda t: self._handle_setpoint_error(t, "HEAT"))
-
-        # Handle single slider mode (HEAT or COOL mode)
-        if value := kwargs.get(ATTR_TEMPERATURE):
-            temp = int(value)
-            current_thermostat_mode = self._hass_to_qolsys_thermostat_mode(
-                self.hvac_mode
-            )
-
-            setpoint_mode = ThermostatSetpointMode.HEATING
-            if current_thermostat_mode == ThermostatMode.COOL:
-                setpoint_mode = ThermostatSetpointMode.COOLING
-
-            _LOGGER.debug(
-                f"Setting {setpoint_mode.name} setpoint to {temp} (node_id: {node_id})"
-            )
-            await self.QolsysPanel.command_zwave_thermostat_setpoint_set(
-                node_id=node_id, endpoint="0", mode=setpoint_mode, setpoint=temp
-            )
-
-
-class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
+class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
@@ -406,18 +118,14 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
 
     @property
     def target_temperature_high(self) -> float | None:
-        # Only return a value in AUTO mode
         if self._service.hvac_mode in (QolsysHvacMode.AUTO, QolsysHvacMode.HEAT_COOL):
             return self._service.target_cool_temp
-
         return None
 
     @property
     def target_temperature_low(self) -> float | None:
-        # Only return a value in AUTO mode
         if self._service.hvac_mode in (QolsysHvacMode.AUTO, QolsysHvacMode.HEAT_COOL):
             return self._service.target_heat_temp
-
         return None
 
     @property
@@ -430,7 +138,6 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
 
     @property
     def hvac_action(self):
-        _LOGGER.debug(f"Getting HVAC action: {self._service.hvac_action}")
         return self._service.hvac_action
 
     @property
@@ -459,8 +166,6 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
         await self._service.set_fan_mode(fan_mode)
 
     async def async_set_temperature(self, **kwargs: Any):
-        _LOGGER.debug(f"Setting temperature with kwargs: {kwargs}")
-
         if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
             await self._service.set_temperature(value, QolsysHvacMode.COOL)
 
@@ -469,148 +174,3 @@ class AutomationDeviceClimate(QolsysAutomationDeviceEntity, ClimateEntity):
 
         if value := kwargs.get(ATTR_TEMPERATURE):
             await self._service.set_temperature(value, self._service.hvac_mode)
-
-    def _qolsys_to_hass_fan_mode(self, qolsys_fan_mode: ThermostatFanMode):
-        """Convert Qolsys fan mode to Home Assistant fan mode."""
-        match qolsys_fan_mode:
-            case ThermostatFanMode.LOW:
-                return FAN_ON
-
-            case ThermostatFanMode.AUTO_LOW:
-                return FAN_AUTO
-
-            case ThermostatFanMode.AUTO_HIGH:
-                return FAN_AUTO
-
-            case ThermostatFanMode.HIGH:
-                return FAN_HIGH
-
-            case ThermostatFanMode.AUTO_MEDIUM:
-                return FAN_AUTO
-
-            case ThermostatFanMode.MEDIUM:
-                return FAN_MEDIUM
-
-            case ThermostatFanMode.CIRCULATION:
-                return "Circulate"
-
-            case ThermostatFanMode.HUMIDITY_CIRCULATION:
-                return FAN_AUTO
-
-            case ThermostatFanMode.LEFT_RIGHT:
-                return FAN_AUTO
-
-            case ThermostatFanMode.QUIET:
-                return FAN_LOW
-
-            case ThermostatFanMode.EXTERNAL_CIRCULATION:
-                return FAN_AUTO
-
-            case ThermostatFanMode.MANUFACTURER_SPECEFIC:
-                return FAN_AUTO
-
-        return None
-
-    def _qolsys_to_hass_thermostat_mode(
-        self, qolsys_thermostat_mode: ThermostatMode
-    ) -> HVACMode:
-        """Convert Qolsys thermostat mode to Home Assistant HVAC mode."""
-        match qolsys_thermostat_mode:
-            case ThermostatMode.OFF:
-                return HVACMode.OFF
-
-            case ThermostatMode.HEAT:
-                return HVACMode.HEAT
-
-            case ThermostatMode.FURNACE:
-                return HVACMode.HEAT
-
-            case ThermostatMode.AUX_HEAT:
-                return HVACMode.HEAT
-
-            case ThermostatMode.ENERGY_SAVE_HEAT:
-                return HVACMode.HEAT
-
-            case ThermostatMode.COOL:
-                return HVACMode.COOL
-
-            case ThermostatMode.ENERGY_SAVE_COOL:
-                return HVACMode.COOL
-
-            case ThermostatMode.AUTO:
-                return HVACMode.AUTO
-
-            case ThermostatMode.AWAY:
-                return HVACMode.AUTO
-
-            case ThermostatMode.FULL_POWER:
-                return HVACMode.AUTO
-
-            case ThermostatMode.MOIST_AIR:
-                return HVACMode.AUTO
-
-            case ThermostatMode.RESUME:
-                return HVACMode.AUTO
-
-            case ThermostatMode.MANUFACTURER_SPECEFIC:
-                return HVACMode.AUTO
-
-            case ThermostatMode.FAN_ONLY:
-                return HVACMode.FAN_ONLY
-
-            case ThermostatMode.DRY_AIR:
-                return HVACMode.DRY
-
-            case ThermostatMode.AUTO_CHANGEOVER:
-                return HVACMode.AUTO
-
-        return None
-
-    def _hass_to_qolsys_thermostat_mode(self, hass_hvac_mode: HVACMode) -> HVACMode:
-        """Convert Home Assistant HVAC mode to Qolsys thermostat mode."""
-        match hass_hvac_mode:
-            case HVACMode.OFF:
-                return ThermostatMode.OFF
-
-            case HVACMode.HEAT:
-                return ThermostatMode.HEAT
-
-            case HVACMode.COOL:
-                return ThermostatMode.COOL
-
-            case HVACMode.HEAT_COOL:
-                return ThermostatMode.AUTO
-
-            case HVACMode.AUTO:
-                return ThermostatMode.AUTO
-
-            case HVACMode.FAN_ONLY:
-                return ThermostatMode.FAN_ONLY
-
-        return None
-
-    def _hass_to_qolsys_fan_mode(self, hass_fan_mode: str):
-        """Convert Home Assistant fan mode to Qolsys fan mode."""
-        if hass_fan_mode == FAN_AUTO:
-            return ThermostatFanMode.AUTO_LOW
-
-        if hass_fan_mode == FAN_ON:
-            return ThermostatFanMode.LOW
-
-        match hass_fan_mode:
-            case "auto":
-                return ThermostatFanMode.AUTO_LOW
-
-            case "on":
-                return ThermostatFanMode.LOW
-
-            case "high":
-                return ThermostatFanMode.HIGH
-
-            case "low":
-                return ThermostatFanMode.LOW
-
-            case "Circulate":
-                return ThermostatFanMode.CIRCULATION
-
-        return ThermostatFanMode.AUTO_LOW

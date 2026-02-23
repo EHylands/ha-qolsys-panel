@@ -79,7 +79,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
     )
 
-    # Configure controller
+    # Configure the controller
     if not await QolsysPanel.config(start_pairing=False):
         _LOGGER.error("Error Configuring Controller")
         raise ConfigEntryNotReady(
