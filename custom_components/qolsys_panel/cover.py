@@ -16,8 +16,6 @@ from qolsys_controller.automation.service_cover import CoverService
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from custom_components.qolsys_panel.entity import QolsysZwaveEntity
-
 from .types import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity
 

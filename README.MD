@@ -87,7 +87,7 @@ Any **Qolsys Panel** that can be paired with an **IQ Remote**:
 - IQ Panel 4
 - IQ 4 Hub
 - IQ Hub
-- IQ Pro
+- IQ Pro (IQ Installer app)
 
 ## 📦 Provided Entities
 
@@ -126,8 +126,7 @@ The integration will be cleanly removed from your system.
 | **Panel**              | Diagnostic Sensors                   | ✅     |
 |                        | Panel Scenes                         | ✅     |
 |                        | Weather Forecast                     | ✅     |
-| **Partition**          | Arming Status                        | ✅     |
-|                        | Alarm State                          | ✅     |
+| **Partition**          | Arming Status and Alarm State        | ✅     |
 |                        | Home Instant Arming                  | ✅     |
 |                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
 |                        | Trigger Alarm                         | ✅     |
