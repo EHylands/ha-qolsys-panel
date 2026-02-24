@@ -34,7 +34,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
-
     entities: list[ClimateEntity] = []
 
     # Add Automation Device Thermostats

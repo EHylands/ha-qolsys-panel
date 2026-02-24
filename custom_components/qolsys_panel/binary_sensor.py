@@ -598,6 +598,7 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self.async_write_ha_state()
         self._cancel_reset = None
 
+
 class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
     """A binary sensor entity for an Automation Device service status."""
 

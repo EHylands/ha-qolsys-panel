@@ -106,44 +106,6 @@ async def async_setup_entry(
                 )
             )
 
-    # Add Z-Wave Device Sensors
-    for device in QolsysPanel.state.zwave_devices:
-        # Battery Sensor
-        if device.is_battery_enabled():
-            entities.append(
-                ZwaveDevice_BatteryValue(
-                    QolsysPanel, device.node_id, config_entry.unique_id
-                )
-            )
-
-        # Z-Wave Meter
-        if device.is_service_meter_enabled():
-            for meter_endpoint in device.meter_endpoints:
-                for meter_sensor in meter_endpoint.sensors:
-                    entities.append(
-                        ZwaveDevice_MeterValue(
-                            QolsysPanel,
-                            device.node_id,
-                            meter_endpoint.endpoint,
-                            meter_endpoint._meter_type,
-                            meter_sensor.scale,
-                            config_entry.unique_id,
-                        )
-                    )
-        # Z-Wave Multilevel Sensor
-        if device.is_service_multilevelsensor_enabled():
-            for sensor_endpoint in device.multilevelsensor_endpoints:
-                for sensor in sensor_endpoint.sensors:
-                    entities.append(
-                        ZwaveDevice_MultilevelSensorValue(
-                            QolsysPanel,
-                            device.node_id,
-                            sensor_endpoint.endpoint,
-                            sensor.unit,
-                            config_entry.unique_id,
-                        )
-                    )
-
     # Add Automation Device Sensors
     for device in QolsysPanel.state.automation_devices:
         # Battery Level Value
@@ -203,29 +165,6 @@ async def async_setup_entry(
             QolsysPanel, virtual_node_id, endpoint, unit, config_entry.unique_id
         )
         async_add_entities([new_sensor])
-
-    # Add new Z-Wave Device Multilevel Sensor - Dynamic
-    async def _zwave_multilevel_sensor_add(**kwargs) -> None:
-        node_id = kwargs["node_id"]
-        endpoint = kwargs["endpoint"]
-        unit = kwargs["unit"]
-
-        _LOGGER.debug(
-            "EVENT_ZWAVE_MULTILEVELSENSOR_ADD - node_id:%s, endpoint:%s, unit:%s",
-            node_id,
-            endpoint,
-            unit,
-        )
-
-        new_sensor = ZwaveDevice_MultilevelSensorValue(
-            QolsysPanel, node_id, endpoint, unit, config_entry.unique_id
-        )
-        async_add_entities([new_sensor])
-
-    _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD)
-    QolsysPanel.state.state_observer.subscribe(
-        QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD, _zwave_multilevel_sensor_add
-    )
 
     _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_AUTDEV_SENSOR_ADD)
     QolsysPanel.state.state_observer.subscribe(

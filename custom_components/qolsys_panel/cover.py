@@ -29,7 +29,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Covers."""
     QolsysPanel = config_entry.runtime_data
-
     entities: list[CoverEntity] = []
 
     # Add Automation Device Covers
