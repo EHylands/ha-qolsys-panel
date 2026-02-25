@@ -162,6 +162,11 @@ async def async_setup_entry(
             )
         )
         entities.append(
+            PartitionAlarmSensor(
+                QolsysPanel, partition.id, config_entry.unique_id, "Gaz"
+            )
+        )
+        entities.append(
             PartitionExitSoundSensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
         entities.append(
@@ -224,7 +229,7 @@ class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
 class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
     """A binary sensor entity showing partition alarm."""
 
-    alarm_type_array = ["Police", "Fire", "Auxiliary"]
+    alarm_type_array = ["Police", "Fire", "Auxiliary", "Gaz"]
 
     def __init__(
         self,
@@ -264,6 +269,10 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
                     PartitionAlarmType.AUXILIARY_EMERGENCY in partition_alarm
                     or PartitionAlarmType.SILENT_AUXILIARY_EMERGENCY in partition_alarm
                 ):
+                    return True
+
+            case "Gaz":
+                if PartitionAlarmType.GAZ_CO in partition_alarm:
                     return True
 
         return False
