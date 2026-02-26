@@ -148,6 +148,9 @@
       "partition_alarm_police": {
         "name": "Police Alarm"
       },
+      "partition_alarm_gaz": {
+        "name": "Gaz Alarm"
+      },
       "partition_alarm_auxiliary": {
         "name": "Auxiliary Alarm"
       },
