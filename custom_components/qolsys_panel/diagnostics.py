@@ -81,29 +81,8 @@ async def async_get_config_entry_diagnostics(
                     for partition in QolsysPanel.state.partitions
                 ],
                 "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
-                "zwave_dimmers": [
-                    dimmer.to_dict_dimmer()
-                    for dimmer in QolsysPanel.state.zwave_dimmers
-                ],
-                "zwave_locks": [
-                    lock.to_dict_lock() for lock in QolsysPanel.state.zwave_locks
-                ],
-                "zwave_thermostats": [
-                    thermostat.to_dict_thermostat()
-                    for thermostat in QolsysPanel.state.zwave_thermostats
-                ],
-                "zwave_thermometers": [
-                    thermometer.to_dict_thermometer()
-                    for thermometer in QolsysPanel.state.zwave_thermometers
-                ],
-                "zwave_other": [
-                    other for other in QolsysPanel.state.zwave_other_devices
-                ],
                 "zwave_nodes": [
                     device.to_dict_base() for device in QolsysPanel.state.zwave_devices
-                ],
-                "virtual_adc_devices": [
-                    device.to_dict_adc() for device in QolsysPanel.state.adc_devices
                 ],
                 "automation_content_provider": [
                     QolsysPanel.panel.db.get_automation_devices()
