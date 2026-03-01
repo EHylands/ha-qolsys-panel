@@ -89,21 +89,6 @@
       "battery": {
         "name": "Battery"
       },
-      "dimmer_battery": {
-        "name": "Battery"
-      },
-      "lock_battery": {
-        "name": "Battery"
-      },
-      "thermostat_battery": {
-        "name": "Battery"
-      },
-      "thermometer_battery":{
-        "name": "Battery"
-      },
-      "powermeter_battery":{
-        "name": "Battery"
-      },
       "powerg_battery_voltage":{
         "name": "Battery Voltage"
       },
@@ -123,9 +108,6 @@
       },
       "panel_fail_to_communicate": {
         "name": "Communication"
-      },
-      "panel_gsm_connection_status": {
-        "name": "GSM Status"
       },
       "panel_zwave_controller": {
         "name": "Z-Wave Controller"
@@ -149,16 +131,13 @@
         "name": "Police Alarm"
       },
       "partition_alarm_gaz": {
-        "name": "Gaz Alarm"
+        "name": "CO Alarm"
       },
       "partition_alarm_auxiliary": {
         "name": "Auxiliary Alarm"
       },
       "panel_auto_bypass": {
         "name": "Auto Bypass"
-      },
-      "zwave_node_status": {
-        "name": "Node Status"
       },
       "partition_exit_sounds": {
         "name": "Exit Sounds"

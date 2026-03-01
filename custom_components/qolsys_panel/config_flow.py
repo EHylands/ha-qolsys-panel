@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError
+from qolsys_controller.errors import QolsysSslError, QolsysMqttError
 import voluptuous as vol
 
 from homeassistant.config_entries import (
@@ -280,6 +280,114 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"Qolsys Panel ({self._data[CONF_MAC]})",
             data=self._data,
+        )
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle  reconfigure flow."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()
+
+        self._config_directory = Path(self.hass.config.config_dir + "/qolsys_panel/")
+        self._QolsysPanel = qolsys_controller()
+        self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
+        self._QolsysPanel.settings.log_mqtt_mesages = False
+        self._QolsysPanel.settings.auto_discover_pki = False
+        self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
+
+        path = self._config_directory.joinpath("pki")
+        directories = [p.name for p in path.iterdir() if p.is_dir()]
+        for d in directories:
+            self._pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
+
+        data_schema = {
+            vol.Required(
+                CONF_HOST,
+                default=entry.data.get(CONF_HOST),
+            ): str,
+            vol.Required(CONF_RANDOM_MAC): selector(
+                {
+                    "select": {
+                        "options": self._pki_list,
+                        "multiple": False,
+                        "mode": "dropdown",
+                    }
+                }
+            ),
+        }
+
+        # Abord if no PKI available
+        if not self._pki_list:
+            errors["base"] = "No existing PKI found in configuration folder"
+            # await self._QolsysPanel.stop_operation()
+            return self.async_show_form(
+                step_id="reconfigure",
+                data_schema=vol.Schema(data_schema),
+                errors=errors,
+            )
+
+        # Load existing data to pre-fill form
+        if user_input is None:
+            return self.async_show_form(
+                step_id="reconfigure",
+                data_schema=vol.Schema(data_schema),
+            )
+
+        # User has submitted new data, attempt to reconfigure with new settings
+        if user_input is not None:
+            self._QolsysPanel.settings.panel_ip = user_input[CONF_HOST]
+            self._QolsysPanel.settings.random_mac = user_input[CONF_RANDOM_MAC]
+
+            if not await self._QolsysPanel.config(start_pairing=False):
+                _LOGGER.error("Failed to reconnect during reconfigure")
+                return self.async_show_form(
+                    step_id="reconfigure",
+                    data_schema=None,
+                    errors={"base": "cannot_connect"},
+                )
+
+            try:
+                await self._QolsysPanel.mqtt_connect_task(
+                    reconnect=False, run_forever=False
+                )
+            except QolsysSslError:
+                _LOGGER.error("TLS error during reconfigure")
+                return self.async_show_form(
+                    step_id="reconfigure",
+                    data_schema=None,
+                    errors={"base": "authentication_failed"},
+                )
+            except QolsysMqttError:
+                _LOGGER.error("TLS error during reconfigure")
+                return self.async_show_form(
+                    step_id="reconfigure",
+                    data_schema=None,
+                    errors={"base": "cannot_connect"},
+                )
+            finally:
+                await self._QolsysPanel.stop_operation()
+
+            self._data[CONF_MAC] = format_mac(self._QolsysPanel.panel.MAC_ADDRESS)
+            self._data[CONF_HOST] = self._QolsysPanel.settings.panel_ip
+            self._data[CONF_MODEL] = self._QolsysPanel.panel.product_type
+            self._data[CONF_RANDOM_MAC] = format_mac(
+                self._QolsysPanel.settings.random_mac
+            )
+            self._data[CONF_IMEI] = self._QolsysPanel.panel.imei
+
+            await self.async_set_unique_id(
+                format_mac(self._QolsysPanel.panel.MAC_ADDRESS)
+            )
+            self._abort_if_unique_id_mismatch()
+            return self.async_update_reload_and_abort(
+                self._get_reconfigure_entry(),
+                data_updates=self._data,
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=data_schema,
         )
 
 

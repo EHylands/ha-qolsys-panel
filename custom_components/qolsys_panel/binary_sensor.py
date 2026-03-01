@@ -66,12 +66,6 @@ PANEL_SENSOR = [
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
     ),
     BinarySensorEntityDescription(
-        key="GSM_CONNECTION_STATUS",
-        translation_key="panel_gsm_connection_status",
-        entity_registry_enabled_default=True,
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-    ),
-    BinarySensorEntityDescription(
         key="ZWAVE_CONTROLLER",
         translation_key="panel_zwave_controller",
         entity_registry_enabled_default=True,
@@ -312,12 +306,6 @@ class PanelSensor(QolsysPanelSensorEntity, BinarySensorEntity):
 
             case "FAIL_TO_COMMUNICATE":
                 return self.QolsysPanel.panel.FAIL_TO_COMMUNICATE != "true"
-
-            case "GSM_CONNECTION_STATUS":
-                return (
-                    self.QolsysPanel.panel.GSM_CONNECTION_STATUS
-                    != "gsm_error_no_signal"
-                )
 
             case "ZWAVE_CONTROLLER":
                 return self.QolsysPanel.panel.ZWAVE_CONTROLLER == "true"
