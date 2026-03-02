@@ -32,7 +32,6 @@ from . import QolsysPanelConfigEntry
 from .entity import (
     QolsysAutomationDeviceEntity,
     QolsysZoneEntity,
-    QolsysZwaveEntity,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -290,30 +289,6 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
     def native_value(self) -> float | None:
         """Return zone device battery voltage value."""
         return self._zone.powerg_battery_voltage
-
-
-class ZwaveDevice_BatteryValue(QolsysZwaveEntity, SensorEntity):
-    """A sensor entity for a dimmer battery value."""
-
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
-    ) -> None:
-        """Set up a sensor entity for a z-wave device battery value."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_unique_id}_battery_value"
-        self._attr_translation_key = "battery"
-        self._attr_native_unit_of_measurement = "%"
-        self._attr_device_class = SensorDeviceClass.BATTERY
-        self._attr_suggested_display_precision = 0
-        self._attr_state_class = SensorStateClass.MEASUREMENT
-
-    @property
-    def native_value(self) -> int | None:
-        """Return z-wave device battery value."""
-        return self._node.node_battery_level_value
-
 
 class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
     """A sensor entity for an Automation Device battery level value."""
