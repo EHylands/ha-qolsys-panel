@@ -3,25 +3,20 @@
 from __future__ import annotations
 
 import logging
-from typing import Type
 
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_zwave import (
-    MeterType,
-    ZWaveElectricMeterScale,
-    ZWaveMultilevelSensorScale,
-    ZWaveUnknownMeterScale,
+from qolsys_controller.automation.service_sensor import SensorService, QolsysSensor
+from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
+from qolsys_controller.enum import (
+    QolsysSensorScale,
+    QolsysMeterScale,
 )
+
 from qolsys_controller.enum import QolsysEvent
 
-from qolsys_controller.protocol_zwave.service_meter import (
-    QolsysZwaveServiceMeter,
-    QolsysZwaveMeterSensor,
-)
-from qolsys_controller.protocol_zwave.service_multilevelsensor import (
-    QolsysZwaveServiceMultilevelSensor,
-)
+from qolsys_controller.automation.service_battery import BatteryService
+
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -31,13 +26,12 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from enum import IntEnum
 
 
 from . import QolsysPanelConfigEntry
 from .entity import (
+    QolsysAutomationDeviceEntity,
     QolsysZoneEntity,
-    QolsysZwaveEntity,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -97,67 +91,69 @@ async def async_setup_entry(
                 )
             )
 
-    # Add Z-Wave Device Sensors
-    for device in QolsysPanel.state.zwave_devices:
-        # Battery Sensor
-        if device.is_battery_enabled():
-            entities.append(
-                ZwaveDevice_BatteryValue(
-                    QolsysPanel, device.node_id, config_entry.unique_id
+    # Add Automation Device Sensors
+    for device in QolsysPanel.state.automation_devices:
+        # Battery Level Value
+        for service in device.service_get_protocol(BatteryService):
+            if service.supports_battery_level():
+                entities.append(
+                    AutomationDevice_BatteryValue(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        config_entry.unique_id,
+                    )
                 )
-            )
 
-        # Z-Wave Meter
-        if device.is_service_meter_enabled():
-            for meter_endpoint in device.meter_endpoints:
-                for meter_sensor in meter_endpoint.sensors:
-                    entities.append(
-                        ZwaveDevice_MeterValue(
-                            QolsysPanel,
-                            device.node_id,
-                            meter_endpoint.endpoint,
-                            meter_endpoint._meter_type,
-                            meter_sensor.scale,
-                            config_entry.unique_id,
-                        )
+        # Multilevel Sensors
+        for service in device.service_get_protocol(SensorService):
+            for sensor in service.sensors:
+                entities.append(
+                    AutomationDevice_Sensor(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        sensor.unit,
+                        config_entry.unique_id,
                     )
-        # Z-Wave Multilevel Sensor
-        if device.is_service_multilevelsensor_enabled():
-            for sensor_endpoint in device.multilevelsensor_endpoints:
-                for sensor in sensor_endpoint.sensors:
-                    entities.append(
-                        ZwaveDevice_MultilevelSensorValue(
-                            QolsysPanel,
-                            device.node_id,
-                            sensor_endpoint.endpoint,
-                            sensor.unit,
-                            config_entry.unique_id,
-                        )
+                )
+
+        # Meters
+        for service in device.service_get_protocol(MeterService):
+            for meter in service.meters:
+                entities.append(
+                    AutomationDevice_Meter(
+                        QolsysPanel,
+                        device.virtual_node_id,
+                        service.endpoint,
+                        meter.unit,
+                        config_entry.unique_id,
                     )
+                )
 
     async_add_entities(entities)
 
-    # Add new Z-Wave Device Multilevel Sensor - Dynamic
-    async def _zwave_multilevel_sensor_add(**kwargs) -> None:
-        node_id = kwargs["node_id"]
+    # Add new Automation Device Sensor - Dynamic
+    async def _automation_device_sensor_add(**kwargs) -> None:
+        virtual_node_id = kwargs["virtual_node_id"]
         endpoint = kwargs["endpoint"]
         unit = kwargs["unit"]
 
         _LOGGER.debug(
-            "EVENT_ZWAVE_MULTILEVELSENSOR_ADD - node_id:%s, endpoint:%s, unit:%s",
-            node_id,
+            "EVENT_AUTDEV_SENSOR_ADD - virtual_node_id:%s, endpoint:%s, unit:%s",
+            virtual_node_id,
             endpoint,
             unit,
         )
 
-        new_sensor = ZwaveDevice_MultilevelSensorValue(
-            QolsysPanel, node_id, endpoint, unit, config_entry.unique_id
+        new_sensor = AutomationDevice_Sensor(
+            QolsysPanel, virtual_node_id, endpoint, unit, config_entry.unique_id
         )
         async_add_entities([new_sensor])
 
-    _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD)
+    _LOGGER.debug("Subscribing to: %s", QolsysEvent.EVENT_AUTDEV_SENSOR_ADD)
     QolsysPanel.state.state_observer.subscribe(
-        QolsysEvent.EVENT_ZWAVE_MULTILEVELSENSOR_ADD, _zwave_multilevel_sensor_add
+        QolsysEvent.EVENT_AUTDEV_SENSOR_ADD, _automation_device_sensor_add
     )
 
 
@@ -294,187 +290,62 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
         """Return zone device battery voltage value."""
         return self._zone.powerg_battery_voltage
 
-
-class ZwaveDevice_BatteryValue(QolsysZwaveEntity, SensorEntity):
-    """A sensor entity for a dimmer battery value."""
+class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
+    """A sensor entity for an Automation Device battery level value."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: int, unique_id: str
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: int,
+        endpoint: int,
+        unique_id: str,
     ) -> None:
-        """Set up a sensor entity for a z-wave device battery value."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_unique_id}_battery_value"
+        """Set up a sensor entity for an automation device battery level value."""
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_battery_value{endpoint}"
         self._attr_translation_key = "battery"
         self._attr_native_unit_of_measurement = "%"
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._service = self._autdev.service_get(BatteryService, endpoint)
 
     @property
     def native_value(self) -> int | None:
-        """Return z-wave device battery value."""
-        return self._node.node_battery_level_value
+        return self._service.battery_level
 
 
-class ZwaveDevice_MeterValue(QolsysZwaveEntity, SensorEntity):
-    """A sensor entity for a z-wave meter value."""
+class AutomationDevice_Sensor(QolsysAutomationDeviceEntity, SensorEntity):
+    """An Automation Device sensor entity."""
 
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
-        node_id: int,
-        endpoint: str,
-        meter_type: MeterType,
-        scale: IntEnum,
+        virtual_node_id: str,
+        endpoint: int,
+        unit: QolsysSensorScale,
         unique_id: str,
     ) -> None:
-        """Set up a sensor entity for a z-wave meter value."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._meter_type: MeterType = meter_type
-        self._attr_suggested_display_precision = 2
-        self._endpoint: str = endpoint
-        self._scale: IntEnum = scale
-        self._attr_unique_id = (
-            f"{self._zwave_unique_id}_{meter_type.name}_{endpoint}_{self._scale.name}"
-        )
-        self._attr_suggested_display_precision = 0
-        self._scale_type: Type[IntEnum] = ZWaveUnknownMeterScale
-        self._meter: QolsysZwaveServiceMeter | None = None
-        self._meter_sensor: QolsysZwaveMeterSensor | None = None
-
-        for meter_endpoint in self._node.meter_endpoints:
-            if meter_endpoint.endpoint == endpoint:
-                self._meter = meter_endpoint
-                self._scale_type = self._meter._scale_type
-                self._meter_sensor = self._meter.get_sensor(scale)
-                break
-
-    @property
-    def state_class(self) -> SensorStateClass:
-        """Return the state class of this entity."""
-
-        match self._scale_type(self._scale):
-            case ZWaveElectricMeterScale.WATTS:
-                return SensorStateClass.MEASUREMENT
-            case ZWaveElectricMeterScale.KWH:
-                return SensorStateClass.TOTAL_INCREASING
-            case ZWaveElectricMeterScale.POWER_FACTOR:
-                return SensorStateClass.MEASUREMENT
-            case ZWaveElectricMeterScale.KVAR:
-                return SensorStateClass.TOTAL
-            case ZWaveElectricMeterScale.VOLTS:
-                return SensorStateClass.MEASUREMENT
-            case ZWaveElectricMeterScale.KVARH:
-                return SensorStateClass.TOTAL
-            case ZWaveElectricMeterScale.KVAH:
-                return SensorStateClass.TOTAL
-            case ZWaveElectricMeterScale.AMPS:
-                return SensorStateClass.MEASUREMENT
-            case ZWaveElectricMeterScale.PULSE_COUNT:
-                return SensorStateClass.MEASUREMENT
-
-        return SensorStateClass.MEASUREMENT
-
-    @property
-    def native_unit_of_measurement(self) -> str:
-        scale_type = self._meter._scale_type
-
-        if self._meter_type == MeterType.ELECTRIC_METER:
-            match scale_type(self._scale):
-                case ZWaveElectricMeterScale.WATTS:
-                    return "W"
-                case ZWaveElectricMeterScale.KWH:
-                    return "kWh"
-                case ZWaveElectricMeterScale.POWER_FACTOR:
-                    return "%"
-                case ZWaveElectricMeterScale.KVAR:
-                    return "kvar"
-                case ZWaveElectricMeterScale.VOLTS:
-                    return "V"
-                case ZWaveElectricMeterScale.KVARH:
-                    return "kvarh"
-                case ZWaveElectricMeterScale.KVAH:
-                    return "Wh"
-                case ZWaveElectricMeterScale.AMPS:
-                    return "A"
-                case ZWaveElectricMeterScale.PULSE_COUNT:
-                    return "Hz"
-
-            return None
-
-    @property
-    def device_class(self) -> SensorDeviceClass | None:
-        scale_type = self._scale_type
-
-        if self._meter_type == MeterType.ELECTRIC_METER:
-            match scale_type(self._scale):
-                case ZWaveElectricMeterScale.WATTS:
-                    return SensorDeviceClass.POWER
-                case ZWaveElectricMeterScale.KWH:
-                    return SensorDeviceClass.ENERGY
-                case ZWaveElectricMeterScale.POWER_FACTOR:
-                    return SensorDeviceClass.POWER_FACTOR
-                case ZWaveElectricMeterScale.KVAR:
-                    return SensorDeviceClass.REACTIVE_POWER
-                case ZWaveElectricMeterScale.VOLTS:
-                    return SensorDeviceClass.VOLTAGE
-                case ZWaveElectricMeterScale.KVARH:
-                    return SensorDeviceClass.REACTIVE_POWER  # Should be reactive_energy
-                case ZWaveElectricMeterScale.KVAH:
-                    return SensorDeviceClass.ENERGY
-                case ZWaveElectricMeterScale.AMPS:
-                    return SensorDeviceClass.CURRENT
-                case ZWaveElectricMeterScale.PULSE_COUNT:
-                    return SensorDeviceClass.FREQUENCY
-
-            return None
-
-    @property
-    def native_value(self) -> int | None:
-        """Return powermeter value."""
-        return self._meter_sensor.value
-
-
-class ZwaveDevice_MultilevelSensorValue(QolsysZwaveEntity, SensorEntity):
-    """A sensor entity for a dimmer meter value."""
-
-    def __init__(
-        self,
-        QolsysPanel: qolsys_controller,
-        node_id: int,
-        endpoint: str,
-        unit: ZWaveMultilevelSensorScale,
-        unique_id: str,
-    ) -> None:
-        """Set up a sensor entity for a z-wave device multilevelsensor value."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = (
-            f"{self._zwave_unique_id}_multilevelsensor_{endpoint}_{unit.name}"
-        )
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_sensor_{endpoint}_{unit.name}"
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
         self._unit = unit
-        self._endpoint: str = endpoint
-        self._scale: ZWaveElectricMeterScale = unit
-        self._multilevel_endpoint: QolsysZwaveServiceMultilevelSensor | None = None
-        self._multilevel_sensor: QolsysZwaveServiceMultilevelSensor | None = None
-
-        for sensor_endpoint in self._node.multilevelsensor_endpoints:
-            if sensor_endpoint.endpoint == endpoint:
-                self._multilevel_endpoint = sensor_endpoint
-                self._multilevel_sensor = self._multilevel_endpoint.get_sensor(unit)
-                break
+        self._endpoint: int = endpoint
+        self._unit: QolsysSensorScale = unit
+        self._service = self._autdev.service_get(SensorService, endpoint)
+        self._sensor: QolsysSensor = self._service.sensor(unit)
 
     @property
     def native_unit_of_measurement(self) -> str:
         match self._unit:
-            case ZWaveMultilevelSensorScale.TEMPERATURE_FAHRENHEIT:
+            case QolsysSensorScale.TEMPERATURE_FAHRENHEIT:
                 return "°F"
-            case ZWaveMultilevelSensorScale.TEMPERATURE_CELSIUS:
+            case QolsysSensorScale.TEMPERATURE_CELSIUS:
                 return "°C"
-            case ZWaveMultilevelSensorScale.RELATIVE_HUMIDITY:
+            case QolsysSensorScale.RELATIVE_HUMIDITY:
                 return "%"
 
         return None
@@ -482,21 +353,106 @@ class ZwaveDevice_MultilevelSensorValue(QolsysZwaveEntity, SensorEntity):
     @property
     def device_class(self) -> SensorDeviceClass | None:
         match self._unit:
-            case ZWaveMultilevelSensorScale.TEMPERATURE_CELSIUS:
+            case QolsysSensorScale.TEMPERATURE_FAHRENHEIT:
                 return SensorDeviceClass.TEMPERATURE
 
-            case ZWaveMultilevelSensorScale.TEMPERATURE_FAHRENHEIT:
+            case QolsysSensorScale.TEMPERATURE_CELSIUS:
                 return SensorDeviceClass.TEMPERATURE
 
-            case ZWaveMultilevelSensorScale.RELATIVE_HUMIDITY:
+            case QolsysSensorScale.RELATIVE_HUMIDITY:
                 return SensorDeviceClass.HUMIDITY
 
         return None
 
     @property
     def native_value(self) -> float | None:
-        """Return sensor value."""
-        if self._multilevel_sensor is None:
-            return None
+        return self._sensor.value
 
-        return self._multilevel_sensor.value
+
+class AutomationDevice_Meter(QolsysAutomationDeviceEntity, SensorEntity):
+    """An Automation Device Meter entity."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unit: QolsysMeterScale,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_meter{endpoint}_{unit.name}"
+        self._attr_suggested_display_precision = 2
+        self._unit: QolsysMeterScale = unit
+        self._endpoint: int = endpoint
+        self._service = self._autdev.service_get(MeterService, endpoint)
+        self._meter: QolsysMeter = self._service.meter(unit)
+
+    @property
+    def native_unit_of_measurement(self) -> str:
+        return self._unit.value
+
+    @property
+    def device_class(self) -> SensorDeviceClass | None:
+        match self._unit:
+            case QolsysMeterScale.KWH:
+                return SensorDeviceClass.ENERGY
+            case QolsysMeterScale.KVAH:
+                return SensorDeviceClass.ENERGY
+            case QolsysMeterScale.WATTS:
+                return SensorDeviceClass.POWER
+            case QolsysMeterScale.PULSE_COUNT:
+                return SensorDeviceClass.FREQUENCY
+            case QolsysMeterScale.VOLTS:
+                return SensorDeviceClass.VOLTAGE
+            case QolsysMeterScale.AMPS:
+                return SensorDeviceClass.CURRENT
+            case QolsysMeterScale.POWER_FACTOR:
+                return SensorDeviceClass.POWER_FACTOR
+            case QolsysMeterScale.KVAR:
+                return SensorDeviceClass.REACTIVE_POWER
+            case QolsysMeterScale.KVARH:
+                return SensorDeviceClass.REACTIVE_POWER  # Should be reactive_energy
+            case QolsysMeterScale.CUBIC_METERS:
+                return SensorDeviceClass.VOLUME
+            case QolsysMeterScale.CUBIC_FEET:
+                return SensorDeviceClass.VOLUME
+            case QolsysMeterScale.US_GALLONS:
+                return SensorDeviceClass.VOLUME
+
+        return None
+
+    @property
+    def state_class(self) -> SensorStateClass:
+        """Return the state class of this entity."""
+        match self._unit:
+            case QolsysMeterScale.KWH:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.KVAH:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.WATTS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.PULSE_COUNT:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.VOLTS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.AMPS:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.POWER_FACTOR:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.KVAR:
+                return SensorStateClass.MEASUREMENT
+            case QolsysMeterScale.KVARH:
+                return SensorStateClass.TOTAL
+            case QolsysMeterScale.CUBIC_METERS:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.CUBIC_FEET:
+                return SensorStateClass.TOTAL_INCREASING
+            case QolsysMeterScale.US_GALLONS:
+                return SensorStateClass.TOTAL_INCREASING
+
+        return SensorStateClass.TOTAL
+
+    @property
+    def native_value(self) -> float | None:
+        return self._meter.value

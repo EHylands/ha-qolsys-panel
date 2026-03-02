@@ -1,7 +1,11 @@
 {
   "config": {
+    "abort": {
+      "reconfigure_successful": "Qolsys Panel successfully reconfigured with new settings.",
+      "already_in_progress": "Configuration flow already in progress.",
+      "already_configured": "Qolsys Panel is already configured."
+    },
     "step": {
-
       "user": {
         "description": "Choose pairing method:"
       },
@@ -89,21 +93,6 @@
       "battery": {
         "name": "Battery"
       },
-      "dimmer_battery": {
-        "name": "Battery"
-      },
-      "lock_battery": {
-        "name": "Battery"
-      },
-      "thermostat_battery": {
-        "name": "Battery"
-      },
-      "thermometer_battery":{
-        "name": "Battery"
-      },
-      "powermeter_battery":{
-        "name": "Battery"
-      },
       "powerg_battery_voltage":{
         "name": "Battery Voltage"
       },
@@ -123,9 +112,6 @@
       },
       "panel_fail_to_communicate": {
         "name": "Communication"
-      },
-      "panel_gsm_connection_status": {
-        "name": "GSM Status"
       },
       "panel_zwave_controller": {
         "name": "Z-Wave Controller"
@@ -148,14 +134,14 @@
       "partition_alarm_police": {
         "name": "Police Alarm"
       },
+      "partition_alarm_gaz": {
+        "name": "CO Alarm"
+      },
       "partition_alarm_auxiliary": {
         "name": "Auxiliary Alarm"
       },
       "panel_auto_bypass": {
         "name": "Auto Bypass"
-      },
-      "zwave_node_status": {
-        "name": "Node Status"
       },
       "partition_exit_sounds": {
         "name": "Exit Sounds"

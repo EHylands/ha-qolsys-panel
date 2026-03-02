@@ -1,4 +1,4 @@
-"""Utility functions for Qolsys Panel integration."""
+"""Utility functions for Qolsys Panel Integration."""
 
 from homeassistant.components import network
 from homeassistant.core import HomeAssistant

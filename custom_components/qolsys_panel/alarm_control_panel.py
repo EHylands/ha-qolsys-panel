@@ -1,4 +1,4 @@
-"""Support for Qolsys Panel Partition Control."""
+"""Support for Qolsys Panel Partition."""
 
 from __future__ import annotations
 
@@ -37,14 +37,18 @@ async def async_setup_entry(
     """Set up alarm control panels for each partition."""
     QolsysPanel = config_entry.runtime_data
 
-    async_add_entities(
-        PartitionAlarmControlPanel(
-            QolsysPanel,
-            partition.id,
-            config_entry.unique_id,
+    entities: list[AlarmControlPanelEntity] = []
+
+    for partition in QolsysPanel.state.partitions:
+        entities.append(
+            PartitionAlarmControlPanel(
+                QolsysPanel,
+                partition.id,
+                config_entry.unique_id,
+            )
         )
-        for partition in QolsysPanel.state.partitions
-    )
+
+    async_add_entities(entities)
 
 
 class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity):
@@ -61,7 +65,6 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     def __init__(
         self, QolsysPanel: qolsys_controller, partition_id: str, unique_id: str
     ) -> None:
-        """Initialise a Qolsys Alarm control panel entity."""
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = self._partition_unique_id
         self._attr_code_arm_required = QolsysPanel.settings.check_user_code_on_arm
@@ -70,8 +73,6 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
     @property
     def alarm_state(self) -> AlarmControlPanelState | None:
-        """Return the state of the alarm."""
-
         alarm_state = self._partition.alarm_state
         system_status = self._partition.system_status
 

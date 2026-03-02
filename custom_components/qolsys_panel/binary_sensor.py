@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+import logging
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum import (
@@ -11,7 +12,8 @@ from qolsys_controller.enum import (
     ZoneStatus,
     QolsysEvent,
 )
-from qolsys_controller.protocol_adc.service_malfunction import QolsysAdcMalfunctionService
+
+from qolsys_controller.automation.service_status import StatusService
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -25,16 +27,19 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
 from .entity import (
+    QolsysAutomationDeviceEntity,
     QolsysPanelEntity,
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
     QolsysZoneEntity,
-    QolsysZwaveEntity,
 )
-from .entity_adc import QolsysAdcEntity
+
+_LOGGER = logging.getLogger(__name__)
+
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
+ALARM_TYPE_ARRAY = ["Police", "Fire", "Auxiliary", "Gaz"]
 
 PANEL_SENSOR = [
     BinarySensorEntityDescription(
@@ -58,12 +63,6 @@ PANEL_SENSOR = [
     BinarySensorEntityDescription(
         key="FAIL_TO_COMMUNICATE",
         translation_key="panel_fail_to_communicate",
-        entity_registry_enabled_default=True,
-        device_class=BinarySensorDeviceClass.CONNECTIVITY,
-    ),
-    BinarySensorEntityDescription(
-        key="GSM_CONNECTION_STATUS",
-        translation_key="panel_gsm_connection_status",
         entity_registry_enabled_default=True,
         device_class=BinarySensorDeviceClass.CONNECTIVITY,
     ),
@@ -142,21 +141,14 @@ async def async_setup_entry(
 
     # Add Partition Binary Sensors
     for partition in QolsysPanel.state.partitions:
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Police"
+        # Add Partition Alarm Type Binary Sensors (Police, Fire, Auxiliary, Gaz)
+        for alarm_type in ALARM_TYPE_ARRAY:
+            entities.append(
+                PartitionAlarmSensor(
+                    QolsysPanel, partition.id, config_entry.unique_id, alarm_type
+                )
             )
-        )
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Fire"
-            )
-        )
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Auxiliary"
-            )
-        )
+
         entities.append(
             PartitionExitSoundSensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
@@ -164,24 +156,17 @@ async def async_setup_entry(
             PartitionEntryDelaySensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
 
-    # Add Z-Wave device status sensor
-    for device in QolsysPanel.state.zwave_devices:
-        entities.append(
-            ZwaveDevice_Status(QolsysPanel, device.node_id, config_entry.unique_id)
-        )
-
-    # Add ADC Binary Sensors
-    for adc_device in QolsysPanel.state.adc_devices:
-        for service in adc_device.services:
-            if isinstance(service, QolsysAdcMalfunctionService):
-                entities.append(
-                    AdcSensor_Malfunction(
-                        QolsysPanel,
-                        adc_device.device_id,
-                        service.id,
-                        config_entry.unique_id,
-                    )
+    # Add Automation Device Status Sensors
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(StatusService):
+            entities.append(
+                AutomationDevice_Status(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
                 )
+            )
 
     async_add_entities(entities)
 
@@ -227,7 +212,7 @@ class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
 class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
     """A binary sensor entity showing partition alarm."""
 
-    alarm_type_array = ["Police", "Fire", "Auxiliary"]
+    alarm_type_array = ["Police", "Fire", "Auxiliary", "Gaz"]
 
     def __init__(
         self,
@@ -269,6 +254,10 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
                 ):
                     return True
 
+            case "Gaz":
+                if PartitionAlarmType.GAZ_CO in partition_alarm:
+                    return True
+
         return False
 
 
@@ -306,12 +295,6 @@ class PanelSensor(QolsysPanelSensorEntity, BinarySensorEntity):
 
             case "FAIL_TO_COMMUNICATE":
                 return self.QolsysPanel.panel.FAIL_TO_COMMUNICATE != "true"
-
-            case "GSM_CONNECTION_STATUS":
-                return (
-                    self.QolsysPanel.panel.GSM_CONNECTION_STATUS
-                    != "gsm_error_no_signal"
-                )
 
             case "ZWAVE_CONTROLLER":
                 return self.QolsysPanel.panel.ZWAVE_CONTROLLER == "true"
@@ -498,26 +481,6 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         return None
 
 
-class ZwaveDevice_Status(QolsysZwaveEntity, BinarySensorEntity):
-    """A binary sensor entity for a z-wave device status."""
-
-    _attr_entity_category = EntityCategory.DIAGNOSTIC
-
-    def __init__(
-        self, QolsysPanel: qolsys_controller, node_id: str, unique_id: str
-    ) -> None:
-        """Set up a binary sensor entity for a z-wave device status."""
-        super().__init__(QolsysPanel, node_id, unique_id)
-        self._attr_unique_id = f"{self._zwave_unique_id}_status"
-        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
-        self._attr_translation_key = "zwave_node_status"
-
-    @property
-    def is_on(self) -> bool:
-        """Return this z-wave device status."""
-        return self._node.node_status != "Normal"
-
-
 class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
     """Binary sensor for a Qolsys doorbell."""
 
@@ -622,24 +585,30 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self._cancel_reset = None
 
 
-class AdcSensor_Malfunction(QolsysAdcEntity, BinarySensorEntity):
-    _attr_name = None
-    _attr_name = "Malfunction"
+class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
+    """A binary sensor entity for an Automation Device service status."""
+
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
-        device_id: str,
-        service_id: int,
+        virtual_node_id: str,
+        endpoint: int,
         unique_id: str,
     ) -> None:
-        super().__init__(QolsysPanel, device_id, unique_id)
-        self._attr_unique_id = f"{self._adc_unique_id}_malfunction_{service_id}"
-        self._service_id = service_id
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_status_{endpoint}"
+        self._attr_device_class = BinarySensorDeviceClass.PROBLEM
+
+        self._attr_name = (
+            "Node Status"
+            if endpoint == 0
+            else f"Node Status{virtual_node_id} - Service{endpoint}"
+        )
+
+        self._service = self._autdev.service_get(StatusService, endpoint)
 
     @property
     def is_on(self) -> bool:
-        light_service = self._device.get_adc_service(self._service_id)
-        return light_service.is_malfunctionning()
+        return self._service.is_malfunctioning

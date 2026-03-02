@@ -4,8 +4,6 @@
 
 This is a custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allowing local pairing and control via Home Assistant.
 
-![Qolsys01](https://github.com/EHylands/ha-qolsys-panel/blob/main/assets/qolsys01.jpg)
-
 ## 🧩 Installation
 
 This integration is not yet part of the official HACS store. You must add it manually as a custom repository.
@@ -89,7 +87,7 @@ Any **Qolsys Panel** that can be paired with an **IQ Remote**:
 - IQ Panel 4
 - IQ 4 Hub
 - IQ Hub
-- IQ Pro
+- IQ Pro (IQ Installer app)
 
 ## 📦 Provided Entities
 
@@ -101,73 +99,11 @@ The following entities are provided by this integration:
 - Light
 - Lock
 - Sensor
+- Siren
 - Switch
 - Scene
+- Valve
 - Weather
-
-
-### Alarm Control Panel
-
-An **Alarm Control Panel** entity is created for each configured partition, with full support for **arming and disarming**.
-
-
-### Binary Sensor
-
-A **Binary Sensor** is added for each configured zone on your alarm system.
-
-Additionally, binary sensors are added as **diagnostic sensors** for:
-
-- Panel
-- Partition
-- Zones
-- Z-Wave devices
-
-### Climate
-
-A **Climate** entity is added for each **Z-Wave Thermostat** configured on the panel.
-
-### Light
-
-A **Light** entity is added for each **Z-Wave Dimmer** light configured on the panel.
-
-### Lock
-
-A **Lock** entity is added for each **Z-Wave Lock** connected to the panel.
-
-### Sensor
-
-Sensors are added to provide:
-
-- Zone **Average dBm**
-- Zone **Latest dBm**
-- Zone **Temperature** (Supported PowerG devices)
-- Zone **Light Level** (Supported PowerG devices)
-- Z-Wave Device **Battery %** (if Battery present)
-
-### Switch
-
-Switches are added for each partition to enable specific features:
-
-- **Arm Stay Instant**
-- **Arm Stay Silent Disarm**
-- **Exit Sounds**
-- **Entry Delay**
-
-### Scene
-
-Scenes are added for panel actions:
-
-- **Away**
-- **Home**
-- **Sleep**
-- **Wake Up**
-
-### Weather
-
-- Current weather condition
-- Weather forescast
-
-**Requirement**: Weather to Panel feature to be enabled in associated Alarm.com account
 
 ## 🔧 Removing the Integration
 
@@ -190,34 +126,27 @@ The integration will be cleanly removed from your system.
 | **Panel**              | Diagnostic Sensors                   | ✅     |
 |                        | Panel Scenes                         | ✅     |
 |                        | Weather Forecast                     | ✅     |
-|                        | (Alarm.com Weather to Panel)         |        |
-| **Partition**          | Arming Status                        | ✅     |
-|                        | Alarm State                          | ✅     |
+| **Partition**          | Arming Status and Alarm State        | ✅     |
 |                        | Home Instant Arming                  | ✅     |
 |                        | Home Silent Disarming (Firmware 4.6.1)| ✅     |
 |                        | Trigger Alarm                         | ✅     |
 |                        | Enable or Disable User Code           | ✅     |
-|                        | Set Exit Sounds                      | ✅     |
-|                        | Set Entry Delay                      | ✅     |
-|                        | TTS                                  | 🛠️     |
+|                        | Set Exit Sounds and Entry Delay       | ✅     |
 | **Zones**              | Sensor Status                        | ✅     |
 |                        | Tamper State                         | ✅     |
 |                        | Battery Level                        | ✅     |
 |                        | Temperature (supported PowerG device)| ✅     |
 |                        | Light (supported PowerG device)      | ✅     |
-|                        | Average dBm                          | ✅     |
-|                        | Latest dBm                           | ✅     |
-| **Z-Wave Devices**     | Battery Level                        | ✅     |
-|                        | Node Status                          | ✅     |
-|                        | Control Generic Devices              | TBD    |
-| **Z-Wave Dimmers**     | Light Status and Level Control       | ✅     |
-| **Z-Wave Door Locks**  | Lock, Unlock                         | ✅     |
-| **Z-Wave Powermeters** | Read device status                   | 🛠️     |
-| **Z-Wave Thermometers**| Read device status                   | 🛠️     |
-| **Z-Wave Thermostats** | Read device status                   | ✅     |
-|                        | Write device status                  | ✅     |
-| **Z-Wave Garage Doors**|                                      | 🛠️     |
-| **Z-Wave Outlets**     |                                      | 🛠️     |
-| **Alarm.com Devices**  |                                      |        |
-| **Garage Door**.       | Read Only                            | 🛠️     |
+|                        | Average and Latest dBm               | ✅     |
 
+| Automation Devices| Z-Wave | PowerG | Alarm.com |
+|-----------------|--------|--------|-------|
+| Door Lock        | ✅     | ✅     | ❌    |
+| Energy Clamp     | ✅     | ❌     | ❌    |
+| External Siren   | 🛠️     | ❌     | ❌    |
+| Garage Door      | 🛠️     | ❌     | ✅    |
+| Lights           | ✅     | 🛠️     | ✅    |
+| Smart Outlet     | 🛠️     | ❌     | ❌    |
+| Thermometer      | ✅     | ❌     | ❌    |
+| Thermostat       | ✅     | ❌     | ❌    |
+| Water Valve      | 🛠️     | ❌     | ❌    |
