@@ -54,7 +54,7 @@ def to_hass_level(level):
 
 
 class AutomationDevice_Light(QolsysAutomationDeviceEntity, LightEntity):
-    """An Automation Device Light entity for a qolsys panel."""
+    """Automation Device Light Entity."""
 
     def __init__(
         self,

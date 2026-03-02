@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Type
 
 
 from qolsys_controller import qolsys_controller
@@ -13,12 +12,7 @@ from qolsys_controller.enum import (
     QolsysSensorScale,
     QolsysMeterScale,
 )
-from qolsys_controller.enum_zwave import (
-    MeterType,
-    ZWaveElectricMeterScale,
-    ZWaveMultilevelSensorScale,
-    ZWaveUnknownMeterScale,
-)
+
 from qolsys_controller.enum import QolsysEvent
 
 from qolsys_controller.automation.service_battery import BatteryService
@@ -32,7 +26,6 @@ from homeassistant.components.sensor import (
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from enum import IntEnum
 
 
 from . import QolsysPanelConfigEntry

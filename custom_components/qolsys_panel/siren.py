@@ -1,18 +1,15 @@
-"""Support for Qolsys Siren."""
+"""Support for Qolsys External Siren."""
 
 from __future__ import annotations
 
 import logging
 
-from homeassistant.components.siren import (
-    SirenEntity,
-)
+from homeassistant.components.siren import SirenEntity
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_siren import SirenService
-
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
@@ -25,7 +22,7 @@ async def async_setup_entry(
     config_entry: QolsysPanelConfigEntry,
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
-    """Set up Sirens."""
+    """Set up External Sirens."""
     QolsysPanel = config_entry.runtime_data
 
     entities: list[SirenEntity] = []
@@ -46,7 +43,7 @@ async def async_setup_entry(
 
 
 class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
-    """Automation Device Siren entity"""
+    """Automation Device Siren Entity"""
 
     def __init__(
         self,

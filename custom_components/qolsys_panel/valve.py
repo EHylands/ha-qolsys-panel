@@ -48,7 +48,7 @@ async def async_setup_entry(
 
 
 class AutomationDevice_Valve(QolsysAutomationDeviceEntity, ValveEntity):
-    """Automation Device Valve entity"""
+    """Automation Device Valve Entity"""
 
     def __init__(
         self,
@@ -58,7 +58,7 @@ class AutomationDevice_Valve(QolsysAutomationDeviceEntity, ValveEntity):
         unique_id: str,
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
-        self._attr_unique_id = f"{self._autdev_unique_id}_siren{endpoint}"
+        self._attr_unique_id = f"{self._autdev_unique_id}_valve{endpoint}"
         self._service = self._autdev.service_get(ValveService, endpoint)
         self._attr_name = f"Valve{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_device_class = ValveDeviceClass.WATER

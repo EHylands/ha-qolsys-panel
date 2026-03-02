@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import ssl
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysSslError, QolsysMqttError
@@ -65,7 +66,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.panel_ip = entry.data[CONF_HOST]
     QolsysPanel.settings.panel_mac = entry.data[CONF_MAC]
     QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
-    QolsysPanel.settings.log_mqtt_mesages = False
+    QolsysPanel.settings.log_mqtt_messages = False
     QolsysPanel.settings.auto_discover_pki = False
 
     user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
@@ -83,22 +84,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     if not await QolsysPanel.config(start_pairing=False):
         _LOGGER.error("Error Configuring Controller")
         raise ConfigEntryNotReady(
-            translation_domain=DOMAIN,
-            translation_key="cannot_configure",
+            translation_domain=DOMAIN, translation_key="cannot_configure"
         )
 
     # Start controller operation
     try:
         await QolsysPanel.start_operation()
 
-    except QolsysSslError as err:
+    except (QolsysSslError, ssl.ssl.SSLError) as err:
         _LOGGER.error("Credentials rejected by panel - Signed Certificate Error")
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
         ) from err
 
     except QolsysMqttError as err:
-        _LOGGER.error("MQTT Error")
+        _LOGGER.error("Qolsys Panel MQTT Error")
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="mqtt_error"
         ) from err
@@ -106,8 +106,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     if not QolsysPanel.connected:
         _LOGGER.error("Unable to connect to panel")
         raise ConfigEntryNotReady(
-            translation_domain=DOMAIN,
-            translation_key="cannot_connect",
+            translation_domain=DOMAIN, translation_key="cannot_connect"
         )
 
     entry.runtime_data = QolsysPanel

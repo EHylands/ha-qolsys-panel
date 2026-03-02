@@ -13,7 +13,7 @@ from qolsys_controller.enum import (
     QolsysEvent,
 )
 
-from qolsys_controller.automation.protocol_status import StatusProtocol
+from qolsys_controller.automation.service_status import StatusService
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -39,6 +39,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
+ALARM_TYPE_ARRAY = ["Police", "Fire", "Auxiliary", "Gaz"]
 
 PANEL_SENSOR = [
     BinarySensorEntityDescription(
@@ -140,26 +141,14 @@ async def async_setup_entry(
 
     # Add Partition Binary Sensors
     for partition in QolsysPanel.state.partitions:
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Police"
+        # Add Partition Alarm Type Binary Sensors (Police, Fire, Auxiliary, Gaz)
+        for alarm_type in ALARM_TYPE_ARRAY:
+            entities.append(
+                PartitionAlarmSensor(
+                    QolsysPanel, partition.id, config_entry.unique_id, alarm_type
+                )
             )
-        )
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Fire"
-            )
-        )
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Auxiliary"
-            )
-        )
-        entities.append(
-            PartitionAlarmSensor(
-                QolsysPanel, partition.id, config_entry.unique_id, "Gaz"
-            )
-        )
+
         entities.append(
             PartitionExitSoundSensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
@@ -169,7 +158,7 @@ async def async_setup_entry(
 
     # Add Automation Device Status Sensors
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(StatusProtocol):
+        for service in device.service_get_protocol(StatusService):
             entities.append(
                 AutomationDevice_Status(
                     QolsysPanel,
@@ -618,7 +607,7 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
             else f"Node Status{virtual_node_id} - Service{endpoint}"
         )
 
-        self._service = self._autdev.service_get(StatusProtocol, endpoint)
+        self._service = self._autdev.service_get(StatusService, endpoint)
 
     @property
     def is_on(self) -> bool:

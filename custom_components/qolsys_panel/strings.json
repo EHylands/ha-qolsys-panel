@@ -1,7 +1,11 @@
 {
   "config": {
+    "abort": {
+      "reconfigure_successful": "Qolsys Panel successfully reconfigured with new settings.",
+      "already_in_progress": "Configuration flow already in progress.",
+      "already_configured": "Qolsys Panel is already configured."
+    },
     "step": {
-
       "user": {
         "description": "Choose pairing method:"
       },

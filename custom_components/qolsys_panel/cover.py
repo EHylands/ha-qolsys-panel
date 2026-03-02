@@ -47,7 +47,7 @@ async def async_setup_entry(
 
 
 class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
-    """Automation Device Garage Door Cover entity"""
+    """Automation Device Garage Door Cover Entity"""
 
     def __init__(
         self,

@@ -45,7 +45,7 @@ async def async_setup_entry(
 
 
 class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
-    """An Automation Device Lock entity for a qolsys panel."""
+    """Automation Device Lock Entity."""
 
     def __init__(
         self,

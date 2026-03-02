@@ -16,10 +16,6 @@ TO_REDACT = [
     CONF_MAC,
     "name",
     "sensorname",
-    "node_name",
-    "dimmer_name",
-    "doorlock_name",
-    "thermostat_name",
 ]
 
 
@@ -42,8 +38,6 @@ async def async_get_config_entry_diagnostics(
                 "panel_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
                 "ac_status": QolsysPanel.panel.AC_STATUS,
                 "battery_status": QolsysPanel.panel.BATTERY_STATUS,
-                "gsm_connection_satus": QolsysPanel.panel.GSM_CONNECTION_STATUS,
-                "gsm_signal_strength": QolsysPanel.panel.GSM_SIGNAL_STRENGTH,
                 "fail_to_communicate": QolsysPanel.panel.FAIL_TO_COMMUNICATE,
                 "language": QolsysPanel.panel.LANGUAGE,
                 "temp_format": QolsysPanel.panel.TEMPFORMAT,
@@ -81,13 +75,9 @@ async def async_get_config_entry_diagnostics(
                     for partition in QolsysPanel.state.partitions
                 ],
                 "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
-                "zwave_nodes": [
-                    device.to_dict_base() for device in QolsysPanel.state.zwave_devices
-                ],
                 "automation_content_provider": [
                     QolsysPanel.panel.db.get_automation_devices()
                 ],
-                "powerg_devices": "",
             },
             TO_REDACT,
         ),
