@@ -98,6 +98,7 @@ The following entities are provided by this integration:
 - Climate
 - Light
 - Lock
+- Media Player (TTS)
 - Sensor
 - Siren
 - Switch
