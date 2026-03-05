@@ -290,6 +290,7 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
         """Return zone device battery voltage value."""
         return self._zone.powerg_battery_voltage
 
+
 class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
     """A sensor entity for an Automation Device battery level value."""
 

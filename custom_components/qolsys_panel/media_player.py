@@ -14,6 +14,7 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: QolsysPanelConfigEntry,
@@ -26,17 +27,20 @@ async def async_setup_entry(
     # Add Doorbell Binary Sensor
     entities.append(Qolsys_MediaPlayer(hass, QolsysPanel, config_entry.unique_id))
 
-class Qolsys_MediaPlayer(QolsysPanelEntity,MediaPlayerEntity):
+    async_add_entities(entities)
+
+
+class Qolsys_MediaPlayer(QolsysPanelEntity, MediaPlayerEntity):
     """Qolsys TTS-only media player."""
 
-    _attr_name = "Qolsys Media Player"
+    _attr_name = "Qolsys TTS Player"
     _attr_supported_features = MediaPlayerEntityFeature.PLAY_MEDIA
     _attr_state = STATE_IDLE
 
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
         super().__init__(QolsysPanel, unique_id)
         self.hass = hass
-        self._attr_unique_id = f"{unique_id}_panel_media_payer"
+        self._attr_unique_id = f"{unique_id}_panel_media_player"
 
     async def async_play_media(self, media_type, media_id, **kwargs):
         """Accept only text-based messages."""

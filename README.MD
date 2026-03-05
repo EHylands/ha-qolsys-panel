@@ -125,6 +125,7 @@ The integration will be cleanly removed from your system.
 |------------------------|--------------------------------------|--------|
 | **Panel**              | Diagnostic Sensors                   | ✅     |
 |                        | Panel Scenes                         | ✅     |
+|                        | Speak Command                        | ✅     |
 |                        | Weather Forecast                     | ✅     |
 | **Partition**          | Arming Status and Alarm State        | ✅     |
 |                        | Home Instant Arming                  | ✅     |
