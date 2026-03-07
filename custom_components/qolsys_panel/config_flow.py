@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from pathlib import Path
 from ssl import SSLError
@@ -54,9 +53,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 0
     MINOR_VERSION = 3
-
-    task_one_configure: asyncio.Task | None = None
-    task_two_pair: asyncio.Task | None = None
 
     def __init__(self) -> None:
         """Init config flow."""
@@ -164,7 +160,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         }
 
-        # Abord if no PKI available
+        # Abort if no PKI available
         if not self._pki_list:
             await self._QolsysPanel.stop_operation()
             return self.async_show_form(
@@ -227,7 +223,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         }
 
-        # Abord if no PKI available
+        # Abort if no PKI available
         if not self._pki_list:
             await self._QolsysPanel.stop_operation()
             return self.async_show_form(
@@ -282,7 +278,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._QolsysPanel._pki.set_id(random_mac)
 
         # Check is private key exists
-        self._QolsysPanel._pki.set_id(random_mac)
         if not self._QolsysPanel._pki.check_key_file() and not start_pairing:
             _LOGGER.error("Private key file not found for PKI: %s", random_mac)
             return {"base": f"Private key file not found for PKI: {random_mac}"}
