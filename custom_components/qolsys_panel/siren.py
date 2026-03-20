@@ -67,4 +67,4 @@ class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._service.is_on()
+        return self._service.is_on

@@ -86,7 +86,7 @@ Any **Qolsys Panel** that can be paired with an **IQ Remote**:
 - IQ Panel 2+
 - IQ Panel 4
 - IQ 4 Hub
-- IQ 4 NS ((IQ Installer app))
+- IQ 4 NS (IQ Installer app)
 - IQ Hub
 - IQ Pro (IQ Installer app)
 
