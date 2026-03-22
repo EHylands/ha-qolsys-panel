@@ -92,7 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     try:
         await QolsysPanel.start_operation()
 
-    except (QolsysSslError, ssl.ssl.SSLError) as err:
+    except (QolsysSslError, ssl.SSLError) as err:
         _LOGGER.error("Credentials rejected by panel - Signed Certificate Error")
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"

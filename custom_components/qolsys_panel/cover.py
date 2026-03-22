@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from operator import is_
 
 from homeassistant.components.cover import (
     CoverEntity,
@@ -89,3 +90,11 @@ class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
     @property
     def is_closed(self) -> bool | None:
         return self._cover.is_closed
+
+    @property
+    def is_closing(self) -> bool | None:
+        return self._cover.is_closing
+    
+    @property
+    def is_opening(self) -> bool | None:
+        return self._cover.is_opening
