@@ -75,9 +75,7 @@ async def async_get_config_entry_diagnostics(
                     for partition in QolsysPanel.state.partitions
                 ],
                 "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
-                "automation_content_provider": [
-                    QolsysPanel.panel.db.get_automation_devices()
-                ],
+                "automation_devices": [ device.to_dict() for device in QolsysPanel.state.automation_devices],
             },
             TO_REDACT,
         ),
