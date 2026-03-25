@@ -33,7 +33,6 @@ async def async_get_config_entry_diagnostics(
         "entry_data": async_redact_data(entry.data, TO_REDACT),
         "data": async_redact_data(
             {
-                "android_version": QolsysPanel.panel.ANDROID_VERSION,
                 "hardware_version": QolsysPanel.panel.HARDWARE_VERSION,
                 "panel_tamper_state": QolsysPanel.panel.PANEL_TAMPER_STATE,
                 "ac_status": QolsysPanel.panel.AC_STATUS,
@@ -76,6 +75,7 @@ async def async_get_config_entry_diagnostics(
                 ],
                 "zones": [zone.to_dict() for zone in QolsysPanel.state.zones],
                 "automation_devices": [ device.to_dict() for device in QolsysPanel.state.automation_devices],
+                "adc_devices": [ device.to_dict() for device in QolsysPanel.panel.db.get_adc_devices()],
             },
             TO_REDACT,
         ),
