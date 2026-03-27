@@ -121,8 +121,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         identifiers={(DOMAIN, entry.unique_id)},
         name="Panel",
         manufacturer="Johnson Controls",
-        model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
-        sw_version=QolsysPanel.panel.ANDROID_VERSION,
+        model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})"
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

@@ -306,9 +306,13 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             }
 
         # Configure plugin with provided settings
-        if not await self._QolsysPanel.config(start_pairing=start_pairing):
-            _LOGGER.error("Failed to Configure Qolsys Panel during step: %s", step)
-            return {"base": "cannot_connect"}
+        try:
+            if not await self._QolsysPanel.config(start_pairing=start_pairing):
+                _LOGGER.error("Failed to Configure Qolsys Panel during step: %s", step)
+                return {"base": "cannot_connect"}
+        except (QolsysSslError, SSLError):
+            _LOGGER.error("TLS error during configuration in step: %s", step)
+            return {"base": "TLS certificate error"}
 
         # Attempt to connect to panel with provided settings
         try:
