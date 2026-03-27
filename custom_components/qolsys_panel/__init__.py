@@ -69,6 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.random_mac = entry.data[CONF_RANDOM_MAC]
     QolsysPanel.settings.log_mqtt_messages = False
     QolsysPanel.settings.auto_discover_pki = False
+    QolsysPanel.settings.pairing_resume = False
 
     user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
     QolsysPanel.settings.check_user_code_on_arm = user_code_required

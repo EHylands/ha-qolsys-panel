@@ -121,7 +121,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step="pki_autodiscovery_2",
                 host="",
                 random_mac="",
-                autodiscover_pki=True,
+                resume_pairing=True,
                 start_pairing=True,
             )
             if result != {}:
@@ -180,7 +180,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step="existing_pki",
                 host=user_input[CONF_HOST],
                 random_mac=user_input[CONF_RANDOM_MAC],
-                autodiscover_pki=False,
+                resume_pairing=False,
                 start_pairing=False,
             )
             if result != {}:
@@ -245,7 +245,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step="reconfigure",
                 host=user_input[CONF_HOST],
                 random_mac=user_input[CONF_RANDOM_MAC],
-                autodiscover_pki=False,
+                resume_pairing=False,
                 start_pairing=False,
             )
             if result != {}:
@@ -267,14 +267,15 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         step: str,
         host: str,
         random_mac: str,
-        autodiscover_pki: bool = False,
+        resume_pairing: bool = False,
         start_pairing: bool = False,
     ) -> dict[str, str]:
         self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
         self._QolsysPanel.settings.panel_ip = host
         self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
         self._QolsysPanel.settings.random_mac = random_mac
-        self._QolsysPanel.settings.auto_discover_pki = autodiscover_pki
+        self._QolsysPanel.settings.auto_discover_pki = False
+        self._QolsysPanel.settings.pairing_resume = resume_pairing
         self._QolsysPanel._pki.set_id(random_mac)
 
         # Check is private key exists
