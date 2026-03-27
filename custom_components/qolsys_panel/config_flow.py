@@ -279,17 +279,17 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._QolsysPanel._pki.set_id(random_mac)
 
         # Check is private key exists
-        if not self._QolsysPanel._pki.check_key_file() and not start_pairing:
+        if not await self._QolsysPanel._pki.check_key_file() and not start_pairing:
             _LOGGER.error("Private key file not found for PKI: %s", random_mac)
             return {"base": f"Private key file not found for PKI: {random_mac}"}
 
         # Check client certificate exists
-        if not self._QolsysPanel._pki.check_secure_file() and not start_pairing:
+        if not await self._QolsysPanel._pki.check_secure_file() and not start_pairing:
             _LOGGER.error("Client certificate file not found for PKI: %s", random_mac)
             return {"base": f"Client certificate file not found for PKI: {random_mac}"}
 
         # Check Qolsys public certificate exists
-        if not self._QolsysPanel._pki.check_qolsys_cer_file() and not start_pairing:
+        if not await self._QolsysPanel._pki.check_qolsys_cer_file() and not start_pairing:
             _LOGGER.error("Qolsys certificate file not found for PKI: %s", random_mac)
             return {"base": f"Qolsys certificate file not found for PKI: {random_mac}"}
 
