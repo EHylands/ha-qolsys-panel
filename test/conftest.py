@@ -27,6 +27,7 @@ def mock_qolsys_controller():
 
     yield mock_controller
 
+
 @pytest.fixture
 def mock_config_entry() -> MockConfigEntry:
     """Return a mock config entry."""
@@ -40,10 +41,9 @@ def mock_config_entry() -> MockConfigEntry:
         unique_id="AA:BB:CC:DD:EE:FF",
     )
 
+
 @pytest.fixture
-async def setup_integration(
-    hass: HomeAssistant, mock_config_entry: MockConfigEntry
-):
+async def setup_integration(hass: HomeAssistant, mock_config_entry: MockConfigEntry):
     """Set up the integration."""
     mock_config_entry.add_to_hass(hass)
 
