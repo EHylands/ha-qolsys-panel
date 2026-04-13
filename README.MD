@@ -20,8 +20,6 @@ This integration is now part of the official HACS store.
 
 🔗 [How to add a custom repository in HACS](https://www.hacs.xyz/docs/faq/custom_repositories/)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=EHylands&repository=ha-qolsys-panel&category=Integration+)
-
 ## ⚙️ Configuration
 
 You can pair with your Qolsys Panel using one of the following two methods:
