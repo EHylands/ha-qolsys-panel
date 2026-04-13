@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import (
+from qolsys_controller.enum_qolsys import (
     PartitionAlarmState,
     PartitionSystemStatus,
     PartitionArmingType,

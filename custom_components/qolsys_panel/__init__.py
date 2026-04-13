@@ -70,6 +70,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.log_mqtt_messages = False
     QolsysPanel.settings.auto_discover_pki = False
     QolsysPanel.settings.pairing_resume = False
+    QolsysPanel.settings.mqtt_bridge_enabled = False
 
     user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
     QolsysPanel.settings.check_user_code_on_arm = user_code_required
@@ -121,7 +122,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         identifiers={(DOMAIN, entry.unique_id)},
         name="Panel",
         manufacturer="Johnson Controls",
-        model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})"
+        model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)

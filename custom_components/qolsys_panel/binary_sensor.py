@@ -6,11 +6,11 @@ import time
 import logging
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import (
+from qolsys_controller.enum_qolsys import (
     PartitionAlarmType,
     ZoneSensorType,
     ZoneStatus,
-    QolsysEvent,
+    QolsysNotification,
 )
 
 from qolsys_controller.automation.service_status import StatusService
@@ -187,7 +187,7 @@ class PartitionExitSoundSensor(QolsysPartitionEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return if this partition exit sound is on."""
-        return self._partition.exit_sounds == "ON"
+        return self._partition.exit_sounds
 
 
 class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
@@ -206,7 +206,7 @@ class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return if this partition entry delay is on."""
-        return self._partition.entry_delays == "ON"
+        return self._partition.entry_delays
 
 
 class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
@@ -238,8 +238,6 @@ class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
                 if (
                     PartitionAlarmType.POLICE_EMERGENCY in partition_alarm
                     or PartitionAlarmType.SILENT_POLICE_EMERGENCY in partition_alarm
-                    or PartitionAlarmType.GLASS_BREAK_AWAY_ONLY in partition_alarm
-                    or PartitionAlarmType.GLASS_BREAK in partition_alarm
                 ):
                     return True
 
@@ -498,8 +496,8 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
         self._attr_unique_id = f"{unique_id}_panel_doorbell"
 
         # Subscribe to Qolsys doorbell events
-        QolsysPanel.state.state_observer.subscribe(
-            QolsysEvent.EVENT_PANEL_DOORBELL, self._handle_doorbell_event
+        QolsysPanel.state.register(
+            QolsysNotification.PANEL_DOORBELL, self._handle_doorbell_event
         )
 
     def _handle_doorbell_event(self, event_dict):
@@ -550,8 +548,8 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self._attr_unique_id = f"{unique_id}_panel_chime"
 
         # Subscribe to Qolsys doorbell events
-        QolsysPanel.state.state_observer.subscribe(
-            QolsysEvent.EVENT_PANEL_CHIME, self._handle_chime_event
+        QolsysPanel.state.register(
+            QolsysNotification.PANEL_CHIME, self._handle_chime_event
         )
 
     def _handle_chime_event(self, event_dict):

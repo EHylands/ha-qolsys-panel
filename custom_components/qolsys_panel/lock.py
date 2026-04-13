@@ -81,7 +81,7 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
 
     @property
     def is_opening(self) -> bool:
-        return self._service.is_openning
+        return self._service.is_opening
 
     @property
     def is_open(self) -> bool:

@@ -94,7 +94,7 @@ class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
     @property
     def is_closing(self) -> bool | None:
         return self._cover.is_closing
-    
+
     @property
     def is_opening(self) -> bool | None:
         return self._cover.is_opening

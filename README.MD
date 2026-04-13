@@ -6,9 +6,10 @@ This is a custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allo
 
 ## 🧩 Installation
 
-This integration is not yet part of the official HACS store. You must add it manually as a custom repository.
+This integration is now part of the official HACS store. 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=EHylands&repository=ha-qolsys-panel&category=Integration+)
 
-### Steps:
+### Manuel Install Steps:
 
 1. Open Home Assistant.
 2. Navigate to: **HACS → Integrations → Menu (⋮) → Custom repositories**.
@@ -147,10 +148,12 @@ The integration will be cleanly removed from your system.
 |-----------------|--------|--------|-------|
 | Door Lock        | ✅     | ✅     | ❌    |
 | Energy Clamp     | ✅     | ❌     | ❌    |
-| External Siren   | 🛠️     | ❌     | ❌    |
-| Garage Door      | 🛠️     | ❌     | ✅    |
+| External Siren   | ✅     | ❌     | ❌    |
+| Garage Door      | ✅     | ❌     | ✅    |
 | Lights           | ✅     | 🛠️     | ✅    |
 | Smart Outlet     | 🛠️     | ❌     | ❌    |
 | Thermometer      | ✅     | ❌     | ❌    |
 | Thermostat       | ✅     | ❌     | ❌    |
 | Water Valve      | 🛠️     | ❌     | ❌    |
+
+🛠️ = partially supported or untested

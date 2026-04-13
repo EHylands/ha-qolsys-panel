@@ -32,7 +32,7 @@ async def async_setup_entry(
 
     entities: list[ValveEntity] = []
 
-    # Append Automation Device Locks
+    # Append Automation Device Valves
     for device in QolsysPanel.state.automation_devices:
         for service in device.service_get_protocol(ValveService):
             entities.append(

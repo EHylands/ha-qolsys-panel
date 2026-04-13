@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum import QolsysTemperatureUnit, QolsysHvacMode
+from qolsys_controller.enum_qolsys import QolsysTemperatureUnit, QolsysHvacMode
 from qolsys_controller.automation.service_thermostat import ThermostatService
 
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
