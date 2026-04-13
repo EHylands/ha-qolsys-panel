@@ -7,6 +7,7 @@ This is a custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allo
 ## 🧩 Installation
 
 This integration is now part of the official HACS store. 
+
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=EHylands&repository=ha-qolsys-panel&category=Integration+)
 
 ### Manuel Install Steps:
