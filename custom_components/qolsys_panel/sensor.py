@@ -11,7 +11,7 @@ from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
 from qolsys_controller.enum_qolsys import (
     QolsysSensorScale,
     QolsysMeterScale,
-    QolsysNotification
+    QolsysNotification,
 )
 
 from qolsys_controller.automation.service_battery import BatteryService
@@ -150,10 +150,12 @@ async def async_setup_entry(
         )
         async_add_entities([new_sensor])
 
-
     _LOGGER.debug("Subscribing to: %s", QolsysNotification.AUTOMATION_SENSOR_ADD.name)
-    QolsysPanel.state.register(QolsysNotification.AUTOMATION_SENSOR_ADD, _automation_device_sensor_add)
-   
+    QolsysPanel.state.register(
+        QolsysNotification.AUTOMATION_SENSOR_ADD, _automation_device_sensor_add
+    )
+
+
 class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
     """A sensor entity for a zone latest DBM."""
 

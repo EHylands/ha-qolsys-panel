@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import logging
-
 
 from typing import Any
 
@@ -16,9 +14,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
-
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(

@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_outlet import OutletService
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
@@ -12,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import QolsysPanelConfigEntry
-from .entity import QolsysPartitionEntity
+from .entity import QolsysPartitionEntity, QolsysAutomationDeviceEntity
 
 
 async def async_setup_entry(
@@ -43,7 +44,46 @@ async def async_setup_entry(
         entities.append(switch_silent_disarming)
         entities.append(switch_entry_delay)
 
+    # Append Automation Device Outlets
+    for device in QolsysPanel.state.automation_devices:
+        for service in device.service_get_protocol(OutletService):
+            entities.append(
+                AutomationDevice_Outlet(
+                    QolsysPanel,
+                    device.virtual_node_id,
+                    service.endpoint,
+                    config_entry.unique_id,
+                )
+            )
+
     async_add_entities(entities)
+
+
+class AutomationDevice_Outlet(QolsysAutomationDeviceEntity, SwitchEntity):
+    """Automation Device Switch Entity"""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        virtual_node_id: str,
+        endpoint: int,
+        unique_id: str,
+    ) -> None:
+        super().__init__(QolsysPanel, virtual_node_id, unique_id)
+        self._attr_unique_id = f"{self._autdev_unique_id}_outlet{endpoint}"
+        self._service = self._autdev.service_get(OutletService, endpoint)
+        self._attr_name = f"Outlet{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
+        self._attr_device_class = SwitchDeviceClass.OUTLET
+
+    @property
+    def is_on(self) -> bool | None:
+        return self._service.is_on
+
+    async def async_turn_on(self, **kwargs: Any):
+        await self._service.turn_on()
+
+    async def async_turn_off(self, **kwargs: Any):
+        await self._service.turn_off()
 
 
 class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
