@@ -156,3 +156,6 @@ The integration will be cleanly removed from your system.
 | Water Valve      | 🛠️     | ❌     | ❌    |
 
 🛠️ = partially supported or untested
+
+Works great IF you have PKI credentials OR if you're not using a formerly deployed ADT panel. In the latter case, there is virtually NO WAY to enter IP address and Key from panel as this dialog with Google's Gemini makes abundantly clear:
+https://gemini.google.com/share/e47942f5e05e
