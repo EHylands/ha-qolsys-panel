@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-from operator import is_
 
 from homeassistant.components.cover import (
     CoverEntity,
