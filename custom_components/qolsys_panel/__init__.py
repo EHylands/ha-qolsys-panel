@@ -6,7 +6,7 @@ import logging
 import ssl
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError, QolsysMqttError
+from qolsys_controller.errors import QolsysSslError, QolsysMqttError, QolsysConfigError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
@@ -83,16 +83,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
     )
 
-    # Configure the controller
-    if not await QolsysPanel.config(start_pairing=False):
-        _LOGGER.error("Error Configuring Controller")
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN, translation_key="cannot_configure"
-        )
-
     # Start controller operation
     try:
-        await QolsysPanel.start_operation()
+        await QolsysPanel.start_operation(
+            reconnect=True, run_once=False, start_pairing=False
+        )
+
+    except QolsysConfigError as err:
+        _LOGGER.error("Qolsys Panel Configuration Error")
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="configuration_error"
+        ) from err
 
     except (QolsysSslError, ssl.SSLError) as err:
         _LOGGER.error("Credentials rejected by panel - Signed Certificate Error")
@@ -105,6 +106,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="mqtt_error"
         ) from err
+
+    finally:
+        await QolsysPanel.stop_operation()
+        _LOGGER.info("Cleanup complete")
 
     if not QolsysPanel.connected:
         _LOGGER.error("Unable to connect to panel")

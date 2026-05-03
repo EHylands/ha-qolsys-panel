@@ -8,7 +8,7 @@ from ssl import SSLError
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError, QolsysMqttError
+from qolsys_controller.errors import QolsysSslError, QolsysMqttError, QolsysConfigError
 import voluptuous as vol
 
 from homeassistant.config_entries import (
@@ -59,7 +59,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._pki_list: list[str] = []
         self._QolsysPanel = qolsys_controller()
-        self._QolsysPanel.settings.log_mqtt_messages = False
         self._config_directory = Path()
 
     @staticmethod
@@ -309,19 +308,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 "base": f"Invalid Plugin IP: {self._QolsysPanel.settings.plugin_ip}"
             }
 
-        # Configure plugin with provided settings
-        try:
-            if not await self._QolsysPanel.config(start_pairing=start_pairing):
-                _LOGGER.error("Failed to Configure Qolsys Panel during step: %s", step)
-                return {"base": "cannot_connect"}
-        except (QolsysSslError, SSLError):
-            _LOGGER.error("TLS error during configuration in step: %s", step)
-            return {"base": "TLS certificate error"}
-
         # Attempt to connect to panel with provided settings
         try:
-            await self._QolsysPanel.mqtt_connect_task(
-                reconnect=False, run_forever=False
+            await self._QolsysPanel.start_operation(
+                reconnect=False, run_once=True, start_pairing=start_pairing
             )
         except (QolsysSslError, SSLError):
             _LOGGER.error("TLS error during step: %s", step)
@@ -330,6 +320,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except QolsysMqttError:
             _LOGGER.error("Error connecting to panel during step: %s", step)
             return {"base": "cannot_connect"}
+
+        except QolsysConfigError:
+            _LOGGER.error("Qolsys Panel Configuration Error during step: %s", step)
+            return {"base": "configuration_error"}
 
         finally:
             await self._QolsysPanel.stop_operation()
