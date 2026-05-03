@@ -107,10 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
             translation_domain=DOMAIN, translation_key="mqtt_error"
         ) from err
 
-    finally:
-        await QolsysPanel.stop_operation()
-        _LOGGER.info("Cleanup complete")
-
     if not QolsysPanel.connected:
         _LOGGER.error("Unable to connect to panel")
         raise ConfigEntryNotReady(
