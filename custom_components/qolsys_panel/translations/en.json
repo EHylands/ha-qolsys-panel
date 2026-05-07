@@ -65,9 +65,6 @@
     },
     "authentication_failed": {
       "message": "Incorrect credentials for panel."
-    },
-    "incorrect_door_state": {
-      "message": "Door cannot be manipulated while it is momentarily unlocked."
     }
   },
   "entity": {
