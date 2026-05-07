@@ -278,7 +278,11 @@ upload_to_pypi = false
 upload_to_release = true
 version_variables = ["custom_components/qolsys_panel/manifest.json:version"]
 
-branches = [
-  { match = "main", prerelease = false },
-  { match = "dev", prerelease = true, prerelease_token = "beta" }
-]
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.branches.dev]
+match = "dev"
+prerelease = true
+prerelease_token = "beta"
