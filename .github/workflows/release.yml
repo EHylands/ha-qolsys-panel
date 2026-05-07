@@ -92,6 +92,9 @@ jobs:
       - name: Install semantic-release
         run: pip install python-semantic-release
 
+      - name: Check semantic-release version
+        run: semantic-release --version
+
       - name: Run semantic-release (stable)
         if: github.ref == 'refs/heads/main'
         env:
