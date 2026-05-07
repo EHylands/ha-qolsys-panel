@@ -4,20 +4,19 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.cover import (
-    CoverEntity,
-    CoverDeviceClass,
-    CoverEntityFeature,
-)
-
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_cover import CoverService
 
+from homeassistant.components.cover import (
+    CoverDeviceClass,
+    CoverEntity,
+    CoverEntityFeature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .types import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity
+from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 

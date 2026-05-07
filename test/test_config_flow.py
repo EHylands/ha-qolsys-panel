@@ -1,11 +1,11 @@
-import pytest
 from ssl import SSLError
 
-from homeassistant import config_entries
-from homeassistant.const import CONF_HOST
+import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.qolsys_panel.const import DOMAIN
+from homeassistant import config_entries
+from homeassistant.const import CONF_HOST
 
 
 @pytest.mark.asyncio

@@ -2,16 +2,16 @@
 
 from __future__ import annotations
 
+import logging
+
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_qolsys import QolsysNotification
 from qolsys_controller.automation.protocol_status import StatusProtocol
+from qolsys_controller.enum_qolsys import QolsysNotification
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOMAIN
-
-import logging
 
 
 class QolsysPanelEntity(Entity):

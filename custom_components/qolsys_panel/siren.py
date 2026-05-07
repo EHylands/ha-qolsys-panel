@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import logging
 
+from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_siren import SirenService
+
 from homeassistant.components.siren import SirenEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_siren import SirenService
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry

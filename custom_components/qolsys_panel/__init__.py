@@ -6,28 +6,25 @@ import logging
 import ssl
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError, QolsysMqttError, QolsysConfigError
+from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
-from homeassistant.helpers import config_validation as cv
-
 
 from .const import (
     CONF_RANDOM_MAC,
-    DOMAIN,
     DEFAULT_ARM_CODE_REQUIRED,
-    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DEFAULT_MOTION_SENSOR_DELAY,
+    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
+    DOMAIN,
     OPTION_ARM_CODE,
-    OPTION_MOTION_SENSOR_DELAY_ENABLED,
     OPTION_MOTION_SENSOR_DELAY,
+    OPTION_MOTION_SENSOR_DELAY_ENABLED,
 )
-
 from .services import async_setup_services
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip

@@ -2,34 +2,30 @@
 
 from __future__ import annotations
 
-import voluptuous as vol
-
 import logging
 
+import voluptuous as vol
 
-from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall, callback
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers import config_validation as cv
+from custom_components.qolsys_panel import entity
 from homeassistant.components.alarm_control_panel import (
     DOMAIN as ALARM_CONTROL_PANEL_DOMAIN,
 )
-from homeassistant.helpers import service, entity_registry
-
-
-from custom_components.qolsys_panel import entity
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import config_validation as cv, entity_registry, service
 
 from .const import (
     DEFAULT_TRIGGER_AUXILLIARY,
-    DEFAULT_TRIGGER_POLICE,
     DEFAULT_TRIGGER_FIRE,
+    DEFAULT_TRIGGER_POLICE,
     DOMAIN,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
-    SERVICE_TRIGGER_POLICE,
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
+    SERVICE_TRIGGER_POLICE,
 )
 from .types import QolsysPanelConfigEntry
 

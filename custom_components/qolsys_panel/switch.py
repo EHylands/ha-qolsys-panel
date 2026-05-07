@@ -13,7 +13,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import QolsysPanelConfigEntry
-from .entity import QolsysPartitionEntity, QolsysAutomationDeviceEntity
+from .entity import QolsysAutomationDeviceEntity, QolsysPartitionEntity
 
 
 async def async_setup_entry(

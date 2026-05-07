@@ -4,15 +4,14 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.valve import (
-    ValveEntity,
-    ValveEntityFeature,
-    ValveDeviceClass,
-)
-
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_valve import ValveService
 
+from homeassistant.components.valve import (
+    ValveDeviceClass,
+    ValveEntity,
+    ValveEntityFeature,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 

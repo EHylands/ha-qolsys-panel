@@ -7,8 +7,8 @@ import logging
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_qolsys import (
     PartitionAlarmState,
-    PartitionSystemStatus,
     PartitionArmingType,
+    PartitionSystemStatus,
 )
 from qolsys_controller.errors import QolsysUserCodeError
 
@@ -19,9 +19,8 @@ from homeassistant.components.alarm_control_panel import (
     CodeFormat,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.exceptions import HomeAssistantError
-
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPartitionEntity
 from .types import QolsysPanelConfigEntry

@@ -8,7 +8,7 @@ from ssl import SSLError
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysSslError, QolsysMqttError, QolsysConfigError
+from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 import voluptuous as vol
 
 from homeassistant.config_entries import (
@@ -17,32 +17,29 @@ from homeassistant.config_entries import (
     OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
-from homeassistant.core import callback
-
-
-from .types import QolsysPanelConfigEntry
 
 from .const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
     CONFIG_DIR,
     DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_MOTION_SENSOR_DELAY,
+    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
-    DEFAULT_MOTION_SENSOR_DELAY,
-    DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DOMAIN,
     OPTION_ARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
-    OPTION_TRIGGER_POLICE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
+    OPTION_TRIGGER_POLICE,
 )
-
+from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
@@ -260,6 +257,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 entry,
                 data_updates=self._data,
             )
+        return None
 
     async def _try_connect(
         self,
