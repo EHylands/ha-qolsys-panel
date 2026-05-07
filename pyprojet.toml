@@ -285,5 +285,4 @@ prerelease = false
 
 [tool.semantic_release.branches.dev]
 match = "dev"
-prerelease = true
 prerelease_token = "beta"
