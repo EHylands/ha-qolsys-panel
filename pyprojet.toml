@@ -23,6 +23,21 @@ Repository = "https://github.com/EHylands/ha-qolsys-panel.git"
 requires = ["hatchling >= 1.27"]
 build-backend = "hatchling.build"
 
+[tool.semantic_release]
+version_source = "tag"
+upload_to_pypi = false
+upload_to_release = true
+version_variables = ["custom_components/qolsys_panel/manifest.json:version"]
+
+[tool.semantic_release.branches.main]
+branch = "main"
+prerelease = false
+
+[tool.semantic_release.branches.dev]
+branch = "dev"
+prerelease = true
+prerelease_token = "beta"
+
 
 [tool.ruff]
 required-version = ">=0.11.0"
@@ -271,18 +286,3 @@ max-complexity = 25
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 property-decorators = ["propcache.api.cached_property"]
-
-[tool.semantic_release]
-version_source = "tag"
-upload_to_pypi = false
-upload_to_release = true
-version_variables = ["custom_components/qolsys_panel/manifest.json:version"]
-
-[tool.semantic_release.branches.main]
-match = "main"
-prerelease = false
-
-[tool.semantic_release.branches.dev]
-match = "dev"
-prerelease = true
-prerelease_token = "beta"
