@@ -271,3 +271,19 @@ max-complexity = 25
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 property-decorators = ["propcache.api.cached_property"]
+
+[tool.semantic_release]
+version_source = "tag"
+branch = "main"
+upload_to_pypi = false
+upload_to_release = true
+version_variables = ["custom_components/qolsys_panel/manifest.json:version"]
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.branches.dev]
+match = "dev"
+prerelease = true
+prerelease_token = "beta"

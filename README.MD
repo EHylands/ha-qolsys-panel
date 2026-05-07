@@ -143,16 +143,16 @@ The integration will be cleanly removed from your system.
 |                        | Light (supported PowerG device)      | ✅     |
 |                        | Average and Latest dBm               | ✅     |
 
-| Automation Devices| Z-Wave | PowerG | Alarm.com |
-|-----------------|--------|--------|-------|
-| Door Lock        | ✅     | ✅     | ❌    |
-| Energy Clamp     | ✅     | ❌     | ❌    |
-| External Siren   | ✅     | ❌     | ❌    |
-| Garage Door      | ✅     | ❌     | ✅    |
-| Lights           | ✅     | 🛠️     | ✅    |
-| Smart Outlet     | 🛠️     | ❌     | ❌    |
-| Thermometer      | ✅     | ❌     | ❌    |
-| Thermostat       | ✅     | ❌     | ❌    |
-| Water Valve      | 🛠️     | ❌     | ❌    |
+| Automation Devices| Z-Wave | PowerG | Zigbee | Alarm.com |
+|-----------------|--------|--------|-------|-------|
+| Door Lock        | ✅     | ✅     | ✅    | ❌    |
+| Energy Clamp     | ✅     | ❌     | ❌    | ❌    |
+| External Siren   | ✅     | ❌     | ❌    | ❌    |
+| Garage Door      | ✅     | ❌     | ❌    | ✅    |
+| Light            | ✅     | ✅     | ✅    | ✅    |
+| Smart Outlet     | 🛠️     | ❌     | ❌    | ❌    |
+| Thermometer      | ✅     | ❌     | ❌    | ❌    |
+| Thermostat       | ✅     | ❌     | ❌    | ❌    |
+| Water Valve      | 🛠️     | ❌     | ❌    | ❌    |
 
 🛠️ = partially supported or untested
