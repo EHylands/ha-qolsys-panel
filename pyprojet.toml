@@ -9,7 +9,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 classifiers = [
     "Programming Language :: Python :: 3.12",
-    "Topic :: "Home Automation",
+    "Topic :: Home Automation",
     "License :: OSI Approved :: MIT License",
 ]
 license = "MIT"
