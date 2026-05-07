@@ -2,6 +2,50 @@
 
 <!-- version list -->
 
+## v0.5.0-beta.11 (2026-05-07)
+
+### Features
+
+- Ci-cd 10
+  ([`0c8c17d`](https://github.com/EHylands/ha-qolsys-panel/commit/0c8c17d8e36c82148a85002a295dc336fa776bc3))
+
+- Ci-cd 11
+  ([`ae1065f`](https://github.com/EHylands/ha-qolsys-panel/commit/ae1065f46b58649f5220f666d96688a13aa1cbaf))
+
+- Ci-cd 13
+  ([`434476f`](https://github.com/EHylands/ha-qolsys-panel/commit/434476f067f52687d2df4159b118fca7f4f8cfdf))
+
+- Ci-cd 2
+  ([`54ec40f`](https://github.com/EHylands/ha-qolsys-panel/commit/54ec40f8a3b862d19395606e71d9c7df078f8bc3))
+
+- Ci-cd 3
+  ([`2e2ce73`](https://github.com/EHylands/ha-qolsys-panel/commit/2e2ce736d58d9d1b1f1e2693671550f8ce40dc35))
+
+- Ci-cd 4
+  ([`2e81e8c`](https://github.com/EHylands/ha-qolsys-panel/commit/2e81e8c3bb7bc03bfc405a0915721370734d1352))
+
+- Ci-cd 5
+  ([`8af8e9c`](https://github.com/EHylands/ha-qolsys-panel/commit/8af8e9cc4123131e05eebe96468bcdd664cd6ca2))
+
+- Ci-cd 6
+  ([`8bdff46`](https://github.com/EHylands/ha-qolsys-panel/commit/8bdff46ddd16ef06e1c5c45d2b66041d6b8f5726))
+
+- Ci-cd 7
+  ([`65571c0`](https://github.com/EHylands/ha-qolsys-panel/commit/65571c0f8bc6fdaf321c39aeb3075bb9df63274c))
+
+- Ci-cd 8
+  ([`5655e90`](https://github.com/EHylands/ha-qolsys-panel/commit/5655e90a9887d540dbec2279433a5a58ca2fda44))
+
+- Ci-cd 9
+  ([`10196c8`](https://github.com/EHylands/ha-qolsys-panel/commit/10196c8b3f4ba47169f877990293123ac025ecc9))
+
+- Create ci-cd pipeline
+  ([`9717526`](https://github.com/EHylands/ha-qolsys-panel/commit/971752645783387900a277629b1971e6a09661f7))
+
+- Ct-cd 12
+  ([`0d828b1`](https://github.com/EHylands/ha-qolsys-panel/commit/0d828b1e34e001b5ef357b64925ba501f112a56b))
+
+
 ## v1.0.0-beta.1 (2026-05-06)
 
 ### Features
