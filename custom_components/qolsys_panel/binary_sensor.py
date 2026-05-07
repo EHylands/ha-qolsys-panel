@@ -2,28 +2,27 @@
 
 from __future__ import annotations
 
-import time
 import logging
+import time
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.service_status import StatusService
 from qolsys_controller.enum_qolsys import (
     PartitionAlarmType,
+    QolsysNotification,
     ZoneSensorType,
     ZoneStatus,
-    QolsysNotification,
 )
-
-from qolsys_controller.automation.service_status import StatusService
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
-from homeassistant.helpers.event import async_call_later
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from homeassistant.helpers.event import async_call_later
 
 from . import QolsysPanelConfigEntry
 from .entity import (

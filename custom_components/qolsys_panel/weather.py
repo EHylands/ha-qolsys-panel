@@ -2,21 +2,21 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
 import logging
 
-from datetime import datetime, timezone
-
 from qolsys_controller import qolsys_controller
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
 from homeassistant.components.weather import (
+    Forecast,
     WeatherEntity,
     WeatherEntityFeature,
-    Forecast,
 )
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .types import QolsysPanelConfigEntry
 from .entity import QolsysWeatherEntity
+from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -70,7 +70,7 @@ class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
                         )
                         continue
 
-                    dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=timezone.utc)
+                    dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=UTC)
 
                     forecast: Forecast = {
                         "datetime": dt.isoformat(),

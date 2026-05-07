@@ -11,7 +11,6 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
 
-
 _LOGGER = logging.getLogger(__name__)
 
 

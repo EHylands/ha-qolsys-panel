@@ -6,21 +6,19 @@ import logging
 from typing import Any
 
 from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_qolsys import QolsysTemperatureUnit, QolsysHvacMode
 from qolsys_controller.automation.service_thermostat import ThermostatService
-
-from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
-from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
-from homeassistant.components.climate.const import (
-    HVACMode,
-    ATTR_TARGET_TEMP_HIGH,
-    ATTR_TARGET_TEMP_LOW,
-)
-
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+from qolsys_controller.enum_qolsys import QolsysHvacMode, QolsysTemperatureUnit
 
 from custom_components.qolsys_panel.entity import QolsysAutomationDeviceEntity
+from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
+from homeassistant.components.climate.const import (
+    ATTR_TARGET_TEMP_HIGH,
+    ATTR_TARGET_TEMP_LOW,
+    HVACMode,
+)
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .types import QolsysPanelConfigEntry
 

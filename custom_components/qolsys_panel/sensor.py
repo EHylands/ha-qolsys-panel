@@ -4,18 +4,15 @@ from __future__ import annotations
 
 import logging
 
-
 from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_sensor import SensorService, QolsysSensor
+from qolsys_controller.automation.service_battery import BatteryService
 from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
+from qolsys_controller.automation.service_sensor import QolsysSensor, SensorService
 from qolsys_controller.enum_qolsys import (
-    QolsysSensorScale,
     QolsysMeterScale,
     QolsysNotification,
+    QolsysSensorScale,
 )
-
-from qolsys_controller.automation.service_battery import BatteryService
-
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -26,12 +23,8 @@ from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-
 from . import QolsysPanelConfigEntry
-from .entity import (
-    QolsysAutomationDeviceEntity,
-    QolsysZoneEntity,
-)
+from .entity import QolsysAutomationDeviceEntity, QolsysZoneEntity
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -5,12 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from qolsys_controller import qolsys_controller
+
+from homeassistant.components.scene import Scene
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-from homeassistant.components.scene import Scene
 
-from .types import QolsysPanelConfigEntry
 from .entity import QolsysPanelEntity
+from .types import QolsysPanelConfigEntry
 
 
 async def async_setup_entry(

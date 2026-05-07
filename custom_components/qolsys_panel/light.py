@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-
 from typing import Any
 
 from qolsys_controller import qolsys_controller
@@ -12,9 +11,8 @@ from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEnti
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-
-from .types import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity
+from .types import QolsysPanelConfigEntry
 
 
 async def async_setup_entry(
