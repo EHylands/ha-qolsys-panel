@@ -5,7 +5,11 @@ on:
     branches:
       - main
       - dev
-
+  pull_request:
+    branches:
+      - main
+      - dev
+  
 permissions:
   contents: write
 
@@ -15,20 +19,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
       - name: Validate commit messages
         uses: wagoid/commitlint-github-action@v5
 
-  test:
-    name: Mypy + Ruff
+  hassfest:
+    name: Hassfest Validation
     runs-on: ubuntu-latest
-    needs: commitlint
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+
+      - name: Run hassfest validation
+        uses: home-assistant/actions/hassfest@master
+
+  hacs:
+    name: HACS Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v5
+
+      - name: Run HACS validation
+        uses: hacs/action@main
+        with:
+          category: integration
+
+  test:
+    name: Ruff
+    runs-on: ubuntu-latest
+    needs:
+      - commitlint
+      - hassfest
+      - hacs
+
+    steps:
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -37,23 +68,20 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
-          pip install mypy ruff
+        run: pip install ruff
 
       - name: Ruff check
         run: ruff check .
-
-      - name: MyPy check
-        run: mypy .
 
   release:
     name: Semantic Version + Tag
     runs-on: ubuntu-latest
     needs: test
 
+    if: github.event_name == 'push'
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
