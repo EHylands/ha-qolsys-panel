@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-05-08)
+
+### Bug Fixes
+
+- Bump qolsys-controller 1.0.21 - resolve issue where panel failed to reconnect
+  ([`d3e0bc3`](https://github.com/EHylands/ha-qolsys-panel/commit/d3e0bc3ae986f0e4dd0319f5e9e841608160cc2e))
+
+
 ## v1.0.0 (2026-05-07)
 
 
