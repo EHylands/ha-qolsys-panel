@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3 (2026-05-11)
+
+### Bug Fixes
+
+- Cryptography>=44.0.1,<=47.0.0 requirement for older ha installs
+  ([`2a93c46`](https://github.com/EHylands/ha-qolsys-panel/commit/2a93c4638d8595fe9dd65137f17a43322c3b9ec2))
+
+
 ## v1.0.2 (2026-05-11)
 
 ### Bug Fixes
