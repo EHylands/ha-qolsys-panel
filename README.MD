@@ -1,4 +1,4 @@
-[![HACS Validation](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/hacs.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/hacs.yml)
+[![Build](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/hacs.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/release.yml)
 
 # Qolsys Panel – HACS Custom Integration
 

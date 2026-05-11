@@ -1,4 +1,4 @@
-name: Create New Tag and Release
+name: Build
 
 on:
   push:
