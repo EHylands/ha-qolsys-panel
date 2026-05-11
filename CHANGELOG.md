@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.2 (2026-05-11)
+
+### Bug Fixes
+
+-
+  ([`33d845c`](https://github.com/EHylands/ha-qolsys-panel/commit/33d845c2ac02ca198905c0024e6829ea9a5d358b))
+
+
 ## v1.0.1 (2026-05-08)
 
 ### Bug Fixes
