@@ -90,6 +90,9 @@
       "battery": {
         "name": "Battery"
       },
+      "last_error": {
+        "name": "Last Error"
+      },
       "powerg_battery_voltage":{
         "name": "Battery Voltage"
       },
@@ -201,3 +204,4 @@
     }
   }
 }
+

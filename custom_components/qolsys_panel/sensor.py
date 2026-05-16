@@ -9,6 +9,7 @@ from qolsys_controller.automation.service_battery import BatteryService
 from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
 from qolsys_controller.automation.service_sensor import QolsysSensor, SensorService
 from qolsys_controller.enum_qolsys import (
+    PartitionError,
     QolsysMeterScale,
     QolsysNotification,
     QolsysSensorScale,
@@ -24,7 +25,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
-from .entity import QolsysAutomationDeviceEntity, QolsysZoneEntity
+from .entity import (
+    QolsysAutomationDeviceEntity,
+    QolsysPartitionEntity,
+    QolsysZoneEntity,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +43,13 @@ async def async_setup_entry(
     QolsysPanel = config_entry.runtime_data
 
     entities: list[SensorEntity] = []
+
+    # Add Partition Sensors
+    for partition in QolsysPanel.state.partitions:
+        # Partition Last Error Sensor
+        entities.append(
+            Partition_LastError(QolsysPanel, partition.id, config_entry.unique_id)
+        )
 
     # Add Zone Sensors
     for zone in QolsysPanel.state.zones:
@@ -449,3 +461,24 @@ class AutomationDevice_Meter(QolsysAutomationDeviceEntity, SensorEntity):
     @property
     def native_value(self) -> float | None:
         return self._meter.value
+
+
+class Partition_LastError(QolsysPartitionEntity, SensorEntity):
+    """A sensor entity for a Partition Last Error value."""
+
+    def __init__(
+        self,
+        QolsysPanel: qolsys_controller,
+        partition_id: str,
+        unique_id: str,
+    ) -> None:
+        """Set up a sensor entity for an partition last error value."""
+        super().__init__(QolsysPanel, partition_id, unique_id)
+        self._attr_unique_id = f"{self._partition_unique_id}_lasterror"
+        self._attr_translation_key = "last_error"
+        self._attr_device_class = SensorDeviceClass.ENUM
+        self._attr_options = [error.name for error in PartitionError]
+
+    @property
+    def native_value(self) -> str | None:
+        return self._partition.last_error.name
