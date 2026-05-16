@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3-beta.2 (2026-05-16)
+
+### Features
+
+- Adding partition last_error sensor
+  ([`83771b6`](https://github.com/EHylands/ha-qolsys-panel/commit/83771b60a46362f58f0c74c19178ac8bb454927f))
+
+
 ## v1.0.3-beta.1 (2026-05-16)
 
 ### Chores
