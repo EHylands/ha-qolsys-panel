@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3-beta.3 (2026-05-16)
+
+### Bug Fixes
+
+- Partition bypass last error
+  ([`f220572`](https://github.com/EHylands/ha-qolsys-panel/commit/f2205723ee43bdcaf1e97a2673927427615a4a3c))
+
+
 ## v1.0.3-beta.2 (2026-05-16)
 
 ### Features
