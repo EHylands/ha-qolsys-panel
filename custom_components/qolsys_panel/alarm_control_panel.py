@@ -10,7 +10,11 @@ from qolsys_controller.enum_qolsys import (
     PartitionArmingType,
     PartitionSystemStatus,
 )
-from qolsys_controller.errors import QolsysUserCodeError
+from qolsys_controller.errors import (
+    QolsysOperationTimeoutError,
+    QolsysUserCodeError,
+    QolsysZoneBypassError,
+)
 
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
@@ -104,81 +108,60 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
-        silent_disarming = self._partition.command_arm_stay_silent_disarming
-
         try:
-            await self.QolsysPanel.command_disarm(
-                self._partition_id, user_code=code, silent_disarming=silent_disarming
-            )
+            await self._partition.disarm(user_code=code)
         except QolsysUserCodeError as err:
-            _LOGGER.error(
-                "Failed to disarm partition%s due to invalid user code",
-                self._partition_id,
-            )
             raise HomeAssistantError("DISARM: Invalid user code") from err
+        except QolsysOperationTimeoutError as err:
+            raise HomeAssistantError("DISARM: Operation timed out") from err
+        except Exception as err:
+            _LOGGER.error("Failed to disarm partition%s: %s", self._partition_id, err)
+            raise HomeAssistantError("DISARM: Failed to disarm partition") from err
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send ARM-STAY command."""
-        exit_sounds = self._partition.command_exit_sounds
-        arm_stay_instant = self._partition.command_arm_stay_instant
-        entry_delay = self._partition.command_arm_entry_delay
-
         try:
-            await self.QolsysPanel.command_arm(
-                partition_id=self._partition_id,
-                arming_type=PartitionArmingType.ARM_STAY,
-                user_code=code,
-                exit_sounds=exit_sounds,
-                instant_arm=arm_stay_instant,
-                entry_delay=entry_delay,
-            )
+            await self._partition.arm(PartitionArmingType.ARM_STAY, user_code=code)
         except QolsysUserCodeError as err:
-            _LOGGER.error(
-                "Failed to arm partition%s due to invalid user code",
-                self._partition_id,
-            )
-            raise HomeAssistantError("ARM HOME: Invalid user code") from err
+            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
+        except QolsysOperationTimeoutError as err:
+            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
+        except QolsysZoneBypassError as err:
+            raise HomeAssistantError(
+                "ARM AWAY: Zone bypass required:%s", err.zones
+            ) from err
+        except Exception as err:
+            _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
+            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send ARM-AWAY command."""
-        exit_sounds = self._partition.command_exit_sounds
-        arm_stay_instant = self._partition.command_arm_stay_instant
-        entry_delay = self._partition.command_arm_entry_delay
-
         try:
-            await self.QolsysPanel.command_arm(
-                self._partition_id,
-                arming_type=PartitionArmingType.ARM_AWAY,
-                user_code=code,
-                exit_sounds=exit_sounds,
-                instant_arm=arm_stay_instant,
-                entry_delay=entry_delay,
-            )
+            await self._partition.arm(PartitionArmingType.ARM_AWAY, user_code=code)
         except QolsysUserCodeError as err:
-            _LOGGER.error(
-                "Failed to arm partition%s due to invalid user code",
-                self._partition_id,
-            )
             raise HomeAssistantError("ARM AWAY: Invalid user code") from err
+        except QolsysOperationTimeoutError as err:
+            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
+        except QolsysZoneBypassError as err:
+            raise HomeAssistantError(
+                "ARM AWAY: Zone bypass required:%s", err.zones
+            ) from err
+        except Exception as err:
+            _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
+            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err
 
     async def async_alarm_arm_night(self, code=None):
         """Send ARM-NIGHT command."""
-        exit_sounds = self._partition.command_exit_sounds
-        arm_stay_instant = self._partition.command_arm_stay_instant
-        entry_delay = self._partition.command_arm_entry_delay
-
         try:
-            await self.QolsysPanel.command_arm(
-                self._partition_id,
-                arming_type=PartitionArmingType.ARM_NIGHT,
-                user_code=code,
-                exit_sounds=exit_sounds,
-                instant_arm=arm_stay_instant,
-                entry_delay=entry_delay,
-            )
+            await self._partition.arm(PartitionArmingType.ARM_NIGHT, user_code=code)
         except QolsysUserCodeError as err:
-            _LOGGER.error(
-                "Failed to arm partition%s due to invalid user code",
-                self._partition_id,
-            )
-            raise HomeAssistantError("ARM NIGHT: Invalid user code") from err
+            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
+        except QolsysOperationTimeoutError as err:
+            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
+        except QolsysZoneBypassError as err:
+            raise HomeAssistantError(
+                "ARM AWAY: Zone bypass required:%s", err.zones
+            ) from err
+        except Exception as err:
+            _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
+            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err

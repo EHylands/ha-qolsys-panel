@@ -2,6 +2,44 @@
 
 <!-- version list -->
 
+## v1.0.3-beta.4 (2026-05-18)
+
+### Bug Fixes
+
+- Prevent reconnect loop on cofiguration error
+  ([`eaee256`](https://github.com/EHylands/ha-qolsys-panel/commit/eaee25693b369d60fd8d05d87652a56cde3bf3e0))
+
+
+## v1.0.3-beta.3 (2026-05-16)
+
+### Bug Fixes
+
+- Partition bypass last error
+  ([`f220572`](https://github.com/EHylands/ha-qolsys-panel/commit/f2205723ee43bdcaf1e97a2673927427615a4a3c))
+
+
+## v1.0.3-beta.2 (2026-05-16)
+
+### Features
+
+- Adding partition last_error sensor
+  ([`83771b6`](https://github.com/EHylands/ha-qolsys-panel/commit/83771b60a46362f58f0c74c19178ac8bb454927f))
+
+
+## v1.0.3-beta.1 (2026-05-16)
+
+### Chores
+
+- Badge position in readme.md
+  ([`45136f5`](https://github.com/EHylands/ha-qolsys-panel/commit/45136f501501a305264738261e3e08fb9a336172))
+
+- Change workflow name
+  ([`962c8e6`](https://github.com/EHylands/ha-qolsys-panel/commit/962c8e6c3aa254b0c51ea0577049a09b14de3035))
+
+- Update badge
+  ([`815be67`](https://github.com/EHylands/ha-qolsys-panel/commit/815be67c6d8a11d104a7f5d71861163a89120721))
+
+
 ## v1.0.3 (2026-05-11)
 
 ### Bug Fixes
