@@ -307,24 +307,28 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             }
 
         # Attempt to connect to panel with provided settings
+        error = {}
         try:
             await self._QolsysPanel.start_operation(
                 reconnect=False, run_once=True, start_pairing=start_pairing
             )
-        except (QolsysSslError, SSLError):
+        except* (QolsysSslError, SSLError):
             _LOGGER.error("TLS error during step: %s", step)
-            return {"base": "authentication_failed"}
+            error = {"base": "authentication_failed"}
 
-        except QolsysMqttError:
+        except* QolsysMqttError:
             _LOGGER.error("Error connecting to panel during step: %s", step)
-            return {"base": "cannot_connect"}
+            error = {"base": "cannot_connect"}
 
-        except QolsysConfigError:
+        except* QolsysConfigError:
             _LOGGER.error("Qolsys Panel Configuration Error during step: %s", step)
-            return {"base": "configuration_error"}
+            error = {"base": "configuration_error"}
 
         finally:
             await self._QolsysPanel.stop_operation()
+
+        if error != {}:
+            return error
 
         self._data[CONF_MAC] = format_mac(self._QolsysPanel.panel.MAC_ADDRESS)
         self._data[CONF_HOST] = self._QolsysPanel.settings.panel_ip

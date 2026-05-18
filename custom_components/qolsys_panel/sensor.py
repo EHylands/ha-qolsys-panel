@@ -480,7 +480,6 @@ class Partition_LastError(QolsysPartitionEntity, SensorEntity):
         self._attr_options = [error.name for error in PartitionError]
         self._attr_entity_category = EntityCategory.DIAGNOSTIC
 
-
     @property
     def native_value(self) -> str | None:
         return self._partition.last_error.name
