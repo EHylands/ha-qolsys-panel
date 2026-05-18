@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3-beta.4 (2026-05-18)
+
+### Bug Fixes
+
+- Prevent reconnect loop on cofiguration error
+  ([`eaee256`](https://github.com/EHylands/ha-qolsys-panel/commit/eaee25693b369d60fd8d05d87652a56cde3bf3e0))
+
+
 ## v1.0.3-beta.3 (2026-05-16)
 
 ### Bug Fixes
