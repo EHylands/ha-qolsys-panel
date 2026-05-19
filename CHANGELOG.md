@@ -2,31 +2,7 @@
 
 <!-- version list -->
 
-## v1.1.0-beta.3 (2026-05-19)
-
-### Bug Fixes
-
-- Await arming command
-  ([`9164741`](https://github.com/EHylands/ha-qolsys-panel/commit/9164741ee4e0add49e5795239dd14e39e2dd06cd))
-
-
-## v1.1.0-beta.2 (2026-05-19)
-
-### Chores
-
-- Push main to dev after PR
-  ([`248b3a9`](https://github.com/EHylands/ha-qolsys-panel/commit/248b3a9ace9a8ba27aeed4f5b53726b348d695ac))
-
-
-## v1.1.0-beta.1 (2026-05-19)
-
-### Bug Fixes
-
-- Allow pairing process to use Home Assistant shared Zeroconf instance
-  ([`c0932e9`](https://github.com/EHylands/ha-qolsys-panel/commit/c0932e963aed0b0a453e1a8d7afbbd532a10ab2a))
-
-- Allow pairing process to use Home Assistant shared Zeroconf instance
-  ([`0d9a580`](https://github.com/EHylands/ha-qolsys-panel/commit/0d9a5807b20772c12332766925b9f8c126d10d78))
+## v1.1.0 (2026-05-18)
 
 
 ## v1.0.3-beta.4 (2026-05-18)
