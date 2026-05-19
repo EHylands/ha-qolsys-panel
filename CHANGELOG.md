@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.0-beta.2 (2026-05-19)
+
+### Chores
+
+- Push main to dev after PR
+  ([`248b3a9`](https://github.com/EHylands/ha-qolsys-panel/commit/248b3a9ace9a8ba27aeed4f5b53726b348d695ac))
+
+
 ## v1.1.0-beta.1 (2026-05-19)
 
 ### Bug Fixes
