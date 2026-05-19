@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.0-beta.3 (2026-05-19)
+
+### Bug Fixes
+
+- Await arming command
+  ([`9164741`](https://github.com/EHylands/ha-qolsys-panel/commit/9164741ee4e0add49e5795239dd14e39e2dd06cd))
+
+
 ## v1.1.0-beta.2 (2026-05-19)
 
 ### Chores
