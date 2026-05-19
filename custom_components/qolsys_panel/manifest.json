@@ -5,13 +5,13 @@
     "@EHylands"
   ],
   "config_flow": true,
-  "dependencies": ["network"],
+  "dependencies": ["network","zeroconf"],
   "documentation": "https://github.com/EHylands/ha-qolsys-panel",
   "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/EHylands/ha-qolsys-panel/issues",
   "loggers": ["qolsys_panel", "qolsys-controller"],
   "requirements": ["qolsys-controller==1.1.2"],
-  "version": "1.1.0"
+  "version": "1.1.0-beta.4"
 }
 
