@@ -120,15 +120,15 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send ARM-STAY command."""
-        self._async_alarm_arm_custom(PartitionArmingType.ARM_STAY, code)
+        await self._async_alarm_arm_custom(PartitionArmingType.ARM_STAY, code)
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send ARM-AWAY command."""
-        self._async_alarm_arm_custom(PartitionArmingType.ARM_AWAY, code)
+        await self._async_alarm_arm_custom(PartitionArmingType.ARM_AWAY, code)
 
     async def async_alarm_arm_night(self, code=None):
         """Send ARM-NIGHT command."""
-        self._async_alarm_arm_custom(PartitionArmingType.ARM_NIGHT, code)
+        await self._async_alarm_arm_custom(PartitionArmingType.ARM_NIGHT, code)
 
     async def _async_alarm_arm_custom(
         self, arm_mode: PartitionArmingType, code: str | None = None
