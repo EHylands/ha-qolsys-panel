@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.1.0-beta.1 (2026-05-19)
+
+### Bug Fixes
+
+- Allow pairing process to use Home Assistant shared Zeroconf instance
+  ([`c0932e9`](https://github.com/EHylands/ha-qolsys-panel/commit/c0932e963aed0b0a453e1a8d7afbbd532a10ab2a))
+
+- Allow pairing process to use Home Assistant shared Zeroconf instance
+  ([`0d9a580`](https://github.com/EHylands/ha-qolsys-panel/commit/0d9a5807b20772c12332766925b9f8c126d10d78))
+
+
 ## v1.0.3-beta.4 (2026-05-18)
 
 ### Bug Fixes
