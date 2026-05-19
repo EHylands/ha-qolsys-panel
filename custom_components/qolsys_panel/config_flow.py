@@ -11,6 +11,7 @@ from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 import voluptuous as vol
 
+from homeassistant.components import zeroconf
 from homeassistant.config_entries import (
     ConfigFlow,
     ConfigFlowResult,
@@ -275,6 +276,11 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._QolsysPanel.settings.pairing_resume = resume_pairing
         self._QolsysPanel.settings.mqtt_bridge_enabled = False
         self._QolsysPanel._pki.set_id(random_mac)
+
+        # if start_pairing is True, set home assistant zeroconf shared instance
+        if start_pairing:
+            zc = await zeroconf.async_get_instance(self.hass)
+            self._QolsysPanel.settings.shared_zeroconf_instance = zc
 
         # Check is private key exists
         if not await self._QolsysPanel._pki.check_key_file() and not start_pairing:

@@ -120,48 +120,32 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send ARM-STAY command."""
-        try:
-            await self._partition.arm(PartitionArmingType.ARM_STAY, user_code=code)
-        except QolsysUserCodeError as err:
-            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
-        except QolsysOperationTimeoutError as err:
-            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
-        except QolsysZoneBypassError as err:
-            raise HomeAssistantError(
-                "ARM AWAY: Zone bypass required:%s", err.zones
-            ) from err
-        except Exception as err:
-            _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
-            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err
+        self._async_alarm_arm_custom(PartitionArmingType.ARM_STAY, code)
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
         """Send ARM-AWAY command."""
-        try:
-            await self._partition.arm(PartitionArmingType.ARM_AWAY, user_code=code)
-        except QolsysUserCodeError as err:
-            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
-        except QolsysOperationTimeoutError as err:
-            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
-        except QolsysZoneBypassError as err:
-            raise HomeAssistantError(
-                "ARM AWAY: Zone bypass required:%s", err.zones
-            ) from err
-        except Exception as err:
-            _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
-            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err
+        self._async_alarm_arm_custom(PartitionArmingType.ARM_AWAY, code)
 
     async def async_alarm_arm_night(self, code=None):
         """Send ARM-NIGHT command."""
+        self._async_alarm_arm_custom(PartitionArmingType.ARM_NIGHT, code)
+
+    async def _async_alarm_arm_custom(
+        self, arm_mode: PartitionArmingType, code: str | None = None
+    ) -> None:
+        """Arm with custom mode."""
         try:
-            await self._partition.arm(PartitionArmingType.ARM_NIGHT, user_code=code)
+            await self._partition.arm(arm_mode, user_code=code)
         except QolsysUserCodeError as err:
-            raise HomeAssistantError("ARM AWAY: Invalid user code") from err
+            raise HomeAssistantError(f"{arm_mode.name}: Invalid user code") from err
         except QolsysOperationTimeoutError as err:
-            raise HomeAssistantError("ARM AWAY: Operation timed out") from err
+            raise HomeAssistantError(f"{arm_mode.name}: Operation timed out") from err
         except QolsysZoneBypassError as err:
             raise HomeAssistantError(
-                "ARM AWAY: Zone bypass required:%s", err.zones
+                f"{arm_mode.name}: Zone bypass required:{err.zones}"
             ) from err
         except Exception as err:
             _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
-            raise HomeAssistantError("ARM AWAY: Failed to arm partition") from err
+            raise HomeAssistantError(
+                f"{arm_mode.name}: Failed to arm partition"
+            ) from err
