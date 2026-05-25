@@ -70,7 +70,7 @@ async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data.get("silent")
-    await QolsysPanel.command_panel_trigger_police(partition_id, silent)
+    await QolsysPanel.commands.panel.trigger_police(partition_id, silent)
 
 
 async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
@@ -112,7 +112,7 @@ async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data.get("silent")
-    await QolsysPanel.command_panel_trigger_auxilliary(partition_id, silent)
+    await QolsysPanel.commands.panel.trigger_auxilliary(partition_id, silent)
 
 
 async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
@@ -152,7 +152,7 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
-    await QolsysPanel.command_panel_trigger_fire(partition_id)
+    await QolsysPanel.commands.panel.trigger_fire(partition_id)
 
 
 @callback
