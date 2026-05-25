@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-05-25)
+
+### Bug Fixes
+
+- Bump version
+  ([`008de9c`](https://github.com/EHylands/ha-qolsys-panel/commit/008de9c0c03b6ace9623323b92cfbe70e71c76eb))
+
+- Removing panel.connected value
+  ([`1b4bc01`](https://github.com/EHylands/ha-qolsys-panel/commit/1b4bc01aedba68139903849822d6b97e17f010c6))
+
+### Features
+
+- Bump qolsys-controller 1.3.0
+  ([`5945e65`](https://github.com/EHylands/ha-qolsys-panel/commit/5945e6545590a74724983577da01e79265ba5424))
+
+
 ## v1.1.1 (2026-05-19)
 
 
