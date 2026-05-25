@@ -56,4 +56,4 @@ class Qolsys_MediaPlayer(QolsysPanelEntity, MediaPlayerEntity):
             _LOGGER.warning("Rejected media_id because it is not a string")
             return
 
-        await self.QolsysPanel.command_panel_speak(media_id)
+        await self.QolsysPanel.commands.panel.speak(media_id)

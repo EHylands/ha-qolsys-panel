@@ -6,7 +6,7 @@ import logging
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.protocol_status import StatusProtocol
-from qolsys_controller.enum_qolsys import QolsysNotification
+from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -31,7 +31,7 @@ class QolsysPanelEntity(Entity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        return self.QolsysPanel.connected
+        return self.QolsysPanel.controller_state == ControllerState.CONNECTED
 
     async def async_added_to_hass(self) -> None:
         """Observe connection_status changes."""
@@ -151,7 +151,7 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
             if service.is_malfunctioning:
                 return False
 
-        return self.QolsysPanel.connected
+        return self.QolsysPanel.controller_state == ControllerState.CONNECTED
 
     async def async_added_to_hass(self) -> None:
         """Observe changes."""
