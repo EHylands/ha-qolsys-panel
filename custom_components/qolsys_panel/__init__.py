@@ -82,23 +82,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     # Start controller operation
     try:
-        await QolsysPanel.start_operation(
-            reconnect=True, run_once=False, start_pairing=False
+        hass.async_create_background_task(
+            QolsysPanel.run_forever(
+                reconnect=True, run_once=False, start_pairing=False
+            ),
+            "qolsys-controller",
         )
+        await QolsysPanel.wait_until_connected()
 
-    except QolsysConfigError as err:
+    except* QolsysConfigError as err:
         _LOGGER.error("Qolsys Panel Configuration Error")
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="configuration_error"
         ) from err
 
-    except (QolsysSslError, ssl.SSLError) as err:
+    except* (QolsysSslError, ssl.SSLError) as err:
         _LOGGER.error("Credentials rejected by panel - Signed Certificate Error")
         raise ConfigEntryAuthFailed(
             translation_domain=DOMAIN, translation_key="authentication_failed"
         ) from err
 
-    except QolsysMqttError as err:
+    except* QolsysMqttError as err:
         _LOGGER.error("Qolsys Panel MQTT Error")
         raise ConfigEntryNotReady(
             translation_domain=DOMAIN, translation_key="mqtt_error"
@@ -126,7 +130,8 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        await entry.runtime_data.stop_operation()
+        # await entry.runtime_data.stop_operation()
+        pass
     return unload_ok
 
 

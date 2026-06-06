@@ -315,7 +315,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # Attempt to connect to panel with provided settings
         error = {}
         try:
-            await self._QolsysPanel.start_operation(
+            await self._QolsysPanel.run_forever(
                 reconnect=False, run_once=True, start_pairing=start_pairing
             )
         except* (QolsysSslError, SSLError):
@@ -331,7 +331,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             error = {"base": "configuration_error"}
 
         finally:
-            await self._QolsysPanel.stop_operation()
+            pass
 
         if error != {}:
             return error
