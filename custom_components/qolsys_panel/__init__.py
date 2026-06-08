@@ -138,7 +138,8 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        await entry.runtime.stop()
+        QolsysPanel = entry.runtime_data
+        await QolsysPanel.stop()
     return unload_ok
 
 
