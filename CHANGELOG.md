@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.5 (2026-06-08)
+
+### Bug Fixes
+
+- Enable auto-bypass for safety sensor when enabled on pane;
+  ([`54f2778`](https://github.com/EHylands/ha-qolsys-panel/commit/54f27784fa3009f2a77a7e31e79575c48f20920c))
+
+
 ## v1.2.4 (2026-06-08)
 
 ### Bug Fixes
