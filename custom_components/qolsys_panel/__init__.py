@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import ssl
 
@@ -88,7 +89,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
             ),
             "qolsys-controller",
         )
-        await QolsysPanel.wait_until_connected()
+        try:
+            async with asyncio.timeout(30):
+                await QolsysPanel.wait_until_connected()
+        except TimeoutError as err:
+            await QolsysPanel.stop()
+            raise ConfigEntryNotReady(
+                translation_domain=DOMAIN, translation_key="connection_timeout"
+            ) from err
 
     except* QolsysConfigError as err:
         _LOGGER.error("Qolsys Panel Configuration Error")
@@ -130,8 +138,7 @@ async def async_unload_entry(
 ) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        # await entry.runtime_data.stop_operation()
-        pass
+        await entry.runtime.stop()
     return unload_ok
 
 
