@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.4 (2026-06-08)
+
+### Bug Fixes
+
+- Enable auto-bypass for safety zone when enable on main panel
+  ([`682565f`](https://github.com/EHylands/ha-qolsys-panel/commit/682565f93a5670d6a4fbd31108f1a6f81113cbf4))
+
+
 ## v1.2.3 (2026-06-08)
 
 ### Bug Fixes
