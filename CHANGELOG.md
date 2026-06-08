@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.3 (2026-06-08)
+
+### Bug Fixes
+
+- Bump version
+  ([`9da9407`](https://github.com/EHylands/ha-qolsys-panel/commit/9da9407bfdddae923308b836a09d4dab2f969b3e))
+
+
 ## v1.2.1 (2026-05-27)
 
 ### Bug Fixes
