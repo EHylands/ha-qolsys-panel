@@ -23,6 +23,7 @@ body:
       - IQ 4 Hub
       - IQ Hub
       - IQ Pro
+      - IQ Panel 5
     multiple: false
   validations:
     required: true
