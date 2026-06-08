@@ -44,6 +44,7 @@ from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
+logging.getLogger("custom_components.qolsys_controller").setLevel(logging.DEBUG)
 
 
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
