@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.2.6 (2026-06-14)
+
+### Bug Fixes
+
+- Add garageTilt1 zone sensor group
+  ([`b2df5cd`](https://github.com/EHylands/ha-qolsys-panel/commit/b2df5cd3a2b78260237ba37a49fe93046c5c7fd3))
+
+### Chores
+
+- Update issue template
+  ([`2c75e14`](https://github.com/EHylands/ha-qolsys-panel/commit/2c75e14a003592ff3accfc4cb188d322b0f2d884))
+
+
 ## v1.2.5 (2026-06-08)
 
 ### Bug Fixes
