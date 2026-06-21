@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.7 (2026-06-21)
+
+### Bug Fixes
+
+- Allow controller to parse list fan_mode
+  ([`ef4c3cc`](https://github.com/EHylands/ha-qolsys-panel/commit/ef4c3cc8c2ac1cefdc9a32c5cfa150cd2d9a40f9))
+
+
 ## v1.2.6 (2026-06-14)
 
 ### Bug Fixes
