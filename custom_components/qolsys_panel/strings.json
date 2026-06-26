@@ -149,6 +149,9 @@
       "partition_entry_delays": {
         "name": "Entry Delays"
       },
+      "partition_quick_exit": {
+        "name": "Quick Exit"
+      },
       "zone_unreachable": {
         "name": "Status"
       },
