@@ -36,3 +36,22 @@ trigger_fire:
           filter:
             - integration: qolsys_panel
               domain: alarm_control_panel
+quick_exit:
+  fields:
+    entity_id:
+      required: true
+      selector:
+        entity:
+          multiple: false
+          filter:
+            - integration: qolsys_panel
+              domain: alarm_control_panel
+    duration:
+      required: false
+      default: 120
+      selector:
+        number:
+          min: 1
+          max: 600
+          unit_of_measurement: seconds
+          mode: box
