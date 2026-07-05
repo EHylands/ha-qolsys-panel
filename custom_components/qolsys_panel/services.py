@@ -16,6 +16,7 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, entity_registry, service
 
 from .const import (
+    DEFAULT_QUICK_EXIT_DURATION,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
@@ -23,6 +24,7 @@ from .const import (
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+    SERVICE_QUICK_EXIT,
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
     SERVICE_TRIGGER_POLICE,
@@ -155,6 +157,41 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
     await QolsysPanel.commands.panel.trigger_fire(partition_id)
 
 
+async def async_quick_exit(ent: entity, call: ServiceCall) -> None:
+    """Start Quick Exit on a Qolsys Panel partition (open a door while Armed-Stay without alarming)."""
+    entity_id: str | None = ent.entity_id
+
+    # Get the entity registry entry
+    er = entity_registry.async_get(call.hass)
+    entry = er.async_get(entity_id)
+
+    if entry is None:
+        raise ValueError(f"Entity {entity_id} not found in registry")
+
+    # Get the config entry associated with the entity
+    config_entry: QolsysPanelConfigEntry | None = (
+        call.hass.config_entries.async_get_entry(entry.config_entry_id)
+    )
+    if config_entry is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="integration_not_found",
+            translation_placeholders={"target": entity_id},
+        )
+
+    if config_entry.state is not ConfigEntryState.LOADED:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="not_loaded",
+            translation_placeholders={"target": config_entry.title},
+        )
+
+    QolsysPanel = config_entry.runtime_data
+    partition_id: str = ent._partition_id
+    duration: int = call.data.get("duration", DEFAULT_QUICK_EXIT_DURATION)
+    await QolsysPanel.commands.panel.quick_exit(partition_id, duration)
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up the services for the Qolsys Panel integration."""
@@ -191,4 +228,16 @@ def async_setup_services(hass: HomeAssistant) -> None:
         entity_domain=ALARM_CONTROL_PANEL_DOMAIN,
         schema={},
         func=async_trigger_fire,
+    )
+
+    # Quick Exit Service
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        SERVICE_QUICK_EXIT,
+        entity_domain=ALARM_CONTROL_PANEL_DOMAIN,
+        schema={
+            vol.Optional("duration", default=DEFAULT_QUICK_EXIT_DURATION): cv.positive_int,
+        },
+        func=async_quick_exit,
     )

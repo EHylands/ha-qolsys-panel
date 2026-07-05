@@ -149,6 +149,9 @@
       "partition_entry_delays": {
         "name": "Entry Delays"
       },
+      "partition_quick_exit": {
+        "name": "Quick Exit"
+      },
       "zone_unreachable": {
         "name": "Status"
       },
@@ -201,6 +204,20 @@
         }
       },
       "name": "Qolsys Panel - Trigger Fire Alarm"
+    },
+    "quick_exit": {
+      "description": "Start Quick Exit on the panel partition, allowing a door to be opened while Armed-Stay without triggering an alarm.",
+      "fields": {
+        "entity_id": {
+          "description": "The Qolsys Panel Partition.",
+          "name": "Partition"
+        },
+        "duration": {
+          "description": "Length of the Quick Exit window in seconds.",
+          "name": "Duration"
+        }
+      },
+      "name": "Qolsys Panel - Quick Exit"
     }
   }
 }

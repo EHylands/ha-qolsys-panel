@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_status import StatusService
@@ -154,6 +155,9 @@ async def async_setup_entry(
         entities.append(
             PartitionEntryDelaySensor(QolsysPanel, partition.id, config_entry.unique_id)
         )
+        entities.append(
+            PartitionQuickExitSensor(QolsysPanel, partition.id, config_entry.unique_id)
+        )
 
     # Add Automation Device Status Sensors
     for device in QolsysPanel.state.automation_devices:
@@ -206,6 +210,34 @@ class PartitionEntryDelaySensor(QolsysPartitionEntity, BinarySensorEntity):
     def is_on(self) -> bool:
         """Return if this partition entry delay is on."""
         return self._partition.entry_delays
+
+
+class PartitionQuickExitSensor(QolsysPartitionEntity, BinarySensorEntity):
+    """A binary sensor entity for a partition quick exit window."""
+
+    _attr_device_class = BinarySensorDeviceClass.RUNNING
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, partition_id: int, unique_id: str
+    ) -> None:
+        """Set up a binary sensor entity for partition quick exit."""
+        super().__init__(QolsysPanel, partition_id, unique_id)
+        self._attr_unique_id = f"{self._partition_unique_id}_quick_exit"
+        self._attr_translation_key = "partition_quick_exit"
+
+    @property
+    def is_on(self) -> bool:
+        """Return True while a quick exit window is active on this partition."""
+        return self._partition.quick_exit_active
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Expose quick exit state and countdown timing for dashboards."""
+        return {
+            "quick_exit_state": self._partition.quick_exit_state,
+            "delay": self._partition.quick_exit_delay,
+            "start_time": self._partition.quick_exit_start_time,
+        }
 
 
 class PartitionAlarmSensor(QolsysPartitionEntity, BinarySensorEntity):
