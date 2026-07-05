@@ -4,9 +4,8 @@ from __future__ import annotations
 
 import logging
 
-import voluptuous as vol
-
 from qolsys_controller.errors import CommandExecutionError
+import voluptuous as vol
 
 from custom_components.qolsys_panel import entity
 from homeassistant.components.alarm_control_panel import (
@@ -242,7 +241,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_QUICK_EXIT,
         entity_domain=ALARM_CONTROL_PANEL_DOMAIN,
         schema={
-            vol.Optional("duration", default=DEFAULT_QUICK_EXIT_DURATION): cv.positive_int,
+            vol.Optional(
+                "duration", default=DEFAULT_QUICK_EXIT_DURATION
+            ): cv.positive_int,
         },
         func=async_quick_exit,
     )
