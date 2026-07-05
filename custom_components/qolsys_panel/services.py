@@ -194,10 +194,7 @@ async def async_quick_exit(ent: entity, call: ServiceCall) -> None:
     try:
         await QolsysPanel.commands.panel.quick_exit(partition_id, duration)
     except CommandExecutionError as e:
-        raise HomeAssistantError(
-            translation_domain=DOMAIN,
-            translation_placeholders={"error": str(e)},
-        ) from e
+        raise HomeAssistantError(str(e)) from e
 
 
 @callback
