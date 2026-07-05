@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.3.0 (2026-07-05)
+
+### Features
+
+- Adding partition quick exit service
+  ([`0086271`](https://github.com/EHylands/ha-qolsys-panel/commit/0086271f29ed6f22f13a4104d6f7bd1bfef7438b))
+
+- Adding partition quick exit service
+  ([`885bc81`](https://github.com/EHylands/ha-qolsys-panel/commit/885bc8137d6468ebd9f8846ce3675a3937a92bc5))
+
+
 ## v1.2.8 (2026-06-24)
 
 ### Bug Fixes
