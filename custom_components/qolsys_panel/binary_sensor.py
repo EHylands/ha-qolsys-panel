@@ -10,6 +10,7 @@ from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_status import StatusService
 from qolsys_controller.enum_qolsys import (
     PartitionAlarmType,
+    PartitionQuickExitState,
     QolsysNotification,
     ZoneSensorType,
     ZoneStatus,
@@ -228,7 +229,7 @@ class PartitionQuickExitSensor(QolsysPartitionEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Return True while a quick exit window is active on this partition."""
-        return self._partition.quick_exit_active
+        return self._partition.quick_exit_state == PartitionQuickExitState.STARTED
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

@@ -6,6 +6,8 @@ import logging
 
 import voluptuous as vol
 
+from qolsys_controller.errors import CommandExecutionError
+
 from custom_components.qolsys_panel import entity
 from homeassistant.components.alarm_control_panel import (
     DOMAIN as ALARM_CONTROL_PANEL_DOMAIN,
@@ -189,7 +191,13 @@ async def async_quick_exit(ent: entity, call: ServiceCall) -> None:
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     duration: int = call.data.get("duration", DEFAULT_QUICK_EXIT_DURATION)
-    await QolsysPanel.commands.panel.quick_exit(partition_id, duration)
+    try:
+        await QolsysPanel.commands.panel.quick_exit(partition_id, duration)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 @callback
