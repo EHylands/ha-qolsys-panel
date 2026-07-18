@@ -87,8 +87,8 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     def code_arm_required(self) -> bool:
         """Return whether a code is required for the next state change."""
         if self._next_action_is_arm:
-            return self._QolsysPanel.settings.check_user_code_on_arm
-        return self._QolsysPanel.settings.check_user_code_on_disarm
+            return self.QolsysPanel.settings.check_user_code_on_arm
+        return self.QolsysPanel.settings.check_user_code_on_disarm
 
     @property
     def code_format(self) -> CodeFormat | None:
