@@ -37,7 +37,8 @@
         "init": {
           "title": "Qolsys Panel - Options",
           "data": {
-            "option_arm_code": "User Code required to Arm/Disarm",
+            "option_arm_code": "User Code required to Arm",
+            "opton_disarm_code": "User Code required to Disarm",
             "option_trigger_police": "Enable Trigger Police Alarm",
             "option_trigger_auxilliary": "Enable Trigger Auxiliary Alarm",
             "option_trigger_fire": "Enable Trigger Fire Alarm",

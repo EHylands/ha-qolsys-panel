@@ -19,10 +19,12 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     CONF_RANDOM_MAC,
     DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_MOTION_SENSOR_DELAY,
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DOMAIN,
     OPTION_ARM_CODE,
+    OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
 )
@@ -70,9 +72,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.pairing_resume = False
     QolsysPanel.settings.mqtt_bridge_enabled = False
 
-    user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
-    QolsysPanel.settings.check_user_code_on_arm = user_code_required
-    QolsysPanel.settings.check_user_code_on_disarm = user_code_required
+    arm_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
+    disarm_code_required = entry.options.get(OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED)
+
+    QolsysPanel.settings.check_user_code_on_arm = arm_code_required
+    QolsysPanel.settings.check_user_code_on_disarm = disarm_code_required
 
     QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(
         OPTION_MOTION_SENSOR_DELAY, DEFAULT_MOTION_SENSOR_DELAY
@@ -151,18 +155,21 @@ async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
         config_entry.minor_version,
     )
 
-    if config_entry.version > 0:
+    if config_entry.version > 1:
         # This means the user has downgraded from a future version
         return False
 
-    if config_entry.version == 0:
-        new_data = {**config_entry.data}
-        if config_entry.minor_version < 4:
-            pass
-
-    hass.config_entries.async_update_entry(
-        config_entry, data=new_data, minor_version=3, version=0
-    )
+    if config_entry.version < 1:
+        # 0.x -> 1.0: the disarm code option was split out of the arm code
+        # option; carry over the old combined behavior.
+        new_options = {**config_entry.options}
+        new_options.setdefault(
+            OPTION_DISARM_CODE,
+            new_options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED),
+        )
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, minor_version=0, version=1
+        )
 
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",

@@ -27,6 +27,7 @@ from .const import (
     CONF_RANDOM_MAC,
     CONFIG_DIR,
     DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_MOTION_SENSOR_DELAY,
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DEFAULT_TRIGGER_AUXILLIARY,
@@ -34,6 +35,7 @@ from .const import (
     DEFAULT_TRIGGER_POLICE,
     DOMAIN,
     OPTION_ARM_CODE,
+    OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
     OPTION_TRIGGER_AUXILLIARY,
@@ -50,8 +52,8 @@ logging.getLogger("custom_components.qolsys_controller").setLevel(logging.DEBUG)
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
 
-    VERSION = 0
-    MINOR_VERSION = 3
+    VERSION = 1
+    MINOR_VERSION = 0
 
     def __init__(self) -> None:
         """Init config flow."""
@@ -364,6 +366,10 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                 vol.Required(
                     OPTION_ARM_CODE,
                     default=options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED),
+                ): bool,
+                vol.Required(
+                    OPTION_DISARM_CODE,
+                    default=options.get(OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED),
                 ): bool,
                 vol.Required(
                     OPTION_TRIGGER_POLICE,

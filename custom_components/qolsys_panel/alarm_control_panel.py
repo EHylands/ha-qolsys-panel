@@ -70,9 +70,33 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     ) -> None:
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = self._partition_unique_id
-        self._attr_code_arm_required = QolsysPanel.settings.check_user_code_on_arm
-        if QolsysPanel.settings.check_user_code_on_arm:
-            self._attr_code_format = CodeFormat.NUMBER
+
+    @property
+    def _next_action_is_arm(self) -> bool:
+        """Return whether the next state change is arming.
+
+        A triggered alarm can report a DISARM system status; disarming is
+        still the pending action in that case.
+        """
+        return (
+            self._partition.system_status == PartitionSystemStatus.DISARM
+            and self._partition.alarm_state != PartitionAlarmState.ALARM
+        )
+
+    @property
+    def code_arm_required(self) -> bool:
+        """Return whether a code is required for the next state change."""
+        if self._next_action_is_arm:
+            return self._QolsysPanel.settings.check_user_code_on_arm
+        return self._QolsysPanel.settings.check_user_code_on_disarm
+
+    @property
+    def code_format(self) -> CodeFormat | None:
+        """Return the code format when the next state change requires a code."""
+
+        # Disarm prompts whenever code_format is set, so the format must be
+        # exposed only when the pending action actually needs a code.
+        return CodeFormat.NUMBER if self.code_arm_required else None
 
     @property
     def alarm_state(self) -> AlarmControlPanelState | None:
