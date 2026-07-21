@@ -16,6 +16,8 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -58,12 +60,10 @@ class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
         self._attr_name = f"Siren{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
     async def async_turn_on(self, **kwargs) -> None:
-        _LOGGER.debug("Turn On - Commands: %s", self._node.command_class_list)
-        self._service.turn_on()
+        await self._service.turn_on()
 
-    async def async_turn_off(self, **kwargs):
-        _LOGGER.debug("Turn Off - Commands: %s", self._node.command_class_list)
-        self._service.turn_off()
+    async def async_turn_off(self, **kwargs) -> None:
+        await self._service.turn_off()
 
     @property
     def is_on(self) -> bool | None:

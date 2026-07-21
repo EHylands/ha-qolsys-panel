@@ -21,6 +21,7 @@ from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
+from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 from .const import (
     CONF_IMEI,
@@ -61,6 +62,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._pki_list: list[str] = []
         self._QolsysPanel = qolsys_controller()
         self._config_directory = Path()
+        self._error_placeholders: dict[str, str] = {}
 
     @staticmethod
     @callback
@@ -81,6 +83,23 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
 
         return pki_list
+
+    async def async_step_dhcp(
+        self, discovery_info: DhcpServiceInfo
+    ) -> ConfigFlowResult:
+        """Handle discovery of a Qolsys Panel via DHCP."""
+        mac = format_mac(discovery_info.macaddress)
+
+        await self.async_set_unique_id(mac)
+        # Update the stored host if the panel is already configured, then abort.
+        self._abort_if_unique_id_configured(updates={CONF_HOST: discovery_info.ip})
+
+        # Remember what discovery told us so the pairing steps can pre-fill it.
+        self._data[CONF_MAC] = mac
+        self._data[CONF_HOST] = discovery_info.ip
+        self.context["title_placeholders"] = {"name": f"Qolsys Panel ({mac})"}
+
+        return await self.async_step_user()
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -116,20 +135,20 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         # User has submitted new data, attempt to configure with settings
-        if user_input is not None:
-            result = await self._try_connect(
-                step="pki_autodiscovery_2",
-                host="",
-                random_mac="",
-                resume_pairing=True,
-                start_pairing=True,
+        result = await self._try_connect(
+            step="pki_autodiscovery_2",
+            host="",
+            random_mac="",
+            resume_pairing=True,
+            start_pairing=True,
+        )
+        if result != {}:
+            return self.async_show_form(
+                step_id="pki_autodiscovery_2",
+                data_schema=None,
+                errors=result,
+                description_placeholders=self._error_placeholders,
             )
-            if result != {}:
-                return self.async_show_form(
-                    step_id="pki_autodiscovery_2",
-                    data_schema=None,
-                    errors=result,
-                )
 
         # Add entry to Home Assistant
         await self.async_set_unique_id(self._data[CONF_MAC])
@@ -147,8 +166,13 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._config_directory = Path(self.hass.config.config_dir) / CONFIG_DIR
         self._pki_list = await self._async_get_pki_dir()
 
+        host_default = self._data.get(CONF_HOST)
         data_schema = {
-            vol.Required(CONF_HOST): str,
+            (
+                vol.Required(CONF_HOST, default=host_default)
+                if host_default
+                else vol.Required(CONF_HOST)
+            ): str,
             vol.Required(CONF_RANDOM_MAC): selector(
                 {
                     "select": {
@@ -166,7 +190,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=vol.Schema(data_schema),
-                errors={"base": "No existing PKI found in configuration folder"},
+                errors={"base": "no_pki_found"},
             )
 
         if user_input is None:
@@ -175,20 +199,20 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         # User has submitted new data, attempt to reconfigure with new settings
-        if user_input is not None:
-            result = await self._try_connect(
-                step="existing_pki",
-                host=user_input[CONF_HOST],
-                random_mac=user_input[CONF_RANDOM_MAC],
-                resume_pairing=False,
-                start_pairing=False,
+        result = await self._try_connect(
+            step="existing_pki",
+            host=user_input[CONF_HOST],
+            random_mac=user_input[CONF_RANDOM_MAC],
+            resume_pairing=False,
+            start_pairing=False,
+        )
+        if result != {}:
+            return self.async_show_form(
+                step_id="existing_pki",
+                data_schema=vol.Schema(data_schema),
+                errors=result,
+                description_placeholders=self._error_placeholders,
             )
-            if result != {}:
-                return self.async_show_form(
-                    step_id="existing_pki",
-                    data_schema=vol.Schema(data_schema),
-                    errors=result,
-                )
 
         # Add entry to Home Assistant
         await self.async_set_unique_id(self._data[CONF_MAC])
@@ -229,7 +253,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="reconfigure",
                 data_schema=vol.Schema(data_schema),
-                errors={"base": "No existing PKI found in configuration folder"},
+                errors={"base": "no_pki_found"},
             )
 
         # No user input, show form to reconfigure settings
@@ -240,28 +264,27 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         # User has submitted new data, attempt to reconfigure with new settings
-        if user_input is not None:
-            result = await self._try_connect(
-                step="reconfigure",
-                host=user_input[CONF_HOST],
-                random_mac=user_input[CONF_RANDOM_MAC],
-                resume_pairing=False,
-                start_pairing=False,
+        result = await self._try_connect(
+            step="reconfigure",
+            host=user_input[CONF_HOST],
+            random_mac=user_input[CONF_RANDOM_MAC],
+            resume_pairing=False,
+            start_pairing=False,
+        )
+        if result != {}:
+            return self.async_show_form(
+                step_id="reconfigure",
+                data_schema=vol.Schema(data_schema),
+                errors=result,
+                description_placeholders=self._error_placeholders,
             )
-            if result != {}:
-                return self.async_show_form(
-                    step_id="reconfigure",
-                    data_schema=vol.Schema(data_schema),
-                    errors=result,
-                )
 
-            await self.async_set_unique_id(self._data[CONF_MAC])
-            self._abort_if_unique_id_mismatch()
-            return self.async_update_reload_and_abort(
-                entry,
-                data_updates=self._data,
-            )
-        return None
+        await self.async_set_unique_id(self._data[CONF_MAC])
+        self._abort_if_unique_id_mismatch()
+        return self.async_update_reload_and_abort(
+            entry,
+            data_updates=self._data,
+        )
 
     async def _try_connect(
         self,
@@ -271,6 +294,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         resume_pairing: bool = False,
         start_pairing: bool = False,
     ) -> dict[str, str]:
+        self._error_placeholders = {}
         self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
         self._QolsysPanel.settings.panel_ip = host
         self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
@@ -288,12 +312,14 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # Check is private key exists
         if not await self._QolsysPanel._pki.check_key_file() and not start_pairing:
             _LOGGER.error("Private key file not found for PKI: %s", random_mac)
-            return {"base": f"Private key file not found for PKI: {random_mac}"}
+            self._error_placeholders = {"random_mac": random_mac}
+            return {"base": "private_key_not_found"}
 
         # Check client certificate exists
         if not await self._QolsysPanel._pki.check_secure_file() and not start_pairing:
             _LOGGER.error("Client certificate file not found for PKI: %s", random_mac)
-            return {"base": f"Client certificate file not found for PKI: {random_mac}"}
+            self._error_placeholders = {"random_mac": random_mac}
+            return {"base": "client_certificate_not_found"}
 
         # Check Qolsys public certificate exists
         if (
@@ -301,19 +327,22 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             and not start_pairing
         ):
             _LOGGER.error("Qolsys certificate file not found for PKI: %s", random_mac)
-            return {"base": f"Qolsys certificate file not found for PKI: {random_mac}"}
+            self._error_placeholders = {"random_mac": random_mac}
+            return {"base": "qolsys_certificate_not_found"}
 
         # Check if panel IP is valid
         if not self._QolsysPanel.settings.check_panel_ip() and not start_pairing:
             _LOGGER.error("Invalid Panel IP: %s", self._QolsysPanel.settings.panel_ip)
-            return {"base": f"Invalid Panel IP: {self._QolsysPanel.settings.panel_ip}"}
+            self._error_placeholders = {"panel_ip": self._QolsysPanel.settings.panel_ip}
+            return {"base": "invalid_panel_ip"}
 
         # Check if plugin IP is valid
         if not self._QolsysPanel.settings.check_plugin_ip():
             _LOGGER.error("Invalid Plugin IP: %s", self._QolsysPanel.settings.plugin_ip)
-            return {
-                "base": f"Invalid Plugin IP: {self._QolsysPanel.settings.plugin_ip}"
+            self._error_placeholders = {
+                "plugin_ip": self._QolsysPanel.settings.plugin_ip
             }
+            return {"base": "invalid_plugin_ip"}
 
         # Attempt to connect to panel with provided settings
         error = {}
@@ -369,7 +398,9 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                 ): bool,
                 vol.Required(
                     OPTION_DISARM_CODE,
-                    default=options.get(OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED),
+                    default=options.get(
+                        OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED
+                    ),
                 ): bool,
                 vol.Required(
                     OPTION_TRIGGER_POLICE,

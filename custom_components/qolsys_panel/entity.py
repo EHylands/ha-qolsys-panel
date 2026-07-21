@@ -134,6 +134,9 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
 
         if self._autdev is None:
             _LOGGER.error("Invalid AutDev virtual_node_id:%s", virtual_node_id)
+            raise ValueError(
+                f"Unknown automation device virtual_node_id: {virtual_node_id}"
+            )
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._autdev_unique_id)},

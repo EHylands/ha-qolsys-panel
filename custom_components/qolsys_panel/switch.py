@@ -15,6 +15,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 from . import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity, QolsysPartitionEntity
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,

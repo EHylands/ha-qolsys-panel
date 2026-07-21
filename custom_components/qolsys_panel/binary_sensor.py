@@ -37,6 +37,8 @@ from .entity import (
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 PRESS_RESET_SECONDS = 0.5
 DEBOUNCE_SECONDS = 0.3
@@ -515,9 +517,8 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
     """Binary sensor for a Qolsys doorbell."""
 
     _attr_has_entity_name = True
-    _attr_name = "Doorbell"
+    _attr_translation_key = "doorbell"
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_icon = "mdi:doorbell"
 
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
         super().__init__(QolsysPanel, unique_id)
@@ -567,9 +568,8 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
     """Binary sensor for a Qolsys chime."""
 
     _attr_has_entity_name = True
-    _attr_name = "Chime"
+    _attr_translation_key = "chime"
     _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
-    _attr_icon = "mdi:bell-ring"
 
     def __init__(self, hass, QolsysPanel: qolsys_controller, unique_id: str):
         super().__init__(QolsysPanel, unique_id)

@@ -7,6 +7,7 @@ import logging
 import ssl
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
@@ -73,7 +74,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.mqtt_bridge_enabled = False
 
     arm_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
-    disarm_code_required = entry.options.get(OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED)
+    disarm_code_required = entry.options.get(
+        OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED
+    )
 
     QolsysPanel.settings.check_user_code_on_arm = arm_code_required
     QolsysPanel.settings.check_user_code_on_disarm = disarm_code_required
@@ -121,6 +124,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         ) from err
 
     entry.runtime_data = QolsysPanel
+
+    # Log once when the connection to the panel is lost and once when it is
+    # restored. The controller updates its state right after firing the status
+    # notification, so defer the check until the event loop settles.
+    was_connected = True
+
+    def _check_connection() -> None:
+        nonlocal was_connected
+        state = QolsysPanel.controller_state
+        if was_connected and state == ControllerState.RECONNECTING:
+            _LOGGER.info("Connection to Qolsys Panel lost, reconnecting")
+        elif not was_connected and state == ControllerState.CONNECTED:
+            _LOGGER.info("Connection to Qolsys Panel restored")
+        was_connected = state == ControllerState.CONNECTED
+
+    def _on_panel_status_update() -> None:
+        hass.loop.call_soon(_check_connection)
+
+    def _unregister_connection_logger() -> None:
+        QolsysPanel.state.unregister(
+            QolsysNotification.PANEL_STATUS_UPDATE, _on_panel_status_update
+        )
+
+    QolsysPanel.state.register(
+        QolsysNotification.PANEL_STATUS_UPDATE, _on_panel_status_update
+    )
+    entry.async_on_unload(_unregister_connection_logger)
+
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
 

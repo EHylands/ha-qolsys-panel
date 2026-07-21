@@ -6,6 +6,10 @@
   ],
   "config_flow": true,
   "dependencies": ["network","zeroconf"],
+  "dhcp": [
+    { "macaddress": "3C3178*" },
+    { "macaddress": "18C1E2*" }
+  ],
   "documentation": "https://github.com/EHylands/ha-qolsys-panel",
   "integration_type": "device",
   "iot_class": "local_push",

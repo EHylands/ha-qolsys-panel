@@ -1,0 +1,12 @@
+{
+  "entity": {
+    "binary_sensor": {
+      "doorbell": {
+        "default": "mdi:doorbell"
+      },
+      "chime": {
+        "default": "mdi:bell-ring"
+      }
+    }
+  }
+}
