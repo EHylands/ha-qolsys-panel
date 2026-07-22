@@ -5,10 +5,7 @@ from unittest.mock import MagicMock
 from conftest import PANEL_MAC
 import pytest
 
-from custom_components.qolsys_panel.weather import (
-    WeatherSensor,
-    async_setup_entry,
-)
+from custom_components.qolsys_panel.weather import WeatherSensor, async_setup_entry
 from homeassistant.core import HomeAssistant
 
 UID = PANEL_MAC

@@ -89,6 +89,29 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle discovery of a Qolsys Panel via DHCP."""
         mac = format_mac(discovery_info.macaddress)
+        _LOGGER.debug(
+            "DHCP discovery: host=%s hostname=%s raw_mac=%s formatted_mac=%s",
+            discovery_info.ip,
+            discovery_info.hostname,
+            discovery_info.macaddress,
+            mac,
+        )
+
+        # Log the MAC we discovered next to the MACs of already-configured
+        # entries so a mismatch (which would re-offer a configured panel) is
+        # visible in the logs.
+        configured_macs = {
+            entry.unique_id: entry.data.get(CONF_HOST)
+            for entry in self._async_current_entries(include_ignore=False)
+        }
+        _LOGGER.debug(
+            "DHCP discovery: discovered_mac=%s configured_entries=%s -> %s",
+            mac,
+            configured_macs,
+            "match (will update host and abort)"
+            if mac in configured_macs
+            else "no match (proceeding to setup menu)",
+        )
 
         await self.async_set_unique_id(mac)
         # Update the stored host if the panel is already configured, then abort.

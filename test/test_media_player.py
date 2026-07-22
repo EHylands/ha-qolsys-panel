@@ -1,6 +1,6 @@
 """Tests for the Qolsys Panel media player."""
 
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
@@ -17,8 +17,6 @@ UID = PANEL_MAC
 @pytest.fixture
 def controller() -> MagicMock:
     """A controller mock with an awaitable speak command."""
-    from unittest.mock import AsyncMock
-
     c = MagicMock()
     c.commands.panel.speak = AsyncMock()
     return c

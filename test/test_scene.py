@@ -5,10 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from conftest import PANEL_MAC
 import pytest
 
-from custom_components.qolsys_panel.scene import (
-    QolsysPanelScene,
-    async_setup_entry,
-)
+from custom_components.qolsys_panel.scene import QolsysPanelScene, async_setup_entry
 from homeassistant.core import HomeAssistant
 
 UID = PANEL_MAC

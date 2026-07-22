@@ -71,9 +71,7 @@ async def test_async_setup_entry_creates_entities(
         (QolsysHvacMode.FAN_ONLY, None),
     ],
 )
-def test_target_temperature(
-    controller: MagicMock, hvac_mode, expected_attr
-) -> None:
+def test_target_temperature(controller: MagicMock, hvac_mode, expected_attr) -> None:
     """Target temperature depends on the HVAC mode."""
     climate = _climate(controller)
     climate._service.hvac_mode = hvac_mode
@@ -108,9 +106,7 @@ def test_temperature_unit(controller: MagicMock, unit, expected) -> None:
         (QolsysHvacMode.HEAT, None, None),
     ],
 )
-def test_target_temperature_range(
-    controller: MagicMock, hvac_mode, high, low
-) -> None:
+def test_target_temperature_range(controller: MagicMock, hvac_mode, high, low) -> None:
     """The high/low targets are exposed only in auto/heat-cool modes."""
     climate = _climate(controller)
     climate._service.hvac_mode = hvac_mode

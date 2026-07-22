@@ -27,10 +27,7 @@ from custom_components.qolsys_panel.sensor import (
     ZoneSensor_PowerG_Temperature,
     async_setup_entry,
 )
-from homeassistant.components.sensor import (
-    SensorDeviceClass,
-    SensorStateClass,
-)
+from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
 
 UID = PANEL_MAC

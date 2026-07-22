@@ -2,9 +2,8 @@
 
 from unittest.mock import AsyncMock, patch
 
-from homeassistant.core import HomeAssistant
-
 from custom_components.qolsys_panel.utils import get_local_ip
+from homeassistant.core import HomeAssistant
 
 ADAPTERS_PATH = "custom_components.qolsys_panel.utils.network.async_get_adapters"
 

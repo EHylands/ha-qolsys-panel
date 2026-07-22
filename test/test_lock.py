@@ -5,10 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 from conftest import PANEL_MAC
 import pytest
 
-from custom_components.qolsys_panel.lock import (
-    AutomationDeviceLock,
-    async_setup_entry,
-)
+from custom_components.qolsys_panel.lock import AutomationDeviceLock, async_setup_entry
 from homeassistant.components.lock import LockEntityFeature
 from homeassistant.core import HomeAssistant
 

@@ -155,9 +155,7 @@ async def test_dhcp_discovery_prefills_existing_pki_host(
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "existing_pki"
-    host_key = next(
-        k for k in result["data_schema"].schema if k == CONF_HOST
-    )
+    host_key = next(k for k in result["data_schema"].schema if k == CONF_HOST)
     assert host_key.default() == DISCOVERY_IP
 
 

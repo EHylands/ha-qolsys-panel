@@ -56,7 +56,7 @@ class AutomationDevice_Valve(QolsysAutomationDeviceEntity, ValveEntity):
         QolsysPanel: qolsys_controller,
         virtual_node_id: str,
         endpoint: int,
-        unique_id: str,
+        unique_id: str | None = None,
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_valve{endpoint}"
