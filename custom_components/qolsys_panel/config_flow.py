@@ -97,23 +97,39 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             mac,
         )
 
-        # Log the MAC we discovered next to the MACs of already-configured
-        # entries so a mismatch (which would re-offer a configured panel) is
-        # visible in the logs.
-        configured_macs = {
-            entry.unique_id: entry.data.get(CONF_HOST)
+        # IQ2+ panels report their MAC with a trailing newline that
+        # format_mac() cannot strip, so a configured entry may carry a
+        # "\n"-suffixed unique_id. Match on the stripped form but reuse the
+        # entry's *existing* unique_id for the abort check below; never rewrite
+        # it, since every entity and device id is derived from it and changing
+        # it would re-create them under new ids and break automations.
+        unique_id = mac
+        for entry in self._async_current_entries(include_ignore=False):
+            if entry.unique_id is not None and entry.unique_id.strip() == mac:
+                unique_id = entry.unique_id
+                break
+
+        # Log the MAC we discovered next to each configured entry's unique_id
+        # AND its CONF_MAC data field, so a mismatch (which would re-offer a
+        # configured panel) is visible in the logs. The abort is decided on
+        # unique_id; logging CONF_MAC too surfaces any divergence between them.
+        configured = {
+            entry.unique_id: {
+                "conf_mac": entry.data.get(CONF_MAC),
+                "host": entry.data.get(CONF_HOST),
+            }
             for entry in self._async_current_entries(include_ignore=False)
         }
         _LOGGER.debug(
             "DHCP discovery: discovered_mac=%s configured_entries=%s -> %s",
             mac,
-            configured_macs,
+            configured,
             "match (will update host and abort)"
-            if mac in configured_macs
+            if unique_id != mac or mac in configured
             else "no match (proceeding to setup menu)",
         )
 
-        await self.async_set_unique_id(mac)
+        await self.async_set_unique_id(unique_id)
         # Update the stored host if the panel is already configured, then abort.
         self._abort_if_unique_id_configured(updates={CONF_HOST: discovery_info.ip})
 

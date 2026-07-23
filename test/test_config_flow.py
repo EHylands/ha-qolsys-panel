@@ -138,6 +138,48 @@ async def test_dhcp_discovery_updates_host_and_aborts(
     assert mock_config_entry.data[CONF_HOST] == "192.168.1.99"
 
 
+async def test_dhcp_discovery_matches_newline_suffixed_unique_id(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+):
+    """IQ2+ panels store the MAC with a trailing newline; discovery still matches.
+
+    The clean MAC from DHCP must abort against the "\\n"-suffixed entry, and the
+    entry's unique_id must be left untouched (every entity/device id is derived
+    from it, so changing it would re-create them and break automations).
+    """
+    dirty_unique_id = f"{PANEL_MAC}\n"
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=f"Qolsys Panel ({PANEL_MAC})",
+        data={
+            CONF_HOST: PANEL_HOST,
+            CONF_MAC: dirty_unique_id,
+            CONF_MODEL: PANEL_MODEL,
+            CONF_IMEI: PANEL_IMEI,
+            CONF_RANDOM_MAC: RANDOM_MAC,
+        },
+        unique_id=dirty_unique_id,
+        version=1,
+        minor_version=0,
+    )
+    entry.add_to_hass(hass)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP, ip="192.168.1.99"),
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    # Host refreshed, but the newline-suffixed unique_id is preserved untouched.
+    assert entry.data[CONF_HOST] == "192.168.1.99"
+    assert entry.unique_id == dirty_unique_id
+
+
 async def test_dhcp_discovery_prefills_existing_pki_host(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
