@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.4.0 (2026-07-24)
+
+### Features
+
+- Add require disarm code option ([#101](https://github.com/EHylands/ha-qolsys-panel/pull/101),
+  [`ba8e2bf`](https://github.com/EHylands/ha-qolsys-panel/commit/ba8e2bf252175f625149f91aca731ce0a43675c6))
+
+- Feature update
+  ([`9e8303e`](https://github.com/EHylands/ha-qolsys-panel/commit/9e8303efbc6711f3f1bb1775ab157f6bdcb55d1a))
+
+- Feature update ([#101](https://github.com/EHylands/ha-qolsys-panel/pull/101),
+  [`ba8e2bf`](https://github.com/EHylands/ha-qolsys-panel/commit/ba8e2bf252175f625149f91aca731ce0a43675c6))
+
+
 ## v1.3.0 (2026-07-05)
 
 ### Features
