@@ -342,6 +342,7 @@ async def test_existing_pki_validation_errors(
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
     pki_dir: Path,
+    *,
     target: str,
     check: str,
     error: str,
@@ -381,6 +382,7 @@ async def test_existing_pki_connection_errors(
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
     pki_dir: Path,
+    *,
     side_effect: Exception,
     error: str,
 ):
