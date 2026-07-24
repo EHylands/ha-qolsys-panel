@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel weather."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
@@ -48,14 +49,16 @@ async def test_async_setup_entry_creates_entities(
 def test_condition_present(controller: MagicMock) -> None:
     """The condition reflects the current weather when available."""
     weather = WeatherSensor(controller, UID)
-    weather._weather.current_weather.return_value = MagicMock(condition="Sunny")
+    cast(MagicMock, weather._weather.current_weather).return_value = MagicMock(
+        condition="Sunny"
+    )
     assert weather.condition == "Sunny"
 
 
 def test_condition_absent(controller: MagicMock) -> None:
     """The condition is empty when there is no current weather."""
     weather = WeatherSensor(controller, UID)
-    weather._weather.current_weather.return_value = None
+    cast(MagicMock, weather._weather.current_weather).return_value = None
     assert weather.condition == ""
 
 
@@ -66,6 +69,7 @@ async def test_forecast_daily(controller: MagicMock) -> None:
 
     forecast = await weather.async_forecast_daily()
 
+    assert forecast is not None
     assert len(forecast) == 1
     assert forecast[0]["condition"] == "Cloudy"
     assert forecast[0]["native_temperature"] == 70

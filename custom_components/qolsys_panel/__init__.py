@@ -154,11 +154,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
+    unique_id = entry.unique_id
+    assert unique_id is not None
 
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(CONNECTION_NETWORK_MAC, mac)} if mac else set(),
-        identifiers={(DOMAIN, entry.unique_id)},
+        identifiers={(DOMAIN, unique_id)},
         name="Panel",
         manufacturer="Johnson Controls",
         model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
@@ -178,7 +180,9 @@ async def async_unload_entry(
     return unload_ok
 
 
-async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
+async def async_migrate_entry(
+    hass: HomeAssistant, config_entry: QolsysPanelConfigEntry
+) -> bool:
     """Migrate old entry."""
     _LOGGER.debug(
         "Migrating configuration from version %s.%s",

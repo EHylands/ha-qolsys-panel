@@ -42,7 +42,7 @@ def mock_qolsys_controller() -> Generator[MagicMock]:
     """Mock the qolsys_controller instance used by the config flow."""
     controller = MagicMock()
     controller.run_forever = AsyncMock()
-    controller.stop_operation = AsyncMock()
+    controller.stop = AsyncMock()
 
     controller._pki.check_key_file = AsyncMock(return_value=True)
     controller._pki.check_secure_file = AsyncMock(return_value=True)

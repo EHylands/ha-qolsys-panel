@@ -162,7 +162,7 @@ async def test_dynamic_sensor_add(hass: HomeAssistant, controller: MagicMock) ->
         for call in controller.state.register.call_args_list
         if call.args[0] is QolsysNotification.AUTOMATION_SENSOR_ADD
     )
-    await callback(
+    callback(
         virtual_node_id="5",
         endpoint=0,
         unit=QolsysSensorScale.TEMPERATURE_FAHRENHEIT,

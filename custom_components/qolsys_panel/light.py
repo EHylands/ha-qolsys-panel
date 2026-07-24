@@ -23,29 +23,31 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
     entities: list[LightEntity] = []
 
     # Add Automation Device Lights
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(LightService):
+        for service in device.service_get_protocol(LightService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDevice_Light(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
     async_add_entities(entities)
 
 
-def to_qolsys_level(level):
+def to_qolsys_level(level: int) -> int:
     """Convert the given Home Assistant light level (0-255) to Qolsys (0-99)."""
     return int((level * 99) / 255)
 
 
-def to_hass_level(level):
+def to_hass_level(level: int) -> int:
     """Convert the given Qolsys (0-99) light level to Home Assistant (0-255)."""
     return int((level * 255) / 99)
 
@@ -62,7 +64,9 @@ class AutomationDevice_Light(QolsysAutomationDeviceEntity, LightEntity):
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_light{endpoint}"
-        self._service = self._autdev.service_get(LightService, endpoint)
+        service = self._autdev.service_get(LightService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: LightService = service
         self._attr_name = f"Light{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
         if self._service.supports_level():
@@ -89,4 +93,5 @@ class AutomationDevice_Light(QolsysAutomationDeviceEntity, LightEntity):
 
     @property
     def brightness(self) -> int | None:
-        return to_hass_level(self._service.level)
+        level = self._service.level
+        return to_hass_level(level) if level is not None else None

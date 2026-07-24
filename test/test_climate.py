@@ -1,10 +1,16 @@
 """Tests for the Qolsys Panel climate entities."""
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import QolsysHvacMode, QolsysTemperatureUnit
+from qolsys_controller.enum_qolsys import (
+    QolsysFanMode,
+    QolsysHvacAction,
+    QolsysHvacMode,
+    QolsysTemperatureUnit,
+)
 
 from custom_components.qolsys_panel.climate import (
     AutomationDevice_Climate,
@@ -13,6 +19,8 @@ from custom_components.qolsys_panel.climate import (
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
+    HVACAction,
+    HVACMode,
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
@@ -117,7 +125,7 @@ def test_target_temperature_range(controller: MagicMock, hvac_mode, high, low) -
 
 
 def test_passthrough_properties(controller: MagicMock) -> None:
-    """Simple properties pass through to the backing service."""
+    """Numeric properties pass through to the backing service."""
     climate = _climate(controller)
     climate._service.current_temperature = 70
     climate._service.current_humidity = 45
@@ -128,33 +136,50 @@ def test_passthrough_properties(controller: MagicMock) -> None:
     assert climate.current_humidity == 45
     assert climate.min_temp == 50
     assert climate.max_temp == 90
-    # fan/hvac accessors return the service values directly
-    assert climate.fan_mode == climate._service.fan_mode
-    assert climate.fan_modes == climate._service.fan_modes
-    assert climate.hvac_action == climate._service.hvac_action
-    assert climate.hvac_mode == climate._service.hvac_mode
-    assert climate.hvac_modes == climate._service.hvac_modes
+
+
+def test_enum_properties_convert_to_ha_types(controller: MagicMock) -> None:
+    """The fan/hvac accessors convert the service's Qolsys enums to HA enums."""
+    climate = _climate(controller)
+    climate._service.fan_mode = QolsysFanMode.FAN_AUTO
+    climate._service.fan_modes = [QolsysFanMode.FAN_AUTO, QolsysFanMode.FAN_LOW]
+    climate._service.hvac_action = QolsysHvacAction.HEATING
+    climate._service.hvac_mode = QolsysHvacMode.HEAT
+    climate._service.hvac_modes = [QolsysHvacMode.HEAT, QolsysHvacMode.COOL]
+
+    assert climate.fan_mode == "auto"
+    assert climate.fan_modes == ["auto", "low"]
+    assert climate.hvac_action == HVACAction.HEATING
+    assert isinstance(climate.hvac_action, HVACAction)
+    assert climate.hvac_mode == HVACMode.HEAT
+    assert isinstance(climate.hvac_mode, HVACMode)
+    assert climate.hvac_modes == [HVACMode.HEAT, HVACMode.COOL]
+    assert all(isinstance(mode, HVACMode) for mode in climate.hvac_modes)
 
 
 async def test_set_hvac_mode(controller: MagicMock) -> None:
     """Setting the HVAC mode forwards to the service."""
     climate = _climate(controller)
-    await climate.async_set_hvac_mode(QolsysHvacMode.HEAT)
-    climate._service.set_hvac_mode.assert_awaited_once_with(QolsysHvacMode.HEAT)
+    await climate.async_set_hvac_mode(HVACMode.HEAT)
+    cast(AsyncMock, climate._service.set_hvac_mode).assert_awaited_once_with(
+        QolsysHvacMode.HEAT
+    )
 
 
 async def test_turn_off(controller: MagicMock) -> None:
     """Turning off forwards to the service."""
     climate = _climate(controller)
     await climate.async_turn_off()
-    climate._service.turn_off.assert_awaited_once()
+    cast(AsyncMock, climate._service.turn_off).assert_awaited_once()
 
 
 async def test_set_fan_mode(controller: MagicMock) -> None:
     """Setting the fan mode forwards to the service."""
     climate = _climate(controller)
     await climate.async_set_fan_mode("auto")
-    climate._service.set_fan_mode.assert_awaited_once_with("auto")
+    cast(AsyncMock, climate._service.set_fan_mode).assert_awaited_once_with(
+        QolsysFanMode.FAN_AUTO
+    )
 
 
 async def test_set_temperature_high_low(controller: MagicMock) -> None:
@@ -163,8 +188,9 @@ async def test_set_temperature_high_low(controller: MagicMock) -> None:
     await climate.async_set_temperature(
         **{ATTR_TARGET_TEMP_HIGH: 76, ATTR_TARGET_TEMP_LOW: 66}
     )
-    climate._service.set_temperature.assert_any_await(76, QolsysHvacMode.COOL)
-    climate._service.set_temperature.assert_any_await(66, QolsysHvacMode.HEAT)
+    mock_set = cast(AsyncMock, climate._service.set_temperature)
+    mock_set.assert_any_await(76, QolsysHvacMode.COOL)
+    mock_set.assert_any_await(66, QolsysHvacMode.HEAT)
 
 
 async def test_set_temperature_single(controller: MagicMock) -> None:
@@ -172,4 +198,6 @@ async def test_set_temperature_single(controller: MagicMock) -> None:
     climate = _climate(controller)
     climate._service.hvac_mode = QolsysHvacMode.HEAT
     await climate.async_set_temperature(**{ATTR_TEMPERATURE: 72})
-    climate._service.set_temperature.assert_awaited_once_with(72, QolsysHvacMode.HEAT)
+    cast(AsyncMock, climate._service.set_temperature).assert_awaited_once_with(
+        72, QolsysHvacMode.HEAT
+    )

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, cast
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_battery import BatteryService
@@ -43,104 +44,99 @@ async def async_setup_entry(
 ) -> None:
     """Set up sensors."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
 
     entities: list[SensorEntity] = []
 
     # Add Partition Sensors
     for partition in QolsysPanel.state.partitions:
         # Partition Last Error Sensor
-        entities.append(
-            Partition_LastError(QolsysPanel, partition.id, config_entry.unique_id)
-        )
+        entities.append(Partition_LastError(QolsysPanel, partition.id, unique_id))
 
     # Add Zone Sensors
     for zone in QolsysPanel.state.zones:
         if zone.is_latest_dbm_enabled():
-            entities.append(
-                ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, config_entry.unique_id)
-            )
+            entities.append(ZoneSensor_LatestDBM(QolsysPanel, zone.zone_id, unique_id))
 
         if zone.is_average_dbm_enabled():
-            entities.append(
-                ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, config_entry.unique_id)
-            )
+            entities.append(ZoneSensor_AverageDBM(QolsysPanel, zone.zone_id, unique_id))
 
         # Add PowerG Sensors if enabled
         if zone.is_powerg_temperature_enabled():
             entities.append(
-                ZoneSensor_PowerG_Temperature(
-                    QolsysPanel, zone.zone_id, config_entry.unique_id
-                )
+                ZoneSensor_PowerG_Temperature(QolsysPanel, zone.zone_id, unique_id)
             )
 
         # Add PowerG Light Sensor if enabled
         if zone.is_powerg_light_enabled():
             entities.append(
-                ZoneSensor_PowerG_Light(
-                    QolsysPanel, zone.zone_id, config_entry.unique_id
-                )
+                ZoneSensor_PowerG_Light(QolsysPanel, zone.zone_id, unique_id)
             )
 
         # Add PowerG+ Battery Level Sensor if enabled
         if zone.is_powerg_battery_level_enabled():
             entities.append(
-                ZoneSensor_BatteryLevel(
-                    QolsysPanel, zone.zone_id, config_entry.unique_id
-                )
+                ZoneSensor_BatteryLevel(QolsysPanel, zone.zone_id, unique_id)
             )
 
         # Add PowerG+ Battery Voltage if enabled
         if zone.is_powerg_battery_voltage_enabled():
             entities.append(
-                ZoneSensor_BatteryVoltage(
-                    QolsysPanel, zone.zone_id, config_entry.unique_id
-                )
+                ZoneSensor_BatteryVoltage(QolsysPanel, zone.zone_id, unique_id)
             )
 
     # Add Automation Device Sensors
     for device in QolsysPanel.state.automation_devices:
         # Battery Level Value
-        for service in device.service_get_protocol(BatteryService):
-            if service.supports_battery_level():
+        for battery in cast(
+            list[BatteryService],
+            device.service_get_protocol(BatteryService),  # type: ignore[type-abstract]
+        ):
+            if battery.supports_battery_level():
                 entities.append(
                     AutomationDevice_BatteryValue(
                         QolsysPanel,
                         device.virtual_node_id,
-                        service.endpoint,
-                        config_entry.unique_id,
+                        battery.endpoint,
+                        unique_id,
                     )
                 )
 
         # Multilevel Sensors
-        for service in device.service_get_protocol(SensorService):
-            for sensor in service.sensors:
+        for sensor_service in cast(
+            list[SensorService], device.service_get_protocol(SensorService)
+        ):
+            for sensor in sensor_service.sensors:
                 entities.append(
                     AutomationDevice_Sensor(
                         QolsysPanel,
                         device.virtual_node_id,
-                        service.endpoint,
+                        sensor_service.endpoint,
                         sensor.unit,
-                        config_entry.unique_id,
+                        unique_id,
                     )
                 )
 
         # Meters
-        for service in device.service_get_protocol(MeterService):
-            for meter in service.meters:
+        for meter_service in cast(
+            list[MeterService], device.service_get_protocol(MeterService)
+        ):
+            for meter in meter_service.meters:
                 entities.append(
                     AutomationDevice_Meter(
                         QolsysPanel,
                         device.virtual_node_id,
-                        service.endpoint,
+                        meter_service.endpoint,
                         meter.unit,
-                        config_entry.unique_id,
+                        unique_id,
                     )
                 )
 
     async_add_entities(entities)
 
     # Add new Automation Device Sensor - Dynamic
-    async def _automation_device_sensor_add(**kwargs) -> None:
+    def _automation_device_sensor_add(**kwargs: Any) -> None:
         virtual_node_id = kwargs["virtual_node_id"]
         endpoint = kwargs["endpoint"]
         unit = kwargs["unit"]
@@ -153,7 +149,7 @@ async def async_setup_entry(
         )
 
         new_sensor = AutomationDevice_Sensor(
-            QolsysPanel, virtual_node_id, endpoint, unit, config_entry.unique_id
+            QolsysPanel, virtual_node_id, endpoint, unit, unique_id
         )
         async_add_entities([new_sensor])
 
@@ -169,7 +165,7 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a binary sensor entity for a zone battery status."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -192,7 +188,7 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a binary sensor entity for a zone battery status."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -213,7 +209,7 @@ class ZoneSensor_PowerG_Temperature(QolsysZoneEntity, SensorEntity):
     """A sensor entity for PowerG Temperature."""
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a binary sensor entity for a zone powerg temperature."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -234,7 +230,7 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
     """A sensor entity for PowerG Light."""
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a binary sensor entity for a zone powerg light."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -257,7 +253,7 @@ class ZoneSensor_BatteryLevel(QolsysZoneEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a sensor entity for a zone device battery level value."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -280,7 +276,7 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
-        self, QolsysPanel: qolsys_controller, zone_id: int, unique_id: str
+        self, QolsysPanel: qolsys_controller, zone_id: str, unique_id: str
     ) -> None:
         """Set up a sensor entity for a zone device battery voltage value."""
         super().__init__(QolsysPanel, zone_id, unique_id)
@@ -305,7 +301,7 @@ class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
     def __init__(
         self,
         QolsysPanel: qolsys_controller,
-        virtual_node_id: int,
+        virtual_node_id: str,
         endpoint: int,
         unique_id: str,
     ) -> None:
@@ -317,7 +313,9 @@ class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.BATTERY
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._service = self._autdev.service_get(BatteryService, endpoint)
+        service = self._autdev.service_get(BatteryService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: BatteryService = service
 
     @property
     def native_value(self) -> int | None:
@@ -339,14 +337,17 @@ class AutomationDevice_Sensor(QolsysAutomationDeviceEntity, SensorEntity):
         self._attr_unique_id = f"{self._autdev_unique_id}_sensor_{endpoint}_{unit.name}"
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
-        self._unit = unit
         self._endpoint: int = endpoint
         self._unit: QolsysSensorScale = unit
-        self._service = self._autdev.service_get(SensorService, endpoint)
-        self._sensor: QolsysSensor = self._service.sensor(unit)
+        service = self._autdev.service_get(SensorService, endpoint)
+        assert service is not None
+        self._service: SensorService = service
+        sensor = self._service.sensor(unit)
+        assert sensor is not None
+        self._sensor: QolsysSensor = sensor
 
     @property
-    def native_unit_of_measurement(self) -> str:
+    def native_unit_of_measurement(self) -> str | None:
         match self._unit:
             case QolsysSensorScale.TEMPERATURE_FAHRENHEIT:
                 return "°F"
@@ -392,8 +393,12 @@ class AutomationDevice_Meter(QolsysAutomationDeviceEntity, SensorEntity):
         self._attr_suggested_display_precision = 2
         self._unit: QolsysMeterScale = unit
         self._endpoint: int = endpoint
-        self._service = self._autdev.service_get(MeterService, endpoint)
-        self._meter: QolsysMeter = self._service.meter(unit)
+        service = self._autdev.service_get(MeterService, endpoint)
+        assert service is not None
+        self._service: MeterService = service
+        meter = self._service.meter(unit)
+        assert meter is not None
+        self._meter: QolsysMeter = meter
 
     @property
     def native_unit_of_measurement(self) -> str:

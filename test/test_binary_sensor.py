@@ -1,5 +1,7 @@
 """Tests for the Qolsys Panel binary sensors."""
 
+from datetime import UTC, datetime
+from typing import cast
 from unittest.mock import MagicMock, patch
 
 from conftest import PANEL_MAC
@@ -312,7 +314,7 @@ def test_doorbell_cancels_previous_reset(
         sensor.async_write_ha_state = MagicMock()
 
         sensor._handle_doorbell_event({})
-        first_cancel = sensor._cancel_reset
+        first_cancel = cast(MagicMock, sensor._cancel_reset)
         sensor._last_press = 0.0  # bypass debounce
         sensor._handle_doorbell_event({})
 
@@ -325,7 +327,7 @@ async def test_doorbell_reset(hass: HomeAssistant, controller: MagicMock) -> Non
     sensor.async_write_ha_state = MagicMock()
     sensor._attr_is_on = True
 
-    await sensor._async_reset(None)
+    await sensor._async_reset(datetime.now(UTC))
 
     assert sensor.is_on is False
     assert sensor._cancel_reset is None
@@ -367,7 +369,7 @@ def test_chime_cancels_previous_reset(
         sensor.async_write_ha_state = MagicMock()
 
         sensor._handle_chime_event({})
-        first_cancel = sensor._cancel_reset
+        first_cancel = cast(MagicMock, sensor._cancel_reset)
         sensor._last_press = 0.0  # bypass debounce
         sensor._handle_chime_event({})
 
@@ -380,7 +382,7 @@ async def test_chime_reset(hass: HomeAssistant, controller: MagicMock) -> None:
     sensor.async_write_ha_state = MagicMock()
     sensor._attr_is_on = True
 
-    await sensor._async_reset(None)
+    await sensor._async_reset(datetime.now(UTC))
 
     assert sensor.is_on is False
     assert sensor._cancel_reset is None

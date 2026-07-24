@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel services."""
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
@@ -50,7 +51,7 @@ def _make_panel() -> MagicMock:
     return panel
 
 
-def _make_entry(hass: HomeAssistant, options: dict) -> MockConfigEntry:
+def _make_entry(hass: HomeAssistant, options: dict[str, Any]) -> MockConfigEntry:
     """Create a loaded config entry with runtime data."""
     entry = MockConfigEntry(
         domain=DOMAIN,
@@ -91,7 +92,7 @@ def _make_ent(entity_id: str) -> MagicMock:
     return ent
 
 
-def _make_call(hass: HomeAssistant, data: dict) -> MagicMock:
+def _make_call(hass: HomeAssistant, data: dict[str, Any]) -> MagicMock:
     """Return a mock ServiceCall."""
     call = MagicMock()
     call.hass = hass

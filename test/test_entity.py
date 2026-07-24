@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel base entities."""
 
+from typing import cast
 from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
@@ -57,12 +58,12 @@ async def test_partition_entity_register_unregister(controller: MagicMock) -> No
     entity = QolsysPartitionEntity(controller, "1", UID)
 
     await entity.async_added_to_hass()
-    entity._partition.register.assert_any_call(
+    cast(MagicMock, entity._partition).register.assert_any_call(
         QolsysNotification.PARTITION_UPDATE, entity.schedule_update_ha_state
     )
 
     await entity.async_will_remove_from_hass()
-    entity._partition.unregister.assert_any_call(
+    cast(MagicMock, entity._partition).unregister.assert_any_call(
         QolsysNotification.PARTITION_UPDATE, entity.schedule_update_ha_state
     )
 
@@ -72,12 +73,12 @@ async def test_zone_entity_register_unregister(controller: MagicMock) -> None:
     entity = QolsysZoneEntity(controller, "1", UID)
 
     await entity.async_added_to_hass()
-    entity._zone.register.assert_any_call(
+    cast(MagicMock, entity._zone).register.assert_any_call(
         QolsysNotification.ZONE_UPDATE, entity.schedule_update_ha_state
     )
 
     await entity.async_will_remove_from_hass()
-    entity._zone.unregister.assert_any_call(
+    cast(MagicMock, entity._zone).unregister.assert_any_call(
         QolsysNotification.ZONE_UPDATE, entity.schedule_update_ha_state
     )
 
@@ -117,12 +118,12 @@ async def test_automation_device_register_unregister(controller: MagicMock) -> N
     entity = QolsysAutomationDeviceEntity(controller, "5", UID)
 
     await entity.async_added_to_hass()
-    entity._autdev.register.assert_any_call(
+    cast(MagicMock, entity._autdev).register.assert_any_call(
         QolsysNotification.AUTOMATION_UPDATE, entity.schedule_update_ha_state
     )
 
     await entity.async_will_remove_from_hass()
-    entity._autdev.unregister.assert_any_call(
+    cast(MagicMock, entity._autdev).unregister.assert_any_call(
         QolsysNotification.AUTOMATION_UPDATE, entity.schedule_update_ha_state
     )
 
@@ -130,7 +131,7 @@ async def test_automation_device_register_unregister(controller: MagicMock) -> N
 def test_automation_device_available_malfunction(controller: MagicMock) -> None:
     """A malfunctioning status service makes the device unavailable."""
     entity = QolsysAutomationDeviceEntity(controller, "5", UID)
-    entity._autdev.service_get_protocol.return_value = [
+    cast(MagicMock, entity._autdev).service_get_protocol.return_value = [
         MagicMock(is_malfunctioning=True)
     ]
     assert entity.available is False
@@ -145,7 +146,7 @@ def test_automation_device_available_connected(
 ) -> None:
     """With no malfunction, availability follows the controller state."""
     entity = QolsysAutomationDeviceEntity(controller, "5", UID)
-    entity._autdev.service_get_protocol.return_value = [
+    cast(MagicMock, entity._autdev).service_get_protocol.return_value = [
         MagicMock(is_malfunctioning=False)
     ]
     controller.controller_state = state

@@ -31,7 +31,9 @@ async def async_setup_entry(
     """Set up Weather."""
     entities: list[WeatherSensor] = []
     QolsysPanel = config_entry.runtime_data
-    entities.append(WeatherSensor(QolsysPanel, config_entry.unique_id))
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
+    entities.append(WeatherSensor(QolsysPanel, unique_id))
     async_add_entities(entities)
 
 
@@ -50,8 +52,9 @@ class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
 
     @property
     def condition(self) -> str:
-        if self._weather.current_weather():
-            return self._weather.current_weather().condition
+        current = self._weather.current_weather()
+        if current is not None:
+            return current.condition
 
         return ""
 
@@ -62,17 +65,17 @@ class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
                 forecasts = []
 
                 for daily in self._weather.forecasts:
-                    timestamp = daily.current_weather_date
+                    raw_timestamp = daily.current_weather_date
 
                     try:
-                        timestamp = int(timestamp)
+                        timestamp = int(raw_timestamp)
                     except ValueError:
                         _LOGGER.error(
-                            "Invalid timestamp '%s' in daily forecast", timestamp
+                            "Invalid timestamp '%s' in daily forecast", raw_timestamp
                         )
                         continue
 
-                    dt = datetime.fromtimestamp(int(timestamp) / 1000, tz=UTC)
+                    dt = datetime.fromtimestamp(timestamp / 1000, tz=UTC)
 
                     forecast: Forecast = {
                         "datetime": dt.isoformat(),

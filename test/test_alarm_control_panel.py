@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel alarm control panel."""
 
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
@@ -148,7 +149,7 @@ async def test_disarm(controller: MagicMock) -> None:
     """Disarm forwards the code to the partition."""
     entity = _panel(controller)
     await entity.async_alarm_disarm("1234")
-    entity._partition.disarm.assert_awaited_once_with(user_code="1234")
+    cast(AsyncMock, entity._partition.disarm).assert_awaited_once_with(user_code="1234")
 
 
 @pytest.mark.parametrize(
@@ -158,7 +159,7 @@ async def test_disarm(controller: MagicMock) -> None:
 async def test_disarm_errors(controller: MagicMock, error: Exception) -> None:
     """Disarm failures surface as HomeAssistantError."""
     entity = _panel(controller)
-    entity._partition.disarm.side_effect = error
+    cast(AsyncMock, entity._partition.disarm).side_effect = error
     with pytest.raises(HomeAssistantError):
         await entity.async_alarm_disarm("1234")
 
@@ -175,7 +176,9 @@ async def test_arm(controller: MagicMock, method: str, arm_mode) -> None:
     """Each arm method forwards the right arming mode and code."""
     entity = _panel(controller)
     await getattr(entity, method)("1234")
-    entity._partition.arm.assert_awaited_once_with(arm_mode, user_code="1234")
+    cast(AsyncMock, entity._partition.arm).assert_awaited_once_with(
+        arm_mode, user_code="1234"
+    )
 
 
 @pytest.mark.parametrize(
@@ -190,6 +193,6 @@ async def test_arm(controller: MagicMock, method: str, arm_mode) -> None:
 async def test_arm_errors(controller: MagicMock, error: Exception) -> None:
     """Arm failures surface as HomeAssistantError."""
     entity = _panel(controller)
-    entity._partition.arm.side_effect = error
+    cast(AsyncMock, entity._partition.arm).side_effect = error
     with pytest.raises(HomeAssistantError):
         await entity.async_alarm_arm_away("1234")

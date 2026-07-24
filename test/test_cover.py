@@ -9,7 +9,7 @@ from custom_components.qolsys_panel.cover import (
     AutomationDevice_Cover,
     async_setup_entry,
 )
-from homeassistant.components.cover import CoverEntityFeature
+from homeassistant.components.cover import ATTR_POSITION, CoverEntityFeature
 from homeassistant.core import HomeAssistant
 
 UID = PANEL_MAC
@@ -79,10 +79,11 @@ async def test_open_close(controller: MagicMock) -> None:
 async def test_set_position(controller: MagicMock) -> None:
     """Setting a position forwards it; a missing position is ignored."""
     cover = AutomationDevice_Cover(controller, "5", 0, UID)
-    cover._cover.set_position = AsyncMock()
+    cover._cover.set_current_position = AsyncMock()
+    mock_set = cover._cover.set_current_position
 
-    await cover.set_current_position(position=40)
-    cover._cover.set_position.assert_awaited_once_with(40)
+    await cover.async_set_cover_position(**{ATTR_POSITION: 40})
+    mock_set.assert_awaited_once_with(40)
 
-    await cover.set_current_position()
-    cover._cover.set_position.assert_awaited_once()
+    await cover.async_set_cover_position()
+    mock_set.assert_awaited_once()

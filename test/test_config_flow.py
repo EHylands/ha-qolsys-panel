@@ -1,7 +1,9 @@
 """Tests for the Qolsys Panel config flow."""
 
+from collections.abc import Iterable
 from pathlib import Path
 from ssl import SSLError
+from typing import cast
 from unittest.mock import AsyncMock, MagicMock
 
 from conftest import (
@@ -68,7 +70,7 @@ def tmp_config_dir(hass: HomeAssistant, tmp_path: Path) -> Path:
 @pytest.fixture
 def pki_dir(tmp_config_dir: Path) -> Path:
     """Create an existing PKI directory in the config dir."""
-    path = tmp_config_dir / "qolsys_panel" / "pki" / PKI_DIR_NAME
+    path: Path = tmp_config_dir / "qolsys_panel" / "pki" / PKI_DIR_NAME
     path.mkdir(parents=True)
     return path
 
@@ -90,7 +92,10 @@ async def test_user_menu(hass: HomeAssistant, mock_qolsys_controller: MagicMock)
     )
 
     assert result["type"] is FlowResultType.MENU
-    assert set(result["menu_options"]) == {"pki_autodiscovery_1", "existing_pki"}
+    assert set(cast("Iterable[str]", result["menu_options"])) == {
+        "pki_autodiscovery_1",
+        "existing_pki",
+    }
 
 
 DISCOVERY_IP = "192.168.1.77"
@@ -114,7 +119,10 @@ async def test_dhcp_discovery_shows_menu(
     )
 
     assert result["type"] is FlowResultType.MENU
-    assert set(result["menu_options"]) == {"pki_autodiscovery_1", "existing_pki"}
+    assert set(cast("Iterable[str]", result["menu_options"])) == {
+        "pki_autodiscovery_1",
+        "existing_pki",
+    }
 
 
 async def test_dhcp_discovery_updates_host_and_aborts(
@@ -143,9 +151,9 @@ async def test_dhcp_discovery_matches_newline_suffixed_unique_id(
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
 ):
-    """IQ2+ panels store the MAC with a trailing newline; discovery still matches.
+    r"""IQ2+ panels store the MAC with a trailing newline; discovery still matches.
 
-    The clean MAC from DHCP must abort against the "\\n"-suffixed entry, and the
+    The clean MAC from DHCP must abort against the "\n"-suffixed entry, and the
     entry's unique_id must be left untouched (every entity/device id is derived
     from it, so changing it would re-create them and break automations).
     """
@@ -197,7 +205,9 @@ async def test_dhcp_discovery_prefills_existing_pki_host(
 
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "existing_pki"
-    host_key = next(k for k in result["data_schema"].schema if k == CONF_HOST)
+    data_schema = result["data_schema"]
+    assert data_schema is not None
+    host_key = next(k for k in data_schema.schema if k == CONF_HOST)
     assert host_key.default() == DISCOVERY_IP
 
 
@@ -304,7 +314,7 @@ async def test_existing_pki_no_pki_found(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "existing_pki"
     assert result["errors"] == {"base": NO_PKI_ERROR}
-    mock_qolsys_controller.stop_operation.assert_awaited_once()
+    mock_qolsys_controller.stop.assert_awaited_once()
 
 
 @pytest.mark.parametrize(
@@ -448,7 +458,7 @@ async def test_reconfigure_no_pki_found(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "reconfigure"
     assert result["errors"] == {"base": NO_PKI_ERROR}
-    mock_qolsys_controller.stop_operation.assert_awaited_once()
+    mock_qolsys_controller.stop.assert_awaited_once()
 
 
 async def test_reconfigure_error_and_recover(

@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import logging
+from typing import cast
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.automation.device import QolsysAutomationDevice
 from qolsys_controller.automation.protocol_status import StatusProtocol
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from qolsys_controller.partition import QolsysPartition
+from qolsys_controller.zone import QolsysZone
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -62,7 +66,11 @@ class QolsysPartitionEntity(QolsysPanelEntity):
         super().__init__(QolsysPanel, unique_id)
         self._partition_id = partition_id
         self._partition_unique_id = f"{unique_id}_partition{partition_id}"
-        self._partition = QolsysPanel.state.partition(self._partition_id)
+        partition = QolsysPanel.state.partition(self._partition_id)
+        if partition is None:
+            _LOGGER.error("Invalid partition_id:%s", self._partition_id)
+            raise ValueError(f"Unknown partition id: {self._partition_id}")
+        self._partition: QolsysPartition = partition
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._partition_unique_id)},
             name=f"Partition{self._partition_id} - {self._partition.name}",
@@ -96,7 +104,11 @@ class QolsysZoneEntity(QolsysPanelEntity):
         super().__init__(QolsysPanel, unique_id)
         self._zone_id = zone_id
         self._zone_unique_id = f"{unique_id}_zone{zone_id}"
-        self._zone = QolsysPanel.state.zone(self._zone_id)
+        zone = QolsysPanel.state.zone(self._zone_id)
+        if zone is None:
+            _LOGGER.error("Invalid zone_id:%s", self._zone_id)
+            raise ValueError(f"Unknown zone id: {self._zone_id}")
+        self._zone: QolsysZone = zone
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._zone_unique_id)},
             name=f"Zone{self._zone_id} - {self._zone.sensorname}",
@@ -130,13 +142,14 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
         super().__init__(QolsysPanel, unique_id)
         self._virtual_node_id = virtual_node_id
         self._autdev_unique_id = f"{unique_id}_autdev_{virtual_node_id}"
-        self._autdev = QolsysPanel.state.automation_device(virtual_node_id)
+        autdev = QolsysPanel.state.automation_device(virtual_node_id)
 
-        if self._autdev is None:
+        if autdev is None:
             _LOGGER.error("Invalid AutDev virtual_node_id:%s", virtual_node_id)
             raise ValueError(
                 f"Unknown automation device virtual_node_id: {virtual_node_id}"
             )
+        self._autdev: QolsysAutomationDevice = autdev
 
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, self._autdev_unique_id)},
@@ -149,7 +162,10 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
     @property
     def available(self) -> bool:
         """Return True if entity is available."""
-        status_services = self._autdev.service_get_protocol(StatusProtocol)
+        status_services = cast(
+            "list[StatusProtocol]",
+            self._autdev.service_get_protocol(StatusProtocol),  # type: ignore[type-abstract]
+        )
         for service in status_services:
             if service.is_malfunctioning:
                 return False

@@ -77,10 +77,7 @@ async def async_get_config_entry_diagnostics(
                 "automation_devices": [
                     device.to_dict() for device in QolsysPanel.state.automation_devices
                 ],
-                "adc_devices": [
-                    device.to_dict()
-                    for device in QolsysPanel.panel.db.get_adc_devices()
-                ],
+                "adc_devices": list(QolsysPanel.panel.db.get_adc_devices()),
             },
             TO_REDACT,
         ),

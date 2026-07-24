@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel valves."""
 
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
@@ -82,7 +83,7 @@ def test_is_closed(controller: MagicMock) -> None:
     ],
 )
 async def test_valve_commands(
-    controller: MagicMock, method: str, args: tuple, service_call: str
+    controller: MagicMock, method: str, args: tuple[Any, ...], service_call: str
 ) -> None:
     """Valve commands forward to the backing service."""
     valve = AutomationDevice_Valve(controller, "5", 0, UID)

@@ -3,11 +3,13 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_cover import CoverService
 
 from homeassistant.components.cover import (
+    ATTR_POSITION,
     CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
@@ -30,17 +32,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up Covers."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
     entities: list[CoverEntity] = []
 
     # Add Automation Device Covers
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(CoverService):
+        for service in device.service_get_protocol(CoverService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDevice_Cover(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
@@ -60,10 +64,12 @@ class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_cover{endpoint}"
         self.device_class = CoverDeviceClass.GARAGE
-        self._cover = self._autdev.service_get(CoverService, endpoint)
+        cover = self._autdev.service_get(CoverService, endpoint)  # type: ignore[type-abstract]
+        assert cover is not None
+        self._cover: CoverService = cover
         self._attr_name = f"GarageDoor{'' if endpoint == 0 else endpoint} - {self._cover.automation_device.device_name}"
 
-        self._attr_supported_features = 0
+        self._attr_supported_features = CoverEntityFeature(0)
         if self._cover.supports_open():
             self._attr_supported_features |= CoverEntityFeature.OPEN
 
@@ -76,16 +82,16 @@ class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
         if self._cover.supports_position():
             self._attr_supported_features |= CoverEntityFeature.SET_POSITION
 
-    async def async_open_cover(self, **kwargs):
+    async def async_open_cover(self, **kwargs: Any) -> None:
         await self._cover.open()
 
-    async def async_close_cover(self, **kwargs):
+    async def async_close_cover(self, **kwargs: Any) -> None:
         await self._cover.close()
 
-    async def set_current_position(self, **kwargs):
-        position = kwargs.get("position")
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
+        position = kwargs.get(ATTR_POSITION)
         if position is not None:
-            await self._cover.set_position(position)
+            await self._cover.set_current_position(position)
 
     @property
     def is_closed(self) -> bool | None:

@@ -66,14 +66,16 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: QolsysPanelConfigEntry):
+    def async_get_options_flow(
+        config_entry: QolsysPanelConfigEntry,
+    ) -> QolsysPanelOptionsFlowHandler:
         return QolsysPanelOptionsFlowHandler()
 
     async def _async_get_pki_dir(self) -> list[str]:
         pki_list: list[str] = []
         path = self._config_directory.joinpath("pki")
 
-        def _scan():
+        def _scan() -> list[str]:
             if not path.exists():
                 return []
             return [p.name for p in path.iterdir() if p.is_dir()]
@@ -225,7 +227,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Abort if no PKI available
         if not self._pki_list:
-            await self._QolsysPanel.stop_operation()
+            await self._QolsysPanel.stop()
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=vol.Schema(data_schema),
@@ -288,7 +290,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Abort if no PKI available
         if not self._pki_list:
-            await self._QolsysPanel.stop_operation()
+            await self._QolsysPanel.stop()
             return self.async_show_form(
                 step_id="reconfigure",
                 data_schema=vol.Schema(data_schema),
@@ -334,7 +336,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         start_pairing: bool = False,
     ) -> dict[str, str]:
         self._error_placeholders = {}
-        self._QolsysPanel.settings.config_directory = self._config_directory.resolve()
+        self._QolsysPanel.settings.config_directory = str(
+            self._config_directory.resolve()
+        )
         self._QolsysPanel.settings.panel_ip = host
         self._QolsysPanel.settings.plugin_ip = await get_local_ip(hass=self.hass)
         self._QolsysPanel.settings.random_mac = random_mac
@@ -345,7 +349,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # if start_pairing is True, set home assistant zeroconf shared instance
         if start_pairing:
-            zc = await zeroconf.async_get_instance(self.hass)
+            zc = await zeroconf.async_get_async_instance(self.hass)
             self._QolsysPanel.settings.shared_zeroconf_instance = zc
 
         # Check is private key exists

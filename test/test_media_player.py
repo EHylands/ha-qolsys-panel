@@ -63,5 +63,6 @@ async def test_play_media_rejects_non_string_id(
 ) -> None:
     """A non-string media id is rejected without speaking."""
     player = Qolsys_MediaPlayer(hass, controller, UID)
-    await player.async_play_media("tts", 12345)
+    # Intentionally non-string media_id to exercise the runtime rejection path.
+    await player.async_play_media("tts", 12345)  # type: ignore[arg-type]
     controller.commands.panel.speak.assert_not_awaited()
