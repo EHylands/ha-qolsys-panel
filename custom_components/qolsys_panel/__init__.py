@@ -7,6 +7,7 @@ import logging
 import ssl
 
 from qolsys_controller import qolsys_controller
+from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
@@ -19,10 +20,12 @@ from homeassistant.helpers.typing import ConfigType
 from .const import (
     CONF_RANDOM_MAC,
     DEFAULT_ARM_CODE_REQUIRED,
+    DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_MOTION_SENSOR_DELAY,
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
     DOMAIN,
     OPTION_ARM_CODE,
+    OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
 )
@@ -70,9 +73,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.pairing_resume = False
     QolsysPanel.settings.mqtt_bridge_enabled = False
 
-    user_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
-    QolsysPanel.settings.check_user_code_on_arm = user_code_required
-    QolsysPanel.settings.check_user_code_on_disarm = user_code_required
+    arm_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
+    disarm_code_required = entry.options.get(
+        OPTION_DISARM_CODE, DEFAULT_DISARM_CODE_REQUIRED
+    )
+
+    QolsysPanel.settings.check_user_code_on_arm = arm_code_required
+    QolsysPanel.settings.check_user_code_on_disarm = disarm_code_required
 
     QolsysPanel.settings.motion_sensor_delay_sec = entry.options.get(
         OPTION_MOTION_SENSOR_DELAY, DEFAULT_MOTION_SENSOR_DELAY
@@ -117,13 +124,43 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         ) from err
 
     entry.runtime_data = QolsysPanel
+
+    # Log once when the connection to the panel is lost and once when it is
+    # restored. The controller updates its state right after firing the status
+    # notification, so defer the check until the event loop settles.
+    was_connected = True
+
+    def _check_connection() -> None:
+        nonlocal was_connected
+        state = QolsysPanel.controller_state
+        if was_connected and state == ControllerState.RECONNECTING:
+            _LOGGER.info("Connection to Qolsys Panel lost, reconnecting")
+        elif not was_connected and state == ControllerState.CONNECTED:
+            _LOGGER.info("Connection to Qolsys Panel restored")
+        was_connected = state == ControllerState.CONNECTED
+
+    def _on_panel_status_update() -> None:
+        hass.loop.call_soon(_check_connection)
+
+    def _unregister_connection_logger() -> None:
+        QolsysPanel.state.unregister(
+            QolsysNotification.PANEL_STATUS_UPDATE, _on_panel_status_update
+        )
+
+    QolsysPanel.state.register(
+        QolsysNotification.PANEL_STATUS_UPDATE, _on_panel_status_update
+    )
+    entry.async_on_unload(_unregister_connection_logger)
+
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
+    unique_id = entry.unique_id
+    assert unique_id is not None
 
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
         connections={(CONNECTION_NETWORK_MAC, mac)} if mac else set(),
-        identifiers={(DOMAIN, entry.unique_id)},
+        identifiers={(DOMAIN, unique_id)},
         name="Panel",
         manufacturer="Johnson Controls",
         model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
@@ -143,7 +180,9 @@ async def async_unload_entry(
     return unload_ok
 
 
-async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
+async def async_migrate_entry(
+    hass: HomeAssistant, config_entry: QolsysPanelConfigEntry
+) -> bool:
     """Migrate old entry."""
     _LOGGER.debug(
         "Migrating configuration from version %s.%s",
@@ -151,18 +190,21 @@ async def async_migrate_entry(hass, config_entry: QolsysPanelConfigEntry):
         config_entry.minor_version,
     )
 
-    if config_entry.version > 0:
+    if config_entry.version > 1:
         # This means the user has downgraded from a future version
         return False
 
-    if config_entry.version == 0:
-        new_data = {**config_entry.data}
-        if config_entry.minor_version < 4:
-            pass
-
-    hass.config_entries.async_update_entry(
-        config_entry, data=new_data, minor_version=3, version=0
-    )
+    if config_entry.version < 1:
+        # 0.x -> 1.0: the disarm code option was split out of the arm code
+        # option; carry over the old combined behavior.
+        new_options = {**config_entry.options}
+        new_options.setdefault(
+            OPTION_DISARM_CODE,
+            new_options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED),
+        )
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, minor_version=0, version=1
+        )
 
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",

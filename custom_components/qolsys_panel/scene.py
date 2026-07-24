@@ -13,6 +13,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -22,11 +24,11 @@ async def async_setup_entry(
     """Set up scenes."""
     entities: list[Scene] = []
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
 
     for scene in QolsysPanel.state.scenes:
-        entities.append(
-            QolsysPanelScene(QolsysPanel, scene.scene_id, config_entry.unique_id)
-        )
+        entities.append(QolsysPanelScene(QolsysPanel, scene.scene_id, unique_id))
 
     async_add_entities(entities)
 
@@ -44,6 +46,7 @@ class QolsysPanelScene(Scene, QolsysPanelEntity):
         self._attr_unique_id = f"{unique_id}_scene_{scene_id}"
         self._scene_id = scene_id
         scene = QolsysPanel.state.scene(scene_id)
+        assert scene is not None
         self._attr_name = f"Qolsys Panel - {scene.name}"
 
     async def async_activate(self, **kwargs: Any) -> None:

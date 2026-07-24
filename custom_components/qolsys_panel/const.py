@@ -12,6 +12,7 @@ OPTION_TRIGGER_POLICE = "option_trigger_police"
 OPTION_TRIGGER_AUXILLIARY = "option_trigger_auxilliary"
 OPTION_TRIGGER_FIRE = "option_trigger_fire"
 OPTION_ARM_CODE = "option_arm_code"
+OPTION_DISARM_CODE = "option_disarm_code"
 
 SERVICE_TRIGGER_POLICE = "trigger_police"
 SERVICE_TRIGGER_AUXILLIARY = "trigger_auxilliary"
@@ -21,6 +22,7 @@ SERVICE_QUICK_EXIT = "quick_exit"
 DEFAULT_QUICK_EXIT_DURATION = 120
 
 DEFAULT_ARM_CODE_REQUIRED = False
+DEFAULT_DISARM_CODE_REQUIRED = False
 DEFAULT_TRIGGER_POLICE = False
 DEFAULT_TRIGGER_AUXILLIARY = False
 DEFAULT_TRIGGER_FIRE = False

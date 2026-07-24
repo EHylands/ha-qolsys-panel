@@ -20,6 +20,8 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -28,18 +30,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up Valves."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
 
     entities: list[ValveEntity] = []
 
     # Append Automation Device Valves
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(ValveService):
+        for service in device.service_get_protocol(ValveService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDevice_Valve(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
@@ -58,12 +62,14 @@ class AutomationDevice_Valve(QolsysAutomationDeviceEntity, ValveEntity):
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_valve{endpoint}"
-        self._service = self._autdev.service_get(ValveService, endpoint)
+        service = self._autdev.service_get(ValveService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: ValveService = service
         self._attr_name = f"Valve{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_device_class = ValveDeviceClass.WATER
 
         if isinstance(self._service, ValveService):
-            self._attr_supported_features = 0
+            self._attr_supported_features = ValveEntityFeature(0)
 
             if self._service.supports_open():
                 self._attr_supported_features |= ValveEntityFeature.OPEN

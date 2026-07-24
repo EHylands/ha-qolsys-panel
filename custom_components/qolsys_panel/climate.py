@@ -7,13 +7,18 @@ from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_thermostat import ThermostatService
-from qolsys_controller.enum_qolsys import QolsysHvacMode, QolsysTemperatureUnit
+from qolsys_controller.enum_qolsys import (
+    QolsysFanMode,
+    QolsysHvacMode,
+    QolsysTemperatureUnit,
+)
 
 from custom_components.qolsys_panel.entity import QolsysAutomationDeviceEntity
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
+    HVACAction,
     HVACMode,
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
@@ -24,6 +29,8 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -32,17 +39,19 @@ async def async_setup_entry(
 ) -> None:
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
     entities: list[ClimateEntity] = []
 
     # Add Automation Device Thermostats
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(ThermostatService):
+        for service in device.service_get_protocol(ThermostatService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDevice_Climate(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
@@ -59,11 +68,13 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_thermostat{endpoint}"
-        self._service = self._autdev.service_get(ThermostatService, endpoint)
+        service = self._autdev.service_get(ThermostatService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: ThermostatService = service
         self._attr_name = f"Thermostat{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_target_temperature_step = self._service.target_temperature_step
 
-        self._attr_supported_features = 0
+        self._attr_supported_features = ClimateEntityFeature(0)
         if self._service.supports_target_temperature():
             self._attr_supported_features |= ClimateEntityFeature.TARGET_TEMPERATURE
 
@@ -79,7 +90,7 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
             self._attr_supported_features |= ClimateEntityFeature.TURN_OFF
 
     @property
-    def current_temperature(self) -> float:
+    def current_temperature(self) -> float | None:
         return self._service.current_temperature
 
     @property
@@ -126,24 +137,26 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         return None
 
     @property
-    def fan_mode(self):
+    def fan_mode(self) -> str | None:
         return self._service.fan_mode
 
     @property
     def fan_modes(self) -> list[str]:
-        return self._service.fan_modes
+        return [str(mode) for mode in self._service.fan_modes]
 
     @property
-    def hvac_action(self):
-        return self._service.hvac_action
+    def hvac_action(self) -> HVACAction | None:
+        action = self._service.hvac_action
+        return HVACAction(action) if action is not None else None
 
     @property
-    def hvac_mode(self) -> HVACMode:
-        return self._service.hvac_mode
+    def hvac_mode(self) -> HVACMode | None:
+        mode = self._service.hvac_mode
+        return HVACMode(mode) if mode is not None else None
 
     @property
-    def hvac_modes(self):
-        return self._service.hvac_modes
+    def hvac_modes(self) -> list[HVACMode]:
+        return [HVACMode(mode) for mode in self._service.hvac_modes]
 
     @property
     def min_temp(self) -> float:
@@ -153,16 +166,16 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
     def max_temp(self) -> float:
         return self._service.max_temp
 
-    async def async_set_hvac_mode(self, hvac_mode):
-        await self._service.set_hvac_mode(hvac_mode)
+    async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
+        await self._service.set_hvac_mode(QolsysHvacMode(hvac_mode))
 
-    async def async_turn_off(self):
+    async def async_turn_off(self) -> None:
         await self._service.turn_off()
 
-    async def async_set_fan_mode(self, fan_mode):
-        await self._service.set_fan_mode(fan_mode)
+    async def async_set_fan_mode(self, fan_mode: str) -> None:
+        await self._service.set_fan_mode(QolsysFanMode(fan_mode))
 
-    async def async_set_temperature(self, **kwargs: Any):
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
             await self._service.set_temperature(value, QolsysHvacMode.COOL)
 
@@ -170,4 +183,6 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
             await self._service.set_temperature(value, QolsysHvacMode.HEAT)
 
         if value := kwargs.get(ATTR_TEMPERATURE):
-            await self._service.set_temperature(value, self._service.hvac_mode)
+            hvac_mode = self._service.hvac_mode
+            if hvac_mode is not None:
+                await self._service.set_temperature(value, hvac_mode)

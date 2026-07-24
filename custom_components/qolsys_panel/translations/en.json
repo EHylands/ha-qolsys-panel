@@ -3,7 +3,8 @@
     "abort": {
       "reconfigure_successful": "Qolsys Panel successfully reconfigured with new settings.",
       "already_in_progress": "Configuration flow already in progress.",
-      "already_configured": "Qolsys Panel is already configured."
+      "already_configured": "Qolsys Panel is already configured.",
+      "unique_id_mismatch": "The connected panel does not match the panel configured in this entry."
     },
     "step": {
       "user": {
@@ -21,15 +22,29 @@
         "description": "Connect to your Qolsys Panel using an existing client certificate.",
         "data": {
           "random_mac": "PKI Unique ID (random_mac)",
-          "panel_ip": "Qolsys Panel IP Address"
+          "host": "Qolsys Panel IP Address"
+        }
+      },
+      "reconfigure":{
+        "title": "Qolsys Panel - Reconfigure",
+        "description": "Update your Qolsys Panel connection settings.",
+        "data": {
+          "random_mac": "PKI Unique ID (random_mac)",
+          "host": "Qolsys Panel IP Address"
         }
       }
     },
     "error": {
       "mqtt_error": "Qolsys Panel MQTT communication error.",
-      "cannot_configure": "Could not Configure Qolsys Panel.",
+      "configuration_error": "Could not Configure Qolsys Panel.",
       "cannot_connect": "Qolsys Panel Connection Error.",
-      "authentication_failed":"Credentials rejected by panel - Signed Certificate Error"
+      "authentication_failed": "Credentials rejected by panel - Signed Certificate Error",
+      "no_pki_found": "No existing PKI found in configuration folder.",
+      "private_key_not_found": "Private key file not found for PKI: {random_mac}",
+      "client_certificate_not_found": "Client certificate file not found for PKI: {random_mac}",
+      "qolsys_certificate_not_found": "Qolsys certificate file not found for PKI: {random_mac}",
+      "invalid_panel_ip": "Invalid Panel IP: {panel_ip}",
+      "invalid_plugin_ip": "Invalid Plugin IP: {plugin_ip}"
     }
   },
   "options": {
@@ -37,7 +52,8 @@
         "init": {
           "title": "Qolsys Panel - Options",
           "data": {
-            "option_arm_code": "User Code required to Arm/Disarm",
+            "option_arm_code": "User Code required to Arm",
+            "option_disarm_code": "User Code required to Disarm",
             "option_trigger_police": "Enable Trigger Police Alarm",
             "option_trigger_auxilliary": "Enable Trigger Auxiliary Alarm",
             "option_trigger_fire": "Enable Trigger Fire Alarm",
@@ -54,17 +70,17 @@
     "not_loaded": {
       "message": "{target} is not loaded."
     },
-    "connection_error": {
-      "message": "Could not connect to \"{target}\"."
-    },
-    "unknown_error": {
-      "message": "An unknown error occurred while setting the date and time on \"{target}\"."
-    },
-    "cannot_connect": {
-      "message": "Could not connect to panel."
-    },
     "authentication_failed": {
       "message": "Incorrect credentials for panel."
+    },
+    "connection_timeout": {
+      "message": "Timed out waiting for connection to the Qolsys Panel."
+    },
+    "configuration_error": {
+      "message": "Qolsys Panel configuration error."
+    },
+    "mqtt_error": {
+      "message": "Qolsys Panel MQTT communication error."
     }
   },
   "entity": {
@@ -163,6 +179,12 @@
       },
       "zone_ac_status": {
         "name": "AC Status"
+      },
+      "doorbell": {
+        "name": "Doorbell"
+      },
+      "chime": {
+        "name": "Chime"
       }
     }
   },

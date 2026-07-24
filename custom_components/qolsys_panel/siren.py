@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_siren import SirenService
@@ -16,6 +17,8 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -24,18 +27,20 @@ async def async_setup_entry(
 ) -> None:
     """Set up External Sirens."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
 
     entities: list[SirenEntity] = []
 
     # Append Automation Device Sirens
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(SirenService):
+        for service in device.service_get_protocol(SirenService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDevice_Siren(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
@@ -54,16 +59,16 @@ class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_siren{endpoint}"
-        self._service = self._autdev.service_get(SirenService, endpoint)
+        service = self._autdev.service_get(SirenService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: SirenService = service
         self._attr_name = f"Siren{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
-    async def async_turn_on(self, **kwargs) -> None:
-        _LOGGER.debug("Turn On - Commands: %s", self._node.command_class_list)
-        self._service.turn_on()
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._service.turn_on()
 
-    async def async_turn_off(self, **kwargs):
-        _LOGGER.debug("Turn Off - Commands: %s", self._node.command_class_list)
-        self._service.turn_off()
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        await self._service.turn_off()
 
     @property
     def is_on(self) -> bool | None:

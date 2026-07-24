@@ -14,6 +14,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -21,17 +23,19 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
     entities: list[LockEntity] = []
 
     # Append Automation Device Locks
     for device in QolsysPanel.state.automation_devices:
-        for service in device.service_get_protocol(LockService):
+        for service in device.service_get_protocol(LockService):  # type: ignore[type-abstract]
             entities.append(
                 AutomationDeviceLock(
                     QolsysPanel,
                     device.virtual_node_id,
                     service.endpoint,
-                    config_entry.unique_id,
+                    unique_id,
                 )
             )
 
@@ -50,10 +54,12 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
     ) -> None:
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_lock{endpoint}"
-        self._service = self._autdev.service_get(LockService, endpoint)
+        service = self._autdev.service_get(LockService, endpoint)  # type: ignore[type-abstract]
+        assert service is not None
+        self._service: LockService = service
         self._attr_name = f"Lock{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 
-        self._attr_supported_features = 0
+        self._attr_supported_features = LockEntityFeature(0)
         if self._service.supports_open():
             self._attr_supported_features |= LockEntityFeature.OPEN
 
@@ -81,11 +87,11 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
     def is_open(self) -> bool:
         return self._service.is_open
 
-    async def async_lock(self, **kwargs: Any):
+    async def async_lock(self, **kwargs: Any) -> None:
         await self._service.lock()
 
-    async def async_unlock(self, **kwargs: Any):
+    async def async_unlock(self, **kwargs: Any) -> None:
         await self._service.unlock()
 
-    async def async_open(self, **kwargs: Any):
+    async def async_open(self, **kwargs: Any) -> None:
         await self._service.open()

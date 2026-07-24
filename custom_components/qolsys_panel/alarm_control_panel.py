@@ -31,6 +31,8 @@ from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -39,6 +41,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up alarm control panels for each partition."""
     QolsysPanel = config_entry.runtime_data
+    unique_id = config_entry.unique_id
+    assert unique_id is not None
 
     entities: list[AlarmControlPanelEntity] = []
 
@@ -47,7 +51,7 @@ async def async_setup_entry(
             PartitionAlarmControlPanel(
                 QolsysPanel,
                 partition.id,
-                config_entry.unique_id,
+                unique_id,
             )
         )
 
@@ -70,9 +74,33 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     ) -> None:
         super().__init__(QolsysPanel, partition_id, unique_id)
         self._attr_unique_id = self._partition_unique_id
-        self._attr_code_arm_required = QolsysPanel.settings.check_user_code_on_arm
-        if QolsysPanel.settings.check_user_code_on_arm:
-            self._attr_code_format = CodeFormat.NUMBER
+
+    @property
+    def _next_action_is_arm(self) -> bool:
+        """Return whether the next state change is arming.
+
+        A triggered alarm can report a DISARM system status; disarming is
+        still the pending action in that case.
+        """
+        return (
+            self._partition.system_status == PartitionSystemStatus.DISARM
+            and self._partition.alarm_state != PartitionAlarmState.ALARM
+        )
+
+    @property
+    def code_arm_required(self) -> bool:
+        """Return whether a code is required for the next state change."""
+        if self._next_action_is_arm:
+            return self.QolsysPanel.settings.check_user_code_on_arm
+        return self.QolsysPanel.settings.check_user_code_on_disarm
+
+    @property
+    def code_format(self) -> CodeFormat | None:
+        """Return the code format when the next state change requires a code."""
+
+        # Disarm prompts whenever code_format is set, so the format must be
+        # exposed only when the pending action actually needs a code.
+        return CodeFormat.NUMBER if self.code_arm_required else None
 
     @property
     def alarm_state(self) -> AlarmControlPanelState | None:
@@ -82,10 +110,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         if alarm_state == PartitionAlarmState.ALARM:
             return AlarmControlPanelState.TRIGGERED
 
-        if (
-            system_status == PartitionSystemStatus.DISARM
-            and alarm_state != PartitionAlarmState.ALARM
-        ):
+        if system_status == PartitionSystemStatus.DISARM:
             return AlarmControlPanelState.DISARMED
 
         if system_status in (
@@ -109,7 +134,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
         try:
-            await self._partition.disarm(user_code=code)
+            await self._partition.disarm(user_code=code or "")
         except QolsysUserCodeError as err:
             raise HomeAssistantError("DISARM: Invalid user code") from err
         except QolsysOperationTimeoutError as err:
@@ -126,7 +151,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         """Send ARM-AWAY command."""
         await self._async_alarm_arm_custom(PartitionArmingType.ARM_AWAY, code)
 
-    async def async_alarm_arm_night(self, code=None):
+    async def async_alarm_arm_night(self, code: str | None = None) -> None:
         """Send ARM-NIGHT command."""
         await self._async_alarm_arm_custom(PartitionArmingType.ARM_NIGHT, code)
 
@@ -135,7 +160,7 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
     ) -> None:
         """Arm with custom mode."""
         try:
-            await self._partition.arm(arm_mode, user_code=code)
+            await self._partition.arm(arm_mode, user_code=code or "")
         except QolsysUserCodeError as err:
             raise HomeAssistantError(f"{arm_mode.name}: Invalid user code") from err
         except QolsysOperationTimeoutError as err:

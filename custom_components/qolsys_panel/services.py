@@ -35,9 +35,11 @@ from .types import QolsysPanelConfigEntry
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
+async def async_trigger_police(
+    ent: entity.QolsysPartitionEntity, call: ServiceCall
+) -> None:
     """Trigger Police Alarm on Qolsys Panel."""
-    entity_id: str | None = ent.entity_id
+    entity_id: str = ent.entity_id
 
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
@@ -47,9 +49,9 @@ async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
     # Get the config entry associated with the entity
-    config_entry: QolsysPanelConfigEntry | None = (
-        call.hass.config_entries.async_get_entry(entry.config_entry_id)
-    )
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
     if config_entry is None:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
@@ -72,13 +74,15 @@ async def async_trigger_police(ent: entity, call: ServiceCall) -> None:
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
-    silent: bool = call.data.get("silent")
+    silent: bool = call.data["silent"]
     await QolsysPanel.commands.panel.trigger_police(partition_id, silent)
 
 
-async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
+async def async_trigger_auxilliary(
+    ent: entity.QolsysPartitionEntity, call: ServiceCall
+) -> None:
     """Trigger Auxilliary Alarm on Qolsys Panel."""
-    entity_id: str | None = ent.entity_id
+    entity_id: str = ent.entity_id
 
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
@@ -87,9 +91,9 @@ async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
     # Get the config entry associated with the entity
-    config_entry: QolsysPanelConfigEntry | None = (
-        call.hass.config_entries.async_get_entry(entry.config_entry_id)
-    )
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
     if config_entry is None:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
@@ -114,13 +118,15 @@ async def async_trigger_auxilliary(ent: entity, call: ServiceCall) -> None:
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
-    silent: bool = call.data.get("silent")
+    silent: bool = call.data["silent"]
     await QolsysPanel.commands.panel.trigger_auxilliary(partition_id, silent)
 
 
-async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
+async def async_trigger_fire(
+    ent: entity.QolsysPartitionEntity, call: ServiceCall
+) -> None:
     """Trigger Fire Alarm on Qolsys Panel."""
-    entity_id: str | None = ent.entity_id
+    entity_id: str = ent.entity_id
 
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
@@ -130,9 +136,9 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
     # Get the config entry associated with the entity
-    config_entry: QolsysPanelConfigEntry | None = (
-        call.hass.config_entries.async_get_entry(entry.config_entry_id)
-    )
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
     if config_entry is None:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
@@ -158,9 +164,11 @@ async def async_trigger_fire(ent: entity, call: ServiceCall) -> None:
     await QolsysPanel.commands.panel.trigger_fire(partition_id)
 
 
-async def async_quick_exit(ent: entity, call: ServiceCall) -> None:
+async def async_quick_exit(
+    ent: entity.QolsysPartitionEntity, call: ServiceCall
+) -> None:
     """Start Quick Exit on a Qolsys Panel partition (open a door while Armed-Stay without alarming)."""
-    entity_id: str | None = ent.entity_id
+    entity_id: str = ent.entity_id
 
     # Get the entity registry entry
     er = entity_registry.async_get(call.hass)
@@ -170,9 +178,9 @@ async def async_quick_exit(ent: entity, call: ServiceCall) -> None:
         raise ValueError(f"Entity {entity_id} not found in registry")
 
     # Get the config entry associated with the entity
-    config_entry: QolsysPanelConfigEntry | None = (
-        call.hass.config_entries.async_get_entry(entry.config_entry_id)
-    )
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
     if config_entry is None:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
