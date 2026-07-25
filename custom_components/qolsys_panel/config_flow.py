@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 import logging
 from pathlib import Path
 import re
@@ -14,6 +15,8 @@ import voluptuous as vol
 
 from homeassistant.components import zeroconf
 from homeassistant.config_entries import (
+    SOURCE_REAUTH,
+    SOURCE_RECONFIGURE,
     ConfigFlow,
     ConfigFlowResult,
     OptionsFlowWithReload,
@@ -194,14 +197,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 description_placeholders=self._error_placeholders,
             )
 
-        # Add entry to Home Assistant
-        await self.async_set_unique_id(self._data[CONF_MAC])
-        self._abort_if_unique_id_configured()
-
-        return self.async_create_entry(
-            title=f"Qolsys Panel ({self._data[CONF_MAC]})",
-            data=self._data,
-        )
+        return await self._async_finish()
 
     async def async_step_existing_pki(
         self, user_input: dict[str, Any] | None = None
@@ -260,14 +256,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 description_placeholders=self._error_placeholders,
             )
 
-        # Add entry to Home Assistant
-        await self.async_set_unique_id(self._data[CONF_MAC])
-        self._abort_if_unique_id_configured()
-
-        return self.async_create_entry(
-            title=f"Qolsys Panel ({self._data[CONF_MAC]})",
-            data=self._data,
-        )
+        return await self._async_finish()
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
@@ -327,11 +316,62 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 description_placeholders=self._error_placeholders,
             )
 
-        await self.async_set_unique_id(self._data[CONF_MAC])
-        self._abort_if_unique_id_mismatch()
-        return self.async_update_reload_and_abort(
-            entry,
-            data_updates=self._data,
+        return await self._async_finish()
+
+    async def async_step_reauth(
+        self, entry_data: Mapping[str, Any]
+    ) -> ConfigFlowResult:
+        """Handle reauthentication after the panel rejects the client certificate."""
+        # Pre-fill the host from the existing entry so the existing-PKI form is
+        # populated; the pairing path ignores it.
+        host = entry_data.get(CONF_HOST)
+        if host:
+            self._data[CONF_HOST] = host
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Let the user choose how to re-authenticate with the panel."""
+        return self.async_show_menu(
+            step_id="reauth_confirm",
+            menu_options=["pki_autodiscovery_1", "existing_pki"],
+        )
+
+    async def _async_finish(self) -> ConfigFlowResult:
+        """Create the entry, or update the existing one on reauth/reconfigure.
+
+        The pairing and existing-PKI steps are shared across the initial setup,
+        reconfigure, and reauth sources; the finalization differs only in how the
+        result is committed, so it is centralized here and branches on the flow
+        source. Reauth and reconfigure must land on the *same* physical panel, so
+        they guard on a unique_id match before updating the entry in place.
+        """
+        mac = self._data[CONF_MAC]
+
+        if self.source in (SOURCE_REAUTH, SOURCE_RECONFIGURE):
+            entry = (
+                self._get_reauth_entry()
+                if self.source == SOURCE_REAUTH
+                else self._get_reconfigure_entry()
+            )
+            # IQ2+ panels can report a MAC with a trailing newline, so an entry's
+            # stored unique_id may be "\n"-suffixed while a fresh connection
+            # yields a clean MAC. Match on the stripped form but reuse the entry's
+            # existing unique_id so the guard below does not fire on a purely
+            # cosmetic difference and re-create every entity (see async_step_dhcp).
+            unique_id = mac
+            if entry.unique_id is not None and entry.unique_id.strip() == mac.strip():
+                unique_id = entry.unique_id
+            await self.async_set_unique_id(unique_id)
+            self._abort_if_unique_id_mismatch()
+            return self.async_update_reload_and_abort(entry, data_updates=self._data)
+
+        await self.async_set_unique_id(mac)
+        self._abort_if_unique_id_configured()
+        return self.async_create_entry(
+            title=f"Qolsys Panel ({mac})",
+            data=self._data,
         )
 
     async def _try_connect(

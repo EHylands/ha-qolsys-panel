@@ -148,16 +148,26 @@ async def test_quick_exit(hass: HomeAssistant) -> None:
     )
 
 
-async def test_quick_exit_command_error(hass: HomeAssistant) -> None:
+# (handler, controller command attribute, call data) for every service handler.
+COMMAND_HANDLERS = [
+    (async_trigger_police, "trigger_police", {"silent": False}),
+    (async_trigger_auxilliary, "trigger_auxilliary", {"silent": False}),
+    (async_trigger_fire, "trigger_fire", {}),
+    (async_quick_exit, "quick_exit", {"duration": 45}),
+]
+
+
+@pytest.mark.parametrize(("handler", "command", "data"), COMMAND_HANDLERS)
+async def test_command_error(hass: HomeAssistant, handler, command, data) -> None:
     """A controller command error surfaces as a HomeAssistantError."""
     entry = _make_entry(hass, ALL_OPTIONS_ON)
     ent = _make_ent(_register_entity(hass, entry))
-    entry.runtime_data.commands.panel.quick_exit.side_effect = CommandExecutionError(
-        "boom"
-    )
+    getattr(
+        entry.runtime_data.commands.panel, command
+    ).side_effect = CommandExecutionError("boom")
 
     with pytest.raises(HomeAssistantError):
-        await async_quick_exit(ent, _make_call(hass, {"duration": 45}))
+        await handler(ent, _make_call(hass, data))
 
 
 # (handler, call data) for every service handler.
@@ -178,11 +188,11 @@ OPTION_HANDLERS = [
 
 @pytest.mark.parametrize(("handler", "data"), ALL_HANDLERS)
 async def test_entity_not_registered(hass: HomeAssistant, handler, data) -> None:
-    """An unknown entity raises a ValueError."""
+    """An unknown entity raises a HomeAssistantError."""
     _make_entry(hass, ALL_OPTIONS_ON)
     ent = _make_ent("alarm_control_panel.does_not_exist")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(HomeAssistantError):
         await handler(ent, _make_call(hass, data))
 
 

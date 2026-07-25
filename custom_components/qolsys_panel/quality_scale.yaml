@@ -3,7 +3,9 @@ rules:
   action-setup:
     status: exempt
     comment: |
-      No custom actions defined
+      Only entity service actions are provided, registered via
+      async_register_platform_entity_service. Entity services are tied to a
+      loaded entity and are exempt from action-setup.
   appropriate-polling:
     status: exempt
     comment: |
@@ -26,7 +28,7 @@ rules:
   unique-config-entry: done
 
   # Silver
-  action-exceptions: todo
+  action-exceptions: done
   config-entry-unloading: done
   docs-configuration-parameters: done
   docs-installation-parameters: done
@@ -34,7 +36,7 @@ rules:
   integration-owner: done
   log-when-unavailable: done
   parallel-updates: done
-  reauthentication-flow: todo
+  reauthentication-flow: done
   test-coverage: done
 
   # Gold

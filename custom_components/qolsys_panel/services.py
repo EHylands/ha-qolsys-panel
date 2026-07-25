@@ -46,7 +46,11 @@ async def async_trigger_police(
     entry = er.async_get(entity_id)
 
     if entry is None:
-        raise ValueError(f"Entity {entity_id} not found in registry")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
 
     # Get the config entry associated with the entity
     config_entry: QolsysPanelConfigEntry | None = None
@@ -69,13 +73,21 @@ async def async_trigger_police(
     # Prevent service from running if option is disabled in inegratin options
     if not config_entry.options.get(OPTION_TRIGGER_POLICE, DEFAULT_TRIGGER_POLICE):
         raise HomeAssistantError(
-            "Trigger Police Alarm is disabled in integration options"
+            translation_domain=DOMAIN,
+            translation_key="trigger_police_disabled",
         )
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data["silent"]
-    await QolsysPanel.commands.panel.trigger_police(partition_id, silent)
+    try:
+        await QolsysPanel.commands.panel.trigger_police(partition_id, silent)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 async def async_trigger_auxilliary(
@@ -88,7 +100,11 @@ async def async_trigger_auxilliary(
     er = entity_registry.async_get(call.hass)
     entry = er.async_get(entity_id)
     if entry is None:
-        raise ValueError(f"Entity {entity_id} not found in registry")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
 
     # Get the config entry associated with the entity
     config_entry: QolsysPanelConfigEntry | None = None
@@ -113,13 +129,21 @@ async def async_trigger_auxilliary(
         OPTION_TRIGGER_AUXILLIARY, DEFAULT_TRIGGER_AUXILLIARY
     ):
         raise HomeAssistantError(
-            "Trigger Auxilliary Alarm is disabled in integration options"
+            translation_domain=DOMAIN,
+            translation_key="trigger_auxiliary_disabled",
         )
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
     silent: bool = call.data["silent"]
-    await QolsysPanel.commands.panel.trigger_auxilliary(partition_id, silent)
+    try:
+        await QolsysPanel.commands.panel.trigger_auxilliary(partition_id, silent)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 async def async_trigger_fire(
@@ -133,7 +157,11 @@ async def async_trigger_fire(
     entry = er.async_get(entity_id)
 
     if entry is None:
-        raise ValueError(f"Entity {entity_id} not found in registry")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
 
     # Get the config entry associated with the entity
     config_entry: QolsysPanelConfigEntry | None = None
@@ -156,12 +184,20 @@ async def async_trigger_fire(
     # Prevent service from running if option is disabled in inegratin options
     if not config_entry.options.get(OPTION_TRIGGER_FIRE, DEFAULT_TRIGGER_FIRE):
         raise HomeAssistantError(
-            "Trigger FIre Alarm is disabled in integration options"
+            translation_domain=DOMAIN,
+            translation_key="trigger_fire_disabled",
         )
 
     QolsysPanel = config_entry.runtime_data
     partition_id: str = ent._partition_id
-    await QolsysPanel.commands.panel.trigger_fire(partition_id)
+    try:
+        await QolsysPanel.commands.panel.trigger_fire(partition_id)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 async def async_quick_exit(
@@ -175,7 +211,11 @@ async def async_quick_exit(
     entry = er.async_get(entity_id)
 
     if entry is None:
-        raise ValueError(f"Entity {entity_id} not found in registry")
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
 
     # Get the config entry associated with the entity
     config_entry: QolsysPanelConfigEntry | None = None
@@ -201,7 +241,11 @@ async def async_quick_exit(
     try:
         await QolsysPanel.commands.panel.quick_exit(partition_id, duration)
     except CommandExecutionError as e:
-        raise HomeAssistantError(str(e)) from e
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 @callback

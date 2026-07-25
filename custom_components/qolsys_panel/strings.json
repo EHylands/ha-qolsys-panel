@@ -3,6 +3,7 @@
     "flow_title": "{name}",
     "abort": {
       "reconfigure_successful": "Qolsys Panel successfully reconfigured with new settings.",
+      "reauth_successful": "Qolsys Panel successfully re-authenticated.",
       "already_in_progress": "Configuration flow already in progress.",
       "already_configured": "Qolsys Panel is already configured.",
       "unique_id_mismatch": "The connected panel does not match the panel configured in this entry."
@@ -10,6 +11,14 @@
     "step": {
       "user": {
         "description": "Choose pairing method:",
+        "menu_options": {
+          "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
+          "existing_pki": "Use Existing PKI"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Qolsys Panel - Re-authenticate",
+        "description": "The panel rejected the stored client certificate. Re-pair the panel to generate a new certificate, or select an existing PKI.",
         "menu_options": {
           "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
           "existing_pki": "Use Existing PKI"
@@ -75,6 +84,21 @@
     },
     "not_loaded": {
       "message": "{target} is not loaded."
+    },
+    "entity_not_found": {
+      "message": "Entity {entity_id} was not found in the entity registry."
+    },
+    "trigger_police_disabled": {
+      "message": "Triggering the police alarm is disabled in the integration options."
+    },
+    "trigger_auxiliary_disabled": {
+      "message": "Triggering the auxiliary alarm is disabled in the integration options."
+    },
+    "trigger_fire_disabled": {
+      "message": "Triggering the fire alarm is disabled in the integration options."
+    },
+    "command_failed": {
+      "message": "Failed to run the requested action on the Qolsys Panel: {error}"
     },
     "authentication_failed": {
       "message": "Incorrect credentials for panel."

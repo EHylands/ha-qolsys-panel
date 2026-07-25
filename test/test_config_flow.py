@@ -527,6 +527,86 @@ async def test_reconfigure_unique_id_mismatch(
     assert result["reason"] == "unique_id_mismatch"
 
 
+async def test_reauth_existing_pki_flow(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+    pki_dir: Path,
+):
+    """Reauth via the existing-PKI path updates the entry and reloads."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "reauth_confirm"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "existing_pki"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "existing_pki"
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {CONF_HOST: "192.168.1.77", CONF_RANDOM_MAC: RANDOM_MAC},
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert mock_config_entry.data[CONF_HOST] == "192.168.1.77"
+
+
+async def test_reauth_pki_autodiscovery_flow(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+):
+    """Reauth via re-pairing generates a fresh PKI and reloads the entry."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    assert result["type"] is FlowResultType.MENU
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "pki_autodiscovery_1"}
+    )
+    assert result["step_id"] == "pki_autodiscovery_1"
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["step_id"] == "pki_autodiscovery_2"
+
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    mock_qolsys_controller.run_forever.assert_awaited_once_with(
+        reconnect=False, run_once=True, start_pairing=True
+    )
+
+
+async def test_reauth_unique_id_mismatch(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+    pki_dir: Path,
+):
+    """Reauth aborts when a different panel answers, protecting the entry."""
+    mock_config_entry.add_to_hass(hass)
+    mock_qolsys_controller.panel.MAC_ADDRESS = "11:22:33:44:55:66"
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "existing_pki"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], EXISTING_PKI_USER_INPUT
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "unique_id_mismatch"
+
+
 async def test_options_flow(
     hass: HomeAssistant,
     mock_setup_entry: AsyncMock,

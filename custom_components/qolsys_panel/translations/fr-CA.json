@@ -3,6 +3,7 @@
     "flow_title": "{name}",
     "abort": {
       "reconfigure_successful": "Le panneau Qolsys a été reconfiguré avec succès avec les nouveaux paramètres.",
+      "reauth_successful": "L'authentification du panneau Qolsys a été renouvelée avec succès.",
       "already_in_progress": "Une configuration est déjà en cours.",
       "already_configured": "Le panneau Qolsys est déjà configuré.",
       "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée."
@@ -10,6 +11,14 @@
     "step": {
       "user": {
         "description": "Choisissez une méthode de jumelage :",
+        "menu_options": {
+          "pki_autodiscovery_1": "Découverte et jumelage automatiques du panneau",
+          "existing_pki": "Utiliser un PKI existant"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Panneau Qolsys - Renouveler l'authentification",
+        "description": "Le panneau a rejeté le certificat client enregistré. Jumelez de nouveau le panneau pour générer un nouveau certificat, ou sélectionnez un PKI existant.",
         "menu_options": {
           "pki_autodiscovery_1": "Découverte et jumelage automatiques du panneau",
           "existing_pki": "Utiliser un PKI existant"
@@ -75,6 +84,21 @@
     },
     "not_loaded": {
       "message": "{target} n'est pas chargé."
+    },
+    "entity_not_found": {
+      "message": "L'entité {entity_id} est introuvable dans le registre des entités."
+    },
+    "trigger_police_disabled": {
+      "message": "Le déclenchement de l'alarme policière est désactivé dans les options de l'intégration."
+    },
+    "trigger_auxiliary_disabled": {
+      "message": "Le déclenchement de l'alarme auxiliaire est désactivé dans les options de l'intégration."
+    },
+    "trigger_fire_disabled": {
+      "message": "Le déclenchement de l'alarme incendie est désactivé dans les options de l'intégration."
+    },
+    "command_failed": {
+      "message": "Échec de l'exécution de l'action demandée sur le panneau Qolsys : {error}"
     },
     "authentication_failed": {
       "message": "Identifiants incorrects pour le panneau."
