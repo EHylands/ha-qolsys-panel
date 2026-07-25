@@ -1,0 +1,251 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "abort": {
+      "reconfigure_successful": "Le panneau Qolsys a été reconfiguré avec succès avec les nouveaux paramètres.",
+      "already_in_progress": "Une configuration est déjà en cours.",
+      "already_configured": "Le panneau Qolsys est déjà configuré.",
+      "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée."
+    },
+    "step": {
+      "user": {
+        "description": "Choisissez une méthode de jumelage :",
+        "menu_options": {
+          "pki_autodiscovery_1": "Découverte et jumelage automatiques du panneau",
+          "existing_pki": "Utiliser un PKI existant"
+        }
+      },
+      "pki_autodiscovery_1": {
+        "title": "Panneau Qolsys - Découverte automatique",
+        "description": "Mode de découverte automatique :\n1. Assurez-vous que Home Assistant se trouve sur le même sous-réseau que votre panneau Qolsys\n2. Ouvrez la page de jumelage IQ Remote sur le panneau Qolsys et passez à l'étape suivante"
+      },
+      "pki_autodiscovery_2": {
+        "description": "Cliquez sur le bouton « Soumettre » sur cette page, puis sur le bouton « Pair » de la page de jumelage IQ Remote."
+      },
+      "existing_pki": {
+        "title": "Panneau Qolsys - PKI existant",
+        "description": "Connectez-vous à votre panneau Qolsys à l'aide d'un certificat client existant.",
+        "data": {
+          "random_mac": "Identifiant unique PKI (random_mac)",
+          "host": "Adresse IP du panneau Qolsys"
+        }
+      },
+      "reconfigure": {
+        "title": "Panneau Qolsys - Reconfiguration",
+        "description": "Mettez à jour les paramètres de connexion de votre panneau Qolsys.",
+        "data": {
+          "random_mac": "Identifiant unique PKI (random_mac)",
+          "host": "Adresse IP du panneau Qolsys"
+        }
+      }
+    },
+    "error": {
+      "mqtt_error": "Erreur de communication MQTT avec le panneau Qolsys.",
+      "configuration_error": "Impossible de configurer le panneau Qolsys.",
+      "cannot_connect": "Erreur de connexion au panneau Qolsys.",
+      "authentication_failed": "Identifiants rejetés par le panneau - Erreur du certificat signé",
+      "no_pki_found": "Aucun PKI existant trouvé dans le dossier de configuration.",
+      "private_key_not_found": "Fichier de clé privée introuvable pour le PKI : {random_mac}",
+      "client_certificate_not_found": "Fichier de certificat client introuvable pour le PKI : {random_mac}",
+      "qolsys_certificate_not_found": "Fichier de certificat Qolsys introuvable pour le PKI : {random_mac}",
+      "invalid_panel_ip": "Adresse IP du panneau invalide : {panel_ip}",
+      "invalid_plugin_ip": "Adresse IP du plugiciel invalide : {plugin_ip}",
+      "unknown": "Une erreur inattendue est survenue."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Panneau Qolsys - Options",
+        "data": {
+          "option_arm_code": "Code utilisateur requis pour armer",
+          "option_disarm_code": "Code utilisateur requis pour désarmer",
+          "option_trigger_police": "Activer le déclenchement de l'alarme policière",
+          "option_trigger_auxilliary": "Activer le déclenchement de l'alarme auxiliaire",
+          "option_trigger_fire": "Activer le déclenchement de l'alarme incendie",
+          "option_motion_sensor_delay_enabled": "Activer le délai des détecteurs de mouvement",
+          "option_motion_sensor_delay": "Délai des détecteurs de mouvement (secondes)"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "integration_not_found": {
+      "message": "Intégration « {target} » introuvable dans le registre."
+    },
+    "not_loaded": {
+      "message": "{target} n'est pas chargé."
+    },
+    "authentication_failed": {
+      "message": "Identifiants incorrects pour le panneau."
+    },
+    "connection_timeout": {
+      "message": "Délai d'attente dépassé pour la connexion au panneau Qolsys."
+    },
+    "configuration_error": {
+      "message": "Erreur de configuration du panneau Qolsys."
+    },
+    "mqtt_error": {
+      "message": "Erreur de communication MQTT avec le panneau Qolsys."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "latest_dbm": {
+        "name": "Dernier dBm"
+      },
+      "average_dbm": {
+        "name": "dBm moyen"
+      },
+      "powerg_temperature": {
+        "name": "Température"
+      },
+      "powerg_light": {
+        "name": "Lumière"
+      },
+      "temperature": {
+        "name": "Température"
+      },
+      "power": {
+        "name": "Puissance"
+      },
+      "battery": {
+        "name": "Pile"
+      },
+      "last_error": {
+        "name": "Dernière erreur"
+      },
+      "powerg_battery_voltage": {
+        "name": "Tension de la pile"
+      },
+      "powerg_battery_level": {
+        "name": "Niveau de la pile"
+      }
+    },
+    "binary_sensor": {
+      "panel_ac_status": {
+        "name": "État de l'alimentation CA"
+      },
+      "panel_tamper_state": {
+        "name": "Sabotage"
+      },
+      "panel_battery_status": {
+        "name": "État de la pile"
+      },
+      "panel_fail_to_communicate": {
+        "name": "Communication"
+      },
+      "panel_zwave_controller": {
+        "name": "Contrôleur Z-Wave"
+      },
+      "panel_secure_arming": {
+        "name": "Armement sécurisé"
+      },
+      "panel_auto_stay": {
+        "name": "Présence automatique"
+      },
+      "panel_auto_arm_stay": {
+        "name": "Armement automatique en présence"
+      },
+      "panel_control_4": {
+        "name": "Control4"
+      },
+      "partition_alarm_fire": {
+        "name": "Alarme incendie"
+      },
+      "partition_alarm_police": {
+        "name": "Alarme policière"
+      },
+      "partition_alarm_gaz": {
+        "name": "Alarme CO"
+      },
+      "partition_alarm_auxiliary": {
+        "name": "Alarme auxiliaire"
+      },
+      "panel_auto_bypass": {
+        "name": "Contournement automatique"
+      },
+      "partition_exit_sounds": {
+        "name": "Sons de sortie"
+      },
+      "partition_entry_delays": {
+        "name": "Délais d'entrée"
+      },
+      "partition_quick_exit": {
+        "name": "Sortie rapide"
+      },
+      "zone_unreachable": {
+        "name": "État"
+      },
+      "zone_tamper": {
+        "name": "Sabotage"
+      },
+      "zone_battery_status": {
+        "name": "Pile"
+      },
+      "zone_ac_status": {
+        "name": "État de l'alimentation CA"
+      },
+      "doorbell": {
+        "name": "Sonnette"
+      },
+      "chime": {
+        "name": "Carillon"
+      }
+    }
+  },
+  "services": {
+    "trigger_police": {
+      "description": "Déclenche l'alarme policière sur le panneau.",
+      "fields": {
+        "entity_id": {
+          "description": "La partition du panneau Qolsys.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Déclenche une alarme silencieuse.",
+          "name": "Silencieuse"
+        }
+      },
+      "name": "Panneau Qolsys - Déclencher l'alarme policière"
+    },
+    "trigger_auxilliary": {
+      "description": "Déclenche l'alarme auxiliaire sur le panneau.",
+      "fields": {
+        "entity_id": {
+          "description": "La partition du panneau Qolsys.",
+          "name": "Partition"
+        },
+        "silent": {
+          "description": "Déclenche une alarme silencieuse.",
+          "name": "Silencieuse"
+        }
+      },
+      "name": "Panneau Qolsys - Déclencher l'alarme auxiliaire"
+    },
+    "trigger_fire": {
+      "description": "Déclenche l'alarme incendie sur le panneau.",
+      "fields": {
+        "entity_id": {
+          "description": "La partition du panneau Qolsys.",
+          "name": "Partition"
+        }
+      },
+      "name": "Panneau Qolsys - Déclencher l'alarme incendie"
+    },
+    "quick_exit": {
+      "description": "Démarre la sortie rapide sur la partition du panneau, permettant d'ouvrir une porte en mode Armé-Présence sans déclencher d'alarme.",
+      "fields": {
+        "entity_id": {
+          "description": "La partition du panneau Qolsys.",
+          "name": "Partition"
+        },
+        "duration": {
+          "description": "Durée de la fenêtre de sortie rapide, en secondes.",
+          "name": "Durée"
+        }
+      },
+      "name": "Panneau Qolsys - Sortie rapide"
+    }
+  }
+}

@@ -2,7 +2,7 @@
 name = "ha-qolsys-panel"
 version = "1.4.0"
 authors = [
-  { name="Eric Hylands", email="" },
+  { name="Eric Hylands"},
 ]
 description = "A custom HACS integration for Qolsys Panels"
 readme = "README.md"

@@ -1,0 +1,3 @@
+pytest-homeassistant-custom-component==0.13.346
+qolsys-controller==1.6.0
+mypy==2.1.0

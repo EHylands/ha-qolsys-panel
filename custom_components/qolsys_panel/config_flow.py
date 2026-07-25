@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+import re
 from ssl import SSLError
 from typing import Any
 
@@ -49,6 +50,8 @@ from .utils import get_local_ip
 _LOGGER = logging.getLogger(__name__)
 logging.getLogger("custom_components.qolsys_controller").setLevel(logging.DEBUG)
 
+_MAC_DIR_NAME_RE = re.compile(r"[0-9A-Fa-f]{12}")
+
 
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
@@ -82,6 +85,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         directories = await self.hass.async_add_executor_job(_scan)
         for d in directories:
+            if not _MAC_DIR_NAME_RE.fullmatch(d):
+                _LOGGER.debug("Ignoring non-MAC PKI directory: %s", d)
+                continue
             pki_list.append(":".join(d[i : i + 2] for i in range(0, len(d), 2)))
 
         return pki_list
@@ -148,10 +154,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Show the initial menu."""
         return self.async_show_menu(
             step_id="user",
-            menu_options={
-                "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
-                "existing_pki": "Use Existing PKI",
-            },
+            menu_options=["pki_autodiscovery_1", "existing_pki"],
         )
 
     async def async_step_pki_autodiscovery_1(
@@ -225,12 +228,14 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         }
 
-        # Abort if no PKI available
+        # No PKI available: nothing the user enters here can be submitted, so
+        # show the error alone rather than a host/PKI form with an empty,
+        # unusable dropdown.
         if not self._pki_list:
             await self._QolsysPanel.stop()
             return self.async_show_form(
                 step_id="existing_pki",
-                data_schema=vol.Schema(data_schema),
+                data_schema=None,
                 errors={"base": "no_pki_found"},
             )
 
@@ -288,12 +293,14 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         }
 
-        # Abort if no PKI available
+        # No PKI available: nothing the user enters here can be submitted, so
+        # show the error alone rather than a host/PKI form with an empty,
+        # unusable dropdown.
         if not self._pki_list:
             await self._QolsysPanel.stop()
             return self.async_show_form(
                 step_id="reconfigure",
-                data_schema=vol.Schema(data_schema),
+                data_schema=None,
                 errors={"base": "no_pki_found"},
             )
 
@@ -352,32 +359,40 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             zc = await zeroconf.async_get_async_instance(self.hass)
             self._QolsysPanel.settings.shared_zeroconf_instance = zc
 
-        # Check is private key exists
-        if not await self._QolsysPanel._pki.check_key_file() and not start_pairing:
-            _LOGGER.error("Private key file not found for PKI: %s", random_mac)
-            self._error_placeholders = {"random_mac": random_mac}
-            return {"base": "private_key_not_found"}
+        # PKI files and panel IP are only relevant once pairing has produced
+        # them; skip these checks while start_pairing is in progress.
+        if not start_pairing:
+            # Check is private key exists
+            if not await self._QolsysPanel._pki.check_key_file():
+                _LOGGER.error("Private key file not found for PKI: %s", random_mac)
+                self._error_placeholders = {"random_mac": random_mac}
+                return {"base": "private_key_not_found"}
 
-        # Check client certificate exists
-        if not await self._QolsysPanel._pki.check_secure_file() and not start_pairing:
-            _LOGGER.error("Client certificate file not found for PKI: %s", random_mac)
-            self._error_placeholders = {"random_mac": random_mac}
-            return {"base": "client_certificate_not_found"}
+            # Check client certificate exists
+            if not await self._QolsysPanel._pki.check_secure_file():
+                _LOGGER.error(
+                    "Client certificate file not found for PKI: %s", random_mac
+                )
+                self._error_placeholders = {"random_mac": random_mac}
+                return {"base": "client_certificate_not_found"}
 
-        # Check Qolsys public certificate exists
-        if (
-            not await self._QolsysPanel._pki.check_qolsys_cer_file()
-            and not start_pairing
-        ):
-            _LOGGER.error("Qolsys certificate file not found for PKI: %s", random_mac)
-            self._error_placeholders = {"random_mac": random_mac}
-            return {"base": "qolsys_certificate_not_found"}
+            # Check Qolsys public certificate exists
+            if not await self._QolsysPanel._pki.check_qolsys_cer_file():
+                _LOGGER.error(
+                    "Qolsys certificate file not found for PKI: %s", random_mac
+                )
+                self._error_placeholders = {"random_mac": random_mac}
+                return {"base": "qolsys_certificate_not_found"}
 
-        # Check if panel IP is valid
-        if not self._QolsysPanel.settings.check_panel_ip() and not start_pairing:
-            _LOGGER.error("Invalid Panel IP: %s", self._QolsysPanel.settings.panel_ip)
-            self._error_placeholders = {"panel_ip": self._QolsysPanel.settings.panel_ip}
-            return {"base": "invalid_panel_ip"}
+            # Check if panel IP is valid
+            if not self._QolsysPanel.settings.check_panel_ip():
+                _LOGGER.error(
+                    "Invalid Panel IP: %s", self._QolsysPanel.settings.panel_ip
+                )
+                self._error_placeholders = {
+                    "panel_ip": self._QolsysPanel.settings.panel_ip
+                }
+                return {"base": "invalid_panel_ip"}
 
         # Check if plugin IP is valid
         if not self._QolsysPanel.settings.check_plugin_ip():
@@ -405,8 +420,9 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             _LOGGER.error("Qolsys Panel Configuration Error during step: %s", step)
             error = {"base": "configuration_error"}
 
-        finally:
-            pass
+        except* Exception:
+            _LOGGER.exception("Unexpected error during step: %s", step)
+            error = {"base": "unknown"}
 
         if error != {}:
             return error

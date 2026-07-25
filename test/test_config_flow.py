@@ -211,6 +211,24 @@ async def test_dhcp_discovery_prefills_existing_pki_host(
     assert host_key.default() == DISCOVERY_IP
 
 
+async def test_existing_pki_ignores_non_mac_directories(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    pki_dir: Path,
+):
+    """Non-MAC-shaped directories in the pki folder are excluded from the dropdown."""
+    (pki_dir.parent / ".DS_Store").mkdir()
+
+    result = await _start_menu_step(hass, "existing_pki")
+
+    assert result["type"] is FlowResultType.FORM
+    data_schema = result["data_schema"]
+    assert data_schema is not None
+    random_mac_key = next(k for k in data_schema.schema if k == CONF_RANDOM_MAC)
+    options = data_schema.schema[random_mac_key].config["options"]
+    assert options == [RANDOM_MAC]
+
+
 async def test_pki_autodiscovery_flow(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,

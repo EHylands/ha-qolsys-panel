@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "abort": {
       "reconfigure_successful": "Qolsys Panel successfully reconfigured with new settings.",
       "already_in_progress": "Configuration flow already in progress.",
@@ -8,7 +9,11 @@
     },
     "step": {
       "user": {
-        "description": "Choose pairing method:"
+        "description": "Choose pairing method:",
+        "menu_options": {
+          "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
+          "existing_pki": "Use Existing PKI"
+        }
       },
       "pki_autodiscovery_1":{
         "title": "Qolsys Panel - Automatic Panel Discovery",
@@ -44,7 +49,8 @@
       "client_certificate_not_found": "Client certificate file not found for PKI: {random_mac}",
       "qolsys_certificate_not_found": "Qolsys certificate file not found for PKI: {random_mac}",
       "invalid_panel_ip": "Invalid Panel IP: {panel_ip}",
-      "invalid_plugin_ip": "Invalid Plugin IP: {plugin_ip}"
+      "invalid_plugin_ip": "Invalid Plugin IP: {plugin_ip}",
+      "unknown": "Unexpected error occurred."
     }
   },
   "options": {
