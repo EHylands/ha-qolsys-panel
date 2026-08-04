@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, cast
+from typing import cast
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.service_battery import BatteryService
