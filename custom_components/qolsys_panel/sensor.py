@@ -136,10 +136,10 @@ async def async_setup_entry(
     async_add_entities(entities)
 
     # Add new Automation Device Sensor - Dynamic
-    def _automation_device_sensor_add(**kwargs: Any) -> None:
-        virtual_node_id = kwargs["virtual_node_id"]
-        endpoint = kwargs["endpoint"]
-        unit = kwargs["unit"]
+    def _automation_device_sensor_add(event: Event) -> None:
+        virtual_node_id = event.data["virtual_node_id"]
+        endpoint = event.data["endpoint"]
+        unit = event.data["unit"]
 
         _LOGGER.debug(
             "EVENT_AUTDEV_SENSOR_ADD - virtual_node_id:%s, endpoint:%s, unit:%s",
