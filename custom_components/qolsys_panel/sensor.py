@@ -15,6 +15,8 @@ from qolsys_controller.enum_qolsys import (
     QolsysNotification,
     QolsysSensorScale,
 )
+from qolsys_controller.observable import Event
+
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
