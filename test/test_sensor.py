@@ -13,6 +13,7 @@ from qolsys_controller.enum_qolsys import (
     QolsysNotification,
     QolsysSensorScale,
 )
+from qolsys_controller.observable import Event
 
 from custom_components.qolsys_panel.sensor import (
     AutomationDevice_BatteryValue,
@@ -163,12 +164,48 @@ async def test_dynamic_sensor_add(hass: HomeAssistant, controller: MagicMock) ->
         if call.args[0] is QolsysNotification.AUTOMATION_SENSOR_ADD
     )
     callback(
-        virtual_node_id="5",
-        endpoint=0,
-        unit=QolsysSensorScale.TEMPERATURE_FAHRENHEIT,
+        Event(
+            QolsysNotification.AUTOMATION_SENSOR_ADD,
+            controller,
+            {
+                "virtual_node_id": "5",
+                "endpoint": 0,
+                "unit": QolsysSensorScale.TEMPERATURE_FAHRENHEIT,
+            },
+        )
     )
 
     assert add_entities.call_count == 2
+
+
+async def test_dynamic_sensor_add_ignores_missing_virtual_node_id(
+    hass: HomeAssistant, controller: MagicMock
+) -> None:
+    """A malformed dynamic sensor-add notification does not crash setup."""
+    config_entry = MagicMock()
+    config_entry.runtime_data = controller
+    config_entry.unique_id = UID
+    add_entities = MagicMock()
+
+    await async_setup_entry(hass, config_entry, add_entities)
+
+    callback = next(
+        call.args[1]
+        for call in controller.state.register.call_args_list
+        if call.args[0] is QolsysNotification.AUTOMATION_SENSOR_ADD
+    )
+    callback(
+        Event(
+            QolsysNotification.AUTOMATION_SENSOR_ADD,
+            controller,
+            {
+                "endpoint": 0,
+                "unit": QolsysSensorScale.TEMPERATURE_FAHRENHEIT,
+            },
+        )
+    )
+
+    assert add_entities.call_count == 1
 
 
 @pytest.mark.parametrize(("sensor_cls", "attr"), ZONE_SENSORS)
