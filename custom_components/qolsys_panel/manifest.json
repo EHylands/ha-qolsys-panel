@@ -16,6 +16,6 @@
   "issue_tracker": "https://github.com/EHylands/ha-qolsys-panel/issues",
   "loggers": ["qolsys_panel", "qolsys_controller"],
   "requirements": ["qolsys-controller==1.6.0"],
-  "version": "1.5.0-beta.0"
+  "version": "1.5.0-beta.1"
 }
 
