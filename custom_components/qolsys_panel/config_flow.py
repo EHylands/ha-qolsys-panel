@@ -52,7 +52,17 @@ from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
-logging.getLogger("qolsys_controller").setLevel(logging.DEBUG)
+# "qolsys_controller" is a manifest-declared logger, so Home Assistant's logger
+# integration manages its level and silently ignores a plain setLevel() call.
+# Use HA's un-overridden orig_setLevel (falling back to setLevel when HA isn't
+# managing logging, e.g. in tests) to force DEBUG during the config/pairing flow,
+# where no integration entry exists yet to toggle debug logging from the UI.
+_qolsys_controller_logger = logging.getLogger("qolsys_controller")
+getattr(
+    _qolsys_controller_logger,
+    "orig_setLevel",
+    _qolsys_controller_logger.setLevel,
+)(logging.DEBUG)
 
 _MAC_DIR_NAME_RE = re.compile(r"[0-9A-Fa-f]{12}")
 
