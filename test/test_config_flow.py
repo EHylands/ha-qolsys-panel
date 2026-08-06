@@ -637,3 +637,32 @@ async def test_options_flow(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert dict(mock_config_entry.options) == user_input
+
+
+async def test_reauth_tolerates_newline_unique_id(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    pki_dir: Path,
+):
+    """An IQ2+ trailing-newline unique_id still matches the clean panel MAC."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        title=f"Qolsys Panel ({PANEL_MAC})",
+        data=EXPECTED_ENTRY_DATA,
+        unique_id=f"{PANEL_MAC}\n",
+        version=1,
+        minor_version=0,
+    )
+    entry.add_to_hass(hass)
+
+    result = await entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "existing_pki"}
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], EXISTING_PKI_USER_INPUT
+    )
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
