@@ -24,6 +24,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import AbortFlow
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
@@ -205,19 +206,33 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step_id="pki_autodiscovery_2",
             )
 
-        # User has submitted new data, attempt to configure with settings
-        result = await self._try_connect(
-            step="pki_autodiscovery_2",
-            host="",
-            random_mac="",
-            resume_pairing=True,
-            start_pairing=True,
-        )
-        if result != {}:
-            # Pairing failed: stop the controller and interrupt the flow
-            return await self._async_abort_pairing_failed(result)
+        # User has submitted new data, attempt to configure with settings. Any
+        # unexpected failure here must interrupt the flow with a logged traceback,
+        # never bubble up to HA as a generic "Unknown error occurred".
+        try:
+            result = await self._try_connect(
+                step="pki_autodiscovery_2",
+                host="",
+                random_mac="",
+                resume_pairing=True,
+                start_pairing=True,
+            )
+            if result != {}:
+                # Pairing failed: stop the controller and interrupt the flow
+                return await self._async_abort_pairing_failed(result)
 
-        return await self._async_finish()
+            return await self._async_finish()
+        except AbortFlow:
+            raise  # HA control-flow (e.g. already_configured) - must propagate
+        except (Exception, BaseExceptionGroup):
+            _LOGGER.exception("Unexpected error in pairing step; aborting flow")
+            await self._async_stop_controller()
+            return self.async_abort(
+                reason="pairing_failed",
+                description_placeholders={
+                    "reason": "unexpected error during pairing (see logs)"
+                },
+            )
 
     async def async_step_existing_pki(
         self, user_input: dict[str, Any] | None = None
@@ -430,7 +445,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         try:
             await self._QolsysPanel.stop()
-        except BaseException:  # noqa: BLE001
+        except BaseException:
             task = asyncio.current_task()
             if task is not None and task.cancelling():
                 raise
