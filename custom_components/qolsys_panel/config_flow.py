@@ -420,14 +420,20 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_stop_controller(self) -> None:
-        """Stop the controller, swallowing errors so teardown can't mask an abort.
+        """Stop the controller; never let teardown errors mask the flow result.
 
-        stop() failing must never turn an intended abort into a propagating
-        exception (which HA surfaces to the user as "Unknown error occurred").
+        stop() failing must not turn an intended abort/form into a propagating
+        exception (which HA surfaces to the user as "Unknown error occurred"). The
+        controller's internal task groups can raise a BaseExceptionGroup or a stray
+        CancelledError during teardown, so catch broadly and only re-raise a genuine
+        cancellation of *this* task.
         """
         try:
             await self._QolsysPanel.stop()
-        except Exception:  # noqa: BLE001
+        except BaseException:  # noqa: BLE001
+            task = asyncio.current_task()
+            if task is not None and task.cancelling():
+                raise
             _LOGGER.exception("Error stopping controller during config-flow teardown")
 
     async def _async_abort_pairing_failed(

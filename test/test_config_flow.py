@@ -277,14 +277,25 @@ async def test_pki_autodiscovery_empty_mac_aborts(
     assert len(mock_setup_entry.mock_calls) == 0
 
 
+@pytest.mark.parametrize(
+    "stop_side_effect",
+    [
+        RuntimeError("stop boom"),
+        BaseExceptionGroup("teardown", [asyncio.CancelledError()]),
+    ],
+)
 async def test_pki_autodiscovery_empty_mac_aborts_even_if_stop_raises(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
+    *,
+    stop_side_effect: BaseException,
 ):
-    """The empty-MAC guard must still abort even if controller.stop() raises."""
+    """The empty-MAC guard must still abort even if controller.stop() raises,
+    including a BaseExceptionGroup from the controller's internal task groups.
+    """
     mock_qolsys_controller.panel.MAC_ADDRESS = ""
-    mock_qolsys_controller.stop.side_effect = RuntimeError("stop boom")
+    mock_qolsys_controller.stop.side_effect = stop_side_effect
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
