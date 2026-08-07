@@ -43,6 +43,7 @@ def mock_qolsys_controller() -> Generator[MagicMock]:
     controller = MagicMock()
     controller.run_forever = AsyncMock()
     controller.stop = AsyncMock()
+    controller.is_paired = AsyncMock(return_value=True)
 
     controller._pki.check_key_file = AsyncMock(return_value=True)
     controller._pki.check_secure_file = AsyncMock(return_value=True)

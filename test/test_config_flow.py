@@ -260,24 +260,53 @@ async def test_pki_autodiscovery_flow(
     assert len(mock_setup_entry.mock_calls) == 1
 
 
-async def test_pki_autodiscovery_error_and_recover(
+async def test_pki_autodiscovery_empty_mac_aborts(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
 ):
-    """Test pairing shows an error on failure and can recover."""
+    """A pairing that completes without a panel MAC aborts instead of creating an entry."""
+    mock_qolsys_controller.panel.MAC_ADDRESS = ""
+
+    result = await _start_menu_step(hass, "pki_autodiscovery_1")
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "pairing_failed"
+    assert len(mock_setup_entry.mock_calls) == 0
+
+
+async def test_pki_autodiscovery_unpaired_aborts(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+):
+    """A pairing that 'succeeds' without the PKI artifacts aborts (is_paired False)."""
+    mock_qolsys_controller.is_paired = AsyncMock(return_value=False)
+
+    result = await _start_menu_step(hass, "pki_autodiscovery_1")
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "pairing_failed"
+    assert len(mock_setup_entry.mock_calls) == 0
+
+
+async def test_pki_autodiscovery_error_aborts(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+):
+    """Test a pairing failure interrupts (aborts) the flow with the specific reason."""
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     mock_qolsys_controller.run_forever.side_effect = QolsysMqttError("boom")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "pki_autodiscovery_2"
-    assert result["errors"] == {"base": "cannot_connect"}
-
-    mock_qolsys_controller.run_forever.side_effect = None
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "pairing_failed"
+    assert result["description_placeholders"] == {"reason": "boom"}
+    mock_qolsys_controller.stop.assert_awaited_once()
 
 
 async def test_pki_autodiscovery_duplicate_aborts(
@@ -387,40 +416,32 @@ async def test_existing_pki_validation_errors(
 
 
 @pytest.mark.parametrize(
-    ("side_effect", "error"),
+    "side_effect",
     [
-        (QolsysSslError("boom"), "authentication_failed"),
-        (SSLError(), "authentication_failed"),
-        (QolsysMqttError("boom"), "cannot_connect"),
-        (QolsysConfigError("boom"), "configuration_error"),
+        QolsysSslError("boom"),
+        SSLError(),
+        QolsysMqttError("boom"),
+        QolsysConfigError("boom"),
     ],
 )
-async def test_existing_pki_connection_errors(
+async def test_existing_pki_connection_errors_abort(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
     pki_dir: Path,
     *,
     side_effect: Exception,
-    error: str,
 ):
-    """Test connection errors during the existing PKI flow, then recover."""
+    """Test connection failures during the existing PKI flow interrupt (abort) the flow."""
     mock_qolsys_controller.run_forever.side_effect = side_effect
 
     result = await _start_menu_step(hass, "existing_pki")
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], EXISTING_PKI_USER_INPUT
     )
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "existing_pki"
-    assert result["errors"] == {"base": error}
-
-    mock_qolsys_controller.run_forever.side_effect = None
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], EXISTING_PKI_USER_INPUT
-    )
-    assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert result["data"] == EXPECTED_ENTRY_DATA
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "pairing_failed"
+    mock_qolsys_controller.stop.assert_awaited()
 
 
 async def test_existing_pki_duplicate_aborts(

@@ -52,11 +52,6 @@ from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
-# "qolsys_controller" is a manifest-declared logger, so Home Assistant's logger
-# integration manages its level and silently ignores a plain setLevel() call.
-# Use HA's un-overridden orig_setLevel (falling back to setLevel when HA isn't
-# managing logging, e.g. in tests) to force DEBUG during the config/pairing flow,
-# where no integration entry exists yet to toggle debug logging from the UI.
 _qolsys_controller_logger = logging.getLogger("qolsys_controller")
 getattr(
     _qolsys_controller_logger,
@@ -64,7 +59,24 @@ getattr(
     _qolsys_controller_logger.setLevel,
 )(logging.DEBUG)
 
+
+def _leaf_message(exc: BaseException) -> str:
+    # Return the message of the first leaf exception inside an ExceptionGroup
+    while isinstance(exc, BaseExceptionGroup):
+        exc = exc.exceptions[0]
+    return str(exc)
+
+
 _MAC_DIR_NAME_RE = re.compile(r"[0-9A-Fa-f]{12}")
+
+# _try_connect error codes that mean a failed connection/pairing attempt (as opposed
+# to fixable user input such as a bad host or an incomplete PKI selection).
+_CONNECTION_FAILURE_ERRORS = {
+    "authentication_failed",
+    "cannot_connect",
+    "configuration_error",
+    "unknown",
+}
 
 
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -201,12 +213,8 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             start_pairing=True,
         )
         if result != {}:
-            return self.async_show_form(
-                step_id="pki_autodiscovery_2",
-                data_schema=None,
-                errors=result,
-                description_placeholders=self._error_placeholders,
-            )
+            # Pairing failed: stop the controller and interrupt the flow
+            return await self._async_abort_pairing_failed(result)
 
         return await self._async_finish()
 
@@ -260,6 +268,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             start_pairing=False,
         )
         if result != {}:
+            if result["base"] in _CONNECTION_FAILURE_ERRORS:
+                # Connection/pairing failure: interrupt the flow.
+                return await self._async_abort_pairing_failed(result)
+            # Fixable input error (bad host / incomplete PKI): let the user correct it.
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=vol.Schema(data_schema),
@@ -360,6 +372,27 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """
         mac = self._data[CONF_MAC]
 
+        # An incomplete pairing can still "succeed" (reach CONNECTED) before the panel
+        # reports its identity or writes all PKI artifacts. Creating an entry then yields
+        # an empty unique_id / a half-paired entry stuck retrying setup, so refuse it and
+        # interrupt the flow instead.
+        incomplete_reason = ""
+        if not mac:
+            incomplete_reason = "the panel did not report its identity (MAC address)"
+        elif not await self._QolsysPanel.is_paired():
+            incomplete_reason = "pairing did not produce the required certificates"
+
+        if incomplete_reason:
+            _LOGGER.error(
+                "Pairing incomplete (%s); aborting instead of creating an entry",
+                incomplete_reason,
+            )
+            await self._QolsysPanel.stop()
+            return self.async_abort(
+                reason="pairing_failed",
+                description_placeholders={"reason": incomplete_reason},
+            )
+
         if self.source in (SOURCE_REAUTH, SOURCE_RECONFIGURE):
             entry = (
                 self._get_reauth_entry()
@@ -383,6 +416,17 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_create_entry(
             title=f"Qolsys Panel ({mac})",
             data=self._data,
+        )
+
+    async def _async_abort_pairing_failed(
+        self, result: dict[str, str]
+    ) -> ConfigFlowResult:
+        """Stop the controller and interrupt the flow with the specific failure reason."""
+        await self._QolsysPanel.stop()
+        reason_text = self._error_placeholders.get("reason") or result["base"]
+        return self.async_abort(
+            reason="pairing_failed",
+            description_placeholders={"reason": reason_text},
         )
 
     async def _try_connect(
@@ -459,20 +503,24 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             await self._QolsysPanel.run_forever(
                 reconnect=False, run_once=True, start_pairing=start_pairing
             )
-        except* (QolsysSslError, SSLError):
+        except* (QolsysSslError, SSLError) as eg:
             _LOGGER.error("TLS error during step: %s", step)
+            self._error_placeholders = {"reason": _leaf_message(eg)}
             error = {"base": "authentication_failed"}
 
-        except* QolsysMqttError:
+        except* QolsysMqttError as eg:
             _LOGGER.error("Error connecting to panel during step: %s", step)
+            self._error_placeholders = {"reason": _leaf_message(eg)}
             error = {"base": "cannot_connect"}
 
-        except* QolsysConfigError:
+        except* QolsysConfigError as eg:
             _LOGGER.error("Qolsys Panel Configuration Error during step: %s", step)
+            self._error_placeholders = {"reason": _leaf_message(eg)}
             error = {"base": "configuration_error"}
 
-        except* Exception:
+        except* Exception as eg:
             _LOGGER.exception("Unexpected error during step: %s", step)
+            self._error_placeholders = {"reason": _leaf_message(eg)}
             error = {"base": "unknown"}
 
         if error != {}:

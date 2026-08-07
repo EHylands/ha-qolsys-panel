@@ -6,7 +6,8 @@
       "reauth_successful": "L'authentification du panneau Qolsys a été renouvelée avec succès.",
       "already_in_progress": "Une configuration est déjà en cours.",
       "already_configured": "Le panneau Qolsys est déjà configuré.",
-      "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée."
+      "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée.",
+      "pairing_failed": "L'appairage a échoué : {reason}"
     },
     "step": {
       "user": {

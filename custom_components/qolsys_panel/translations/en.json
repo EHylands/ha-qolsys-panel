@@ -6,7 +6,8 @@
       "reauth_successful": "Qolsys Panel successfully re-authenticated.",
       "already_in_progress": "Configuration flow already in progress.",
       "already_configured": "Qolsys Panel is already configured.",
-      "unique_id_mismatch": "The connected panel does not match the panel configured in this entry."
+      "unique_id_mismatch": "The connected panel does not match the panel configured in this entry.",
+      "pairing_failed": "Pairing failed: {reason}"
     },
     "step": {
       "user": {
