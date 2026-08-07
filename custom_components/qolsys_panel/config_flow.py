@@ -248,7 +248,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # show the error alone rather than a host/PKI form with an empty,
         # unusable dropdown.
         if not self._pki_list:
-            await self._QolsysPanel.stop()
+            await self._async_stop_controller()
             return self.async_show_form(
                 step_id="existing_pki",
                 data_schema=None,
@@ -310,7 +310,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # show the error alone rather than a host/PKI form with an empty,
         # unusable dropdown.
         if not self._pki_list:
-            await self._QolsysPanel.stop()
+            await self._async_stop_controller()
             return self.async_show_form(
                 step_id="reconfigure",
                 data_schema=None,
@@ -388,7 +388,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 "Pairing incomplete (%s); aborting instead of creating an entry",
                 incomplete_reason,
             )
-            await self._QolsysPanel.stop()
+            await self._async_stop_controller()
             return self.async_abort(
                 reason="pairing_failed",
                 description_placeholders={"reason": incomplete_reason},
@@ -419,11 +419,22 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             data=self._data,
         )
 
+    async def _async_stop_controller(self) -> None:
+        """Stop the controller, swallowing errors so teardown can't mask an abort.
+
+        stop() failing must never turn an intended abort into a propagating
+        exception (which HA surfaces to the user as "Unknown error occurred").
+        """
+        try:
+            await self._QolsysPanel.stop()
+        except Exception:  # noqa: BLE001
+            _LOGGER.exception("Error stopping controller during config-flow teardown")
+
     async def _async_abort_pairing_failed(
         self, result: dict[str, str]
     ) -> ConfigFlowResult:
         """Stop the controller and interrupt the flow with the specific failure reason."""
-        await self._QolsysPanel.stop()
+        await self._async_stop_controller()
         reason_text = self._error_placeholders.get("reason") or result["base"]
         return self.async_abort(
             reason="pairing_failed",
