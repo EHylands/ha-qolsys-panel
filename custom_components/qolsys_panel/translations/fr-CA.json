@@ -9,6 +9,9 @@
       "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée.",
       "pairing_failed": "L'appairage a échoué : {reason}"
     },
+    "progress": {
+      "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau. En attente de la fin du jumelage…"
+    },
     "step": {
       "user": {
         "description": "Choisissez une méthode de jumelage :",

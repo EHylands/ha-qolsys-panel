@@ -86,6 +86,15 @@ async def _start_menu_step(hass: HomeAssistant, next_step_id: str):
     )
 
 
+async def _drive_pairing(hass: HomeAssistant, flow_id: str):
+    """Submit the pki_autodiscovery_2 form and drive the background pairing task to done."""
+    result = await hass.config_entries.flow.async_configure(flow_id, {})
+    assert result["type"] is FlowResultType.SHOW_PROGRESS
+    assert result["progress_action"] == "pairing"
+    await hass.async_block_till_done()
+    return await hass.config_entries.flow.async_configure(result["flow_id"])
+
+
 async def test_user_menu(hass: HomeAssistant, mock_qolsys_controller: MagicMock):
     """Test the initial user step shows the menu."""
     result = await hass.config_entries.flow.async_init(
@@ -244,7 +253,7 @@ async def test_pki_autodiscovery_flow(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "pki_autodiscovery_2"
 
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["title"] == f"Qolsys Panel ({PANEL_MAC})"
     assert result["data"] == {
@@ -271,7 +280,7 @@ async def test_pki_autodiscovery_empty_mac_aborts(
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
     assert len(mock_setup_entry.mock_calls) == 0
@@ -299,7 +308,7 @@ async def test_pki_autodiscovery_empty_mac_aborts_even_if_stop_raises(
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
     assert len(mock_setup_entry.mock_calls) == 0
@@ -327,7 +336,7 @@ async def test_pki_autodiscovery_timeout_group_aborts(
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
     assert "timed out" in result["description_placeholders"]["reason"]
@@ -344,7 +353,7 @@ async def test_pki_autodiscovery_unpaired_aborts(
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
     assert len(mock_setup_entry.mock_calls) == 0
@@ -360,7 +369,7 @@ async def test_pki_autodiscovery_error_aborts(
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
 
     mock_qolsys_controller.run_forever.side_effect = QolsysMqttError("boom")
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
     assert result["description_placeholders"] == {"reason": "boom"}
@@ -377,7 +386,7 @@ async def test_pki_autodiscovery_duplicate_aborts(
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
@@ -655,7 +664,7 @@ async def test_reauth_pki_autodiscovery_flow(
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["step_id"] == "pki_autodiscovery_2"
 
-    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result["flow_id"])
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
     mock_qolsys_controller.run_forever.assert_awaited_once_with(

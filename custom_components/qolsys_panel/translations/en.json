@@ -9,6 +9,9 @@
       "unique_id_mismatch": "The connected panel does not match the panel configured in this entry.",
       "pairing_failed": "Pairing failed: {reason}"
     },
+    "progress": {
+      "pairing": "Press the **Pair** button on the panel's IQ Remote config page. Waiting for the panel to complete pairing…"
+    },
     "step": {
       "user": {
         "description": "Choose pairing method:",

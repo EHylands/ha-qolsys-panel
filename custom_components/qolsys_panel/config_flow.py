@@ -94,6 +94,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._QolsysPanel = qolsys_controller()
         self._config_directory = Path()
         self._error_placeholders: dict[str, str] = {}
+        self._pairing_task: asyncio.Task[dict[str, str]] | None = None
 
     @staticmethod
     @callback
@@ -201,27 +202,46 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle the pki_autodiscovery step 2 - Load Plugin."""
-        if user_input is None:
-            return self.async_show_form(
+        # First display: the "press Submit then Pair" message form.
+        if user_input is None and self._pairing_task is None:
+            return self.async_show_form(step_id="pki_autodiscovery_2")
+
+        # Run pairing as a background task instead of blocking the flow's HTTP request.
+        # A blocking step is cancelled by HA when the request times out (~60s), which
+        # kills the pairing timeout before it can fire. A background task driven by
+        # async_show_progress lets pairing run for its full pairing_timeout and the
+        # timeout surfaces as a clean QolsysConfigError.
+        if self._pairing_task is None:
+            self._pairing_task = self.hass.async_create_task(
+                self._try_connect(
+                    step="pki_autodiscovery_2",
+                    host="",
+                    random_mac="",
+                    resume_pairing=True,
+                    start_pairing=True,
+                ),
+                "qolsys_panel pairing",
+                eager_start=False,
+            )
+
+        if not self._pairing_task.done():
+            return self.async_show_progress(
                 step_id="pki_autodiscovery_2",
+                progress_action="pairing",
+                progress_task=self._pairing_task,
             )
 
-        # User has submitted new data, attempt to configure with settings. Any
-        # unexpected failure here must interrupt the flow with a logged traceback,
-        # never bubble up to HA as a generic "Unknown error occurred".
+        return self.async_show_progress_done(next_step_id="pki_autodiscovery_finish")
+
+    async def async_step_pki_autodiscovery_finish(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Finalize once the background pairing task has completed."""
+        task = self._pairing_task
+        self._pairing_task = None
+
         try:
-            result = await self._try_connect(
-                step="pki_autodiscovery_2",
-                host="",
-                random_mac="",
-                resume_pairing=True,
-                start_pairing=True,
-            )
-            if result != {}:
-                # Pairing failed: stop the controller and interrupt the flow
-                return await self._async_abort_pairing_failed(result)
-
-            return await self._async_finish()
+            result = {} if task is None else task.result()
         except AbortFlow:
             raise  # HA control-flow (e.g. already_configured) - must propagate
         except (Exception, BaseExceptionGroup):
@@ -233,6 +253,12 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                     "reason": "unexpected error during pairing (see logs)"
                 },
             )
+
+        if result != {}:
+            # Pairing failed: stop the controller and interrupt the flow.
+            return await self._async_abort_pairing_failed(result)
+
+        return await self._async_finish()
 
     async def async_step_existing_pki(
         self, user_input: dict[str, Any] | None = None
