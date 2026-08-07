@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
 import logging
 from pathlib import Path
@@ -60,11 +61,11 @@ getattr(
 )(logging.DEBUG)
 
 
-def _leaf_message(exc: BaseException) -> str:
-    # Return the message of the first leaf exception inside an ExceptionGroup
-    while isinstance(exc, BaseExceptionGroup):
-        exc = exc.exceptions[0]
-    return str(exc)
+def _leaf_exceptions(exc: BaseException) -> list[BaseException]:
+    # Flatten a (possibly nested) ExceptionGroup to its leaf exceptions.
+    if isinstance(exc, BaseExceptionGroup):
+        return [leaf for sub in exc.exceptions for leaf in _leaf_exceptions(sub)]
+    return [exc]
 
 
 _MAC_DIR_NAME_RE = re.compile(r"[0-9A-Fa-f]{12}")
@@ -503,25 +504,38 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             await self._QolsysPanel.run_forever(
                 reconnect=False, run_once=True, start_pairing=start_pairing
             )
-        except* (QolsysSslError, SSLError) as eg:
-            _LOGGER.error("TLS error during step: %s", step)
-            self._error_placeholders = {"reason": _leaf_message(eg)}
-            error = {"base": "authentication_failed"}
+        except (Exception, BaseExceptionGroup) as exc:
+            # run_forever raises through nested (Base)ExceptionGroups. A single except*
+            # chain misclassifies a multi-leaf group: a later clause overwrites the error,
+            # or a CancelledError leaf escapes and HA shows a generic "unknown". Flatten,
+            # drop cancellation from the run_once teardown, then classify by the most
+            # specific failure present.
+            failures = [
+                e
+                for e in _leaf_exceptions(exc)
+                if not isinstance(e, asyncio.CancelledError)
+            ]
+            if not failures:
+                raise  # genuine cancellation (shutdown) - let it propagate
 
-        except* QolsysMqttError as eg:
-            _LOGGER.error("Error connecting to panel during step: %s", step)
-            self._error_placeholders = {"reason": _leaf_message(eg)}
-            error = {"base": "cannot_connect"}
+            def _first(types: type | tuple[type, ...]) -> BaseException | None:
+                return next((e for e in failures if isinstance(e, types)), None)
 
-        except* QolsysConfigError as eg:
-            _LOGGER.error("Qolsys Panel Configuration Error during step: %s", step)
-            self._error_placeholders = {"reason": _leaf_message(eg)}
-            error = {"base": "configuration_error"}
+            if (cause := _first((QolsysSslError, SSLError))) is not None:
+                _LOGGER.error("TLS error during step: %s", step)
+                error = {"base": "authentication_failed"}
+            elif (cause := _first(QolsysMqttError)) is not None:
+                _LOGGER.error("Error connecting to panel during step: %s", step)
+                error = {"base": "cannot_connect"}
+            elif (cause := _first(QolsysConfigError)) is not None:
+                _LOGGER.error("Configuration error during step: %s", step)
+                error = {"base": "configuration_error"}
+            else:
+                cause = failures[0]
+                _LOGGER.exception("Unexpected error during step: %s", step)
+                error = {"base": "unknown"}
 
-        except* Exception as eg:
-            _LOGGER.exception("Unexpected error during step: %s", step)
-            self._error_placeholders = {"reason": _leaf_message(eg)}
-            error = {"base": "unknown"}
+            self._error_placeholders = {"reason": str(cause) or type(cause).__name__}
 
         if error != {}:
             return error

@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel config flow."""
 
+import asyncio
 from collections.abc import Iterable
 from pathlib import Path
 from ssl import SSLError
@@ -273,6 +274,35 @@ async def test_pki_autodiscovery_empty_mac_aborts(
     result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "pairing_failed"
+    assert len(mock_setup_entry.mock_calls) == 0
+
+
+async def test_pki_autodiscovery_timeout_group_aborts(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+):
+    """A timeout that surfaces as a multi-leaf ExceptionGroup (QolsysConfigError +
+    CancelledError from the cancelled run_once teardown) must still abort with the
+    specific reason, not escape as a generic 'unknown'.
+    """
+    mock_qolsys_controller.run_forever.side_effect = BaseExceptionGroup(
+        "unhandled errors in a TaskGroup",
+        [
+            ExceptionGroup(
+                "",
+                [QolsysConfigError("Pairing timed out after 300 seconds")],
+            ),
+            asyncio.CancelledError(),
+        ],
+    )
+
+    result = await _start_menu_step(hass, "pki_autodiscovery_1")
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "pairing_failed"
+    assert "timed out" in result["description_placeholders"]["reason"]
     assert len(mock_setup_entry.mock_calls) == 0
 
 
