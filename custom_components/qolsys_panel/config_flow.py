@@ -54,6 +54,8 @@ from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
+
+# Force the qolsys_controller logger to DEBUG during config flow
 _qolsys_controller_logger = logging.getLogger("qolsys_controller")
 getattr(
     _qolsys_controller_logger,
@@ -62,13 +64,7 @@ getattr(
 )(logging.DEBUG)
 
 
-def _leaf_exceptions(exc: BaseException) -> list[BaseException]:
-    # Flatten a (possibly nested) ExceptionGroup to its leaf exceptions.
-    if isinstance(exc, BaseExceptionGroup):
-        return [leaf for sub in exc.exceptions for leaf in _leaf_exceptions(sub)]
-    return [exc]
-
-
+# Format of PKI directories is a 12-character hex string (MAC address without colons).
 _MAC_DIR_NAME_RE = re.compile(r"[0-9A-Fa-f]{12}")
 
 # _try_connect error codes that mean a failed connection/pairing attempt (as opposed
@@ -104,6 +100,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         return QolsysPanelOptionsFlowHandler()
 
     async def _async_get_pki_dir(self) -> list[str]:
+        """Return a list of PKI directories (MAC addresses) in the config/pki directory."""
         pki_list: list[str] = []
         path = self._config_directory.joinpath("pki")
 
@@ -207,10 +204,6 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_show_form(step_id="pki_autodiscovery_2")
 
         # Run pairing as a background task instead of blocking the flow's HTTP request.
-        # A blocking step is cancelled by HA when the request times out (~60s), which
-        # kills the pairing timeout before it can fire. A background task driven by
-        # async_show_progress lets pairing run for its full pairing_timeout and the
-        # timeout surfaces as a clean QolsysConfigError.
         if self._pairing_task is None:
             self._pairing_task = self.hass.async_create_task(
                 self._try_connect(
@@ -289,19 +282,16 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         # show the error alone rather than a host/PKI form with an empty,
         # unusable dropdown.
         if not self._pki_list:
+            # No PKI to select and nothing the user can enter here - end the flow.
             await self._async_stop_controller()
-            return self.async_show_form(
-                step_id="existing_pki",
-                data_schema=None,
-                errors={"base": "no_pki_found"},
-            )
+            return self.async_abort(reason="no_pki_found")
 
         if user_input is None:
             return self.async_show_form(
                 step_id="existing_pki", data_schema=vol.Schema(data_schema)
             )
 
-        # User has submitted new data, attempt to reconfigure with new settings
+        # User has submitted new data, attempt to pair with new settings
         result = await self._try_connect(
             step="existing_pki",
             host=user_input[CONF_HOST],
@@ -347,16 +337,11 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
         }
 
-        # No PKI available: nothing the user enters here can be submitted, so
-        # show the error alone rather than a host/PKI form with an empty,
-        # unusable dropdown.
+        # No PKI available: nothing the user enters here can be submitted
         if not self._pki_list:
+            # No PKI to select and nothing the user can enter here - end the flow.
             await self._async_stop_controller()
-            return self.async_show_form(
-                step_id="reconfigure",
-                data_schema=None,
-                errors={"base": "no_pki_found"},
-            )
+            return self.async_abort(reason="no_pki_found")
 
         # No user input, show form to reconfigure settings
         if user_input is None:
@@ -461,14 +446,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
     async def _async_stop_controller(self) -> None:
-        """Stop the controller; never let teardown errors mask the flow result.
-
-        stop() failing must not turn an intended abort/form into a propagating
-        exception (which HA surfaces to the user as "Unknown error occurred"). The
-        controller's internal task groups can raise a BaseExceptionGroup or a stray
-        CancelledError during teardown, so catch broadly and only re-raise a genuine
-        cancellation of *this* task.
-        """
+        """Stop the controller; never let teardown errors mask the flow result."""
         try:
             await self._QolsysPanel.stop()
         except BaseException:
@@ -556,44 +534,28 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             }
             return {"base": "invalid_plugin_ip"}
 
-        # Attempt to connect to panel with provided settings
+        # Attempt to connect to the panel. run_forever raises a plain exception
         error = {}
         try:
             await self._QolsysPanel.run_forever(
                 reconnect=False, run_once=True, start_pairing=start_pairing
             )
-        except (Exception, BaseExceptionGroup) as exc:
-            # run_forever raises through nested (Base)ExceptionGroups. A single except*
-            # chain misclassifies a multi-leaf group: a later clause overwrites the error,
-            # or a CancelledError leaf escapes and HA shows a generic "unknown". Flatten,
-            # drop cancellation from the run_once teardown, then classify by the most
-            # specific failure present.
-            failures = [
-                e
-                for e in _leaf_exceptions(exc)
-                if not isinstance(e, asyncio.CancelledError)
-            ]
-            if not failures:
-                raise  # genuine cancellation (shutdown) - let it propagate
-
-            def _first(types: type | tuple[type, ...]) -> BaseException | None:
-                return next((e for e in failures if isinstance(e, types)), None)
-
-            if (cause := _first((QolsysSslError, SSLError))) is not None:
-                _LOGGER.error("TLS error during step: %s", step)
-                error = {"base": "authentication_failed"}
-            elif (cause := _first(QolsysMqttError)) is not None:
-                _LOGGER.error("Error connecting to panel during step: %s", step)
-                error = {"base": "cannot_connect"}
-            elif (cause := _first(QolsysConfigError)) is not None:
-                _LOGGER.error("Configuration error during step: %s", step)
-                error = {"base": "configuration_error"}
-            else:
-                cause = failures[0]
-                _LOGGER.exception("Unexpected error during step: %s", step)
-                error = {"base": "unknown"}
-
-            self._error_placeholders = {"reason": str(cause) or type(cause).__name__}
+        except (QolsysSslError, SSLError) as err:
+            _LOGGER.error("TLS error during step: %s", step)
+            self._error_placeholders = {"reason": str(err) or type(err).__name__}
+            error = {"base": "authentication_failed"}
+        except QolsysMqttError as err:
+            _LOGGER.error("Error connecting to panel during step: %s", step)
+            self._error_placeholders = {"reason": str(err) or type(err).__name__}
+            error = {"base": "cannot_connect"}
+        except QolsysConfigError as err:
+            _LOGGER.error("Configuration error during step: %s", step)
+            self._error_placeholders = {"reason": str(err) or type(err).__name__}
+            error = {"base": "configuration_error"}
+        except Exception as err:
+            _LOGGER.exception("Unexpected error during step: %s", step)
+            self._error_placeholders = {"reason": str(err) or type(err).__name__}
+            error = {"base": "unknown"}
 
         if error != {}:
             return error

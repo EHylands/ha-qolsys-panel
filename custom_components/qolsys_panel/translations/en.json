@@ -7,7 +7,8 @@
       "already_in_progress": "Configuration flow already in progress.",
       "already_configured": "Qolsys Panel is already configured.",
       "unique_id_mismatch": "The connected panel does not match the panel configured in this entry.",
-      "pairing_failed": "Pairing failed: {reason}"
+      "pairing_failed": "Pairing failed: {reason}",
+      "no_pki_found": "No existing PKI found. Pair with the panel first to create one."
     },
     "progress": {
       "pairing": "Press the **Pair** button on the panel's IQ Remote config page. Waiting for the panel to complete pairing…"
@@ -57,7 +58,6 @@
       "configuration_error": "Could not Configure Qolsys Panel.",
       "cannot_connect": "Qolsys Panel Connection Error.",
       "authentication_failed": "Credentials rejected by panel - Signed Certificate Error",
-      "no_pki_found": "No existing PKI found in configuration folder.",
       "private_key_not_found": "Private key file not found for PKI: {random_mac}",
       "client_certificate_not_found": "Client certificate file not found for PKI: {random_mac}",
       "qolsys_certificate_not_found": "Qolsys certificate file not found for PKI: {random_mac}",

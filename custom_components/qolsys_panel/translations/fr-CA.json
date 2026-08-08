@@ -7,7 +7,8 @@
       "already_in_progress": "Une configuration est déjà en cours.",
       "already_configured": "Le panneau Qolsys est déjà configuré.",
       "unique_id_mismatch": "Le panneau connecté ne correspond pas au panneau configuré pour cette entrée.",
-      "pairing_failed": "L'appairage a échoué : {reason}"
+      "pairing_failed": "L'appairage a échoué : {reason}",
+      "no_pki_found": "Aucun PKI existant trouvé. Jumelez d'abord le panneau pour en créer un."
     },
     "progress": {
       "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau. En attente de la fin du jumelage…"
@@ -57,7 +58,6 @@
       "configuration_error": "Impossible de configurer le panneau Qolsys.",
       "cannot_connect": "Erreur de connexion au panneau Qolsys.",
       "authentication_failed": "Identifiants rejetés par le panneau - Erreur du certificat signé",
-      "no_pki_found": "Aucun PKI existant trouvé dans le dossier de configuration.",
       "private_key_not_found": "Fichier de clé privée introuvable pour le PKI : {random_mac}",
       "client_certificate_not_found": "Fichier de certificat client introuvable pour le PKI : {random_mac}",
       "qolsys_certificate_not_found": "Fichier de certificat Qolsys introuvable pour le PKI : {random_mac}",

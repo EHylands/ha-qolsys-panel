@@ -300,8 +300,9 @@ async def test_pki_autodiscovery_empty_mac_aborts_even_if_stop_raises(
     *,
     stop_side_effect: BaseException,
 ):
-    """The empty-MAC guard must still abort even if controller.stop() raises,
-    including a BaseExceptionGroup from the controller's internal task groups.
+    """Abort on the empty-MAC guard even when controller.stop() raises.
+
+    Covers a BaseExceptionGroup from the controller's internal task groups.
     """
     mock_qolsys_controller.panel.MAC_ADDRESS = ""
     mock_qolsys_controller.stop.side_effect = stop_side_effect
@@ -314,24 +315,14 @@ async def test_pki_autodiscovery_empty_mac_aborts_even_if_stop_raises(
     assert len(mock_setup_entry.mock_calls) == 0
 
 
-async def test_pki_autodiscovery_timeout_group_aborts(
+async def test_pki_autodiscovery_timeout_aborts(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
     mock_setup_entry: AsyncMock,
 ):
-    """A timeout that surfaces as a multi-leaf ExceptionGroup (QolsysConfigError +
-    CancelledError from the cancelled run_once teardown) must still abort with the
-    specific reason, not escape as a generic 'unknown'.
-    """
-    mock_qolsys_controller.run_forever.side_effect = BaseExceptionGroup(
-        "unhandled errors in a TaskGroup",
-        [
-            ExceptionGroup(
-                "",
-                [QolsysConfigError("Pairing timed out after 300 seconds")],
-            ),
-            asyncio.CancelledError(),
-        ],
+    """A pairing timeout (plain QolsysConfigError from run_forever) aborts with the reason."""
+    mock_qolsys_controller.run_forever.side_effect = QolsysConfigError(
+        "Pairing timed out after 300 seconds"
     )
 
     result = await _start_menu_step(hass, "pki_autodiscovery_1")
@@ -425,9 +416,8 @@ async def test_existing_pki_no_pki_found(
     """Test the existing PKI step when no PKI directory exists."""
     result = await _start_menu_step(hass, "existing_pki")
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "existing_pki"
-    assert result["errors"] == {"base": NO_PKI_ERROR}
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == NO_PKI_ERROR
     mock_qolsys_controller.stop.assert_awaited_once()
 
 
@@ -563,9 +553,8 @@ async def test_reconfigure_no_pki_found(
 
     result = await mock_config_entry.start_reconfigure_flow(hass)
 
-    assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "reconfigure"
-    assert result["errors"] == {"base": NO_PKI_ERROR}
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == NO_PKI_ERROR
     mock_qolsys_controller.stop.assert_awaited_once()
 
 
