@@ -12,11 +12,7 @@ from qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import (
-    ConfigEntryAuthFailed,
-    ConfigEntryError,
-    ConfigEntryNotReady,
-)
+from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
@@ -61,7 +57,9 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 _CONNECT_TIMEOUT_SECONDS = 30
 
 
-def _setup_error(exc: BaseException | None) -> ConfigEntryError:
+def _setup_error(
+    exc: BaseException | None,
+) -> ConfigEntryAuthFailed | ConfigEntryNotReady:
     """Map a fatal controller startup failure to the right ConfigEntry* error."""
     if isinstance(exc, (QolsysSslError, ssl.SSLError)):
         return ConfigEntryAuthFailed(
