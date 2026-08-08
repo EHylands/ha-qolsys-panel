@@ -8,11 +8,15 @@ import ssl
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
+from qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryError,
+    ConfigEntryNotReady,
+)
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
@@ -53,6 +57,25 @@ PLATFORMS: list[Platform] = [
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
+# How long to wait for the panel to connect during setup before retrying.
+_CONNECT_TIMEOUT_SECONDS = 30
+
+
+def _setup_error(exc: BaseException | None) -> ConfigEntryError:
+    """Map a fatal controller startup failure to the right ConfigEntry* error."""
+    if isinstance(exc, (QolsysSslError, ssl.SSLError)):
+        return ConfigEntryAuthFailed(
+            translation_domain=DOMAIN, translation_key="authentication_failed"
+        )
+    if isinstance(exc, QolsysMqttError):
+        return ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="mqtt_error"
+        )
+    # QolsysConfigError or anything unexpected.
+    return ConfigEntryNotReady(
+        translation_domain=DOMAIN, translation_key="configuration_error"
+    )
+
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Qolsys Panel services."""
@@ -88,46 +111,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
     )
 
-    # Start controller operation
-    try:
-        hass.async_create_background_task(
-            QolsysPanel.run_forever(
-                reconnect=True, run_once=False, start_pairing=False
-            ),
-            "qolsys-controller",
+    # Start the controller (long-lived) and, separately, wait for the CONNECTED state.
+    controller_task = hass.async_create_background_task(
+        QolsysPanel.run_forever(reconnect=True, run_once=False, start_pairing=False),
+        "qolsys-controller",
+    )
+    connected_task = hass.async_create_task(QolsysPanel.wait_until_connected())
+
+    done, _pending = await asyncio.wait(
+        {controller_task, connected_task},
+        timeout=_CONNECT_TIMEOUT_SECONDS,
+        return_when=asyncio.FIRST_COMPLETED,
+    )
+
+    if connected_task not in done or connected_task.exception() is not None:
+        # Fatal startup failure or timeout: tear everything down and surface the reason.
+        connected_task.cancel()
+        await QolsysPanel.stop()
+        controller_task.cancel()
+        if controller_task in done:
+            exc = controller_task.exception()
+            _LOGGER.error("Qolsys Panel startup failed: %r", exc)
+            raise _setup_error(exc) from exc
+        raise ConfigEntryNotReady(
+            translation_domain=DOMAIN, translation_key="connection_timeout"
         )
-        try:
-            async with asyncio.timeout(30):
-                await QolsysPanel.wait_until_connected()
-        except TimeoutError as err:
-            await QolsysPanel.stop()
-            raise ConfigEntryNotReady(
-                translation_domain=DOMAIN, translation_key="connection_timeout"
-            ) from err
-
-    except* QolsysConfigError as err:
-        _LOGGER.error("Qolsys Panel Configuration Error")
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN, translation_key="configuration_error"
-        ) from err
-
-    except* (QolsysSslError, ssl.SSLError) as err:
-        _LOGGER.error("Credentials rejected by panel - Signed Certificate Error")
-        raise ConfigEntryAuthFailed(
-            translation_domain=DOMAIN, translation_key="authentication_failed"
-        ) from err
-
-    except* QolsysMqttError as err:
-        _LOGGER.error("Qolsys Panel MQTT Error")
-        raise ConfigEntryNotReady(
-            translation_domain=DOMAIN, translation_key="mqtt_error"
-        ) from err
 
     entry.runtime_data = QolsysPanel
 
     # Log once when the connection to the panel is lost and once when it is
-    # restored. The controller updates its state right after firing the status
-    # notification, so defer the check until the event loop settles.
+    # restored.
     was_connected = True
 
     def _check_connection() -> None:

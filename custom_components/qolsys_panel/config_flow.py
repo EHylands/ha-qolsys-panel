@@ -91,6 +91,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._config_directory = Path()
         self._error_placeholders: dict[str, str] = {}
         self._pairing_task: asyncio.Task[dict[str, str]] | None = None
+        self._plugin_ip: str = ""
 
     @staticmethod
     @callback
@@ -180,34 +181,31 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Show the initial menu."""
         return self.async_show_menu(
             step_id="user",
-            menu_options=["pki_autodiscovery_1", "existing_pki"],
+            menu_options=["pki_autodiscovery", "existing_pki"],
         )
 
-    async def async_step_pki_autodiscovery_1(
+    async def async_step_pki_autodiscovery(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """Handle the pki_autodiscovery step - User message."""
+        """Show pairing instructions, then discover and pair the panel.
+
+        First display is an instructions form; on submit pairing runs as a background
+        task and the progress form takes over.
+        """
         self._config_directory = Path(self.hass.config.config_dir) / CONFIG_DIR
 
-        if user_input is None:
-            return self.async_show_form(
-                step_id="pki_autodiscovery_1",
-            )
-        return await self.async_step_pki_autodiscovery_2()
-
-    async def async_step_pki_autodiscovery_2(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Handle the pki_autodiscovery step 2 - Load Plugin."""
-        # First display: the "press Submit then Pair" message form.
+        # First display: the instructions form (subnet check + open the IQ Remote page).
         if user_input is None and self._pairing_task is None:
-            return self.async_show_form(step_id="pki_autodiscovery_2")
+            return self.async_show_form(step_id="pki_autodiscovery")
 
         # Run pairing as a background task instead of blocking the flow's HTTP request.
         if self._pairing_task is None:
+            # Cache the local IP for the progress message (the task sets it too, but not
+            # until it runs, which is after this first async_show_progress).
+            self._plugin_ip = await get_local_ip(hass=self.hass)
             self._pairing_task = self.hass.async_create_task(
                 self._try_connect(
-                    step="pki_autodiscovery_2",
+                    step="pki_autodiscovery",
                     host="",
                     random_mac="",
                     resume_pairing=True,
@@ -219,9 +217,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         if not self._pairing_task.done():
             return self.async_show_progress(
-                step_id="pki_autodiscovery_2",
+                step_id="pki_autodiscovery",
                 progress_action="pairing",
                 progress_task=self._pairing_task,
+                description_placeholders={"plugin_ip": self._plugin_ip},
             )
 
         return self.async_show_progress_done(next_step_id="pki_autodiscovery_finish")
@@ -385,7 +384,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Let the user choose how to re-authenticate with the panel."""
         return self.async_show_menu(
             step_id="reauth_confirm",
-            menu_options=["pki_autodiscovery_1", "existing_pki"],
+            menu_options=["pki_autodiscovery", "existing_pki"],
         )
 
     async def _async_finish(self) -> ConfigFlowResult:

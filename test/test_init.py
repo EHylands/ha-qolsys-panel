@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel integration setup."""
 
+import asyncio
 from collections.abc import Generator
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -20,6 +21,11 @@ from homeassistant.core import HomeAssistant
 
 LOST_MESSAGE = "Connection to Qolsys Panel lost, reconnecting"
 RESTORED_MESSAGE = "Connection to Qolsys Panel restored"
+
+
+async def _block_forever(*_args, **_kwargs) -> None:
+    """Simulate a controller call that never completes (blocks until cancelled)."""
+    await asyncio.Event().wait()
 
 
 @pytest.fixture(autouse=True)
@@ -141,27 +147,48 @@ async def test_unload_unregisters_connection_logger(
 @pytest.mark.parametrize(
     ("error", "expected_state"),
     [
-        (TimeoutError(), ConfigEntryState.SETUP_RETRY),
         (QolsysConfigError("boom"), ConfigEntryState.SETUP_RETRY),
         (QolsysSslError("boom"), ConfigEntryState.SETUP_ERROR),
         (QolsysMqttError("boom"), ConfigEntryState.SETUP_RETRY),
     ],
 )
-async def test_setup_connection_errors(
+async def test_setup_controller_startup_errors(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
     mock_controller: MagicMock,
     error: Exception,
     expected_state: ConfigEntryState,
 ) -> None:
-    """A failed connection during setup leaves the entry retrying or errored."""
-    mock_controller.wait_until_connected.side_effect = error
+    """A fatal run_forever failure during setup surfaces the specific reason.
+
+    The controller task exits first (before wait_until_connected), so its plain
+    exception is classified into the matching ConfigEntry* error.
+    """
+    mock_controller.run_forever.side_effect = error
+    mock_controller.wait_until_connected.side_effect = _block_forever
     mock_config_entry.add_to_hass(hass)
 
     await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is expected_state
+
+
+async def test_setup_connection_timeout(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """No connection and no fatal error within the timeout leaves the entry retrying."""
+    mock_controller.run_forever.side_effect = _block_forever
+    mock_controller.wait_until_connected.side_effect = _block_forever
+    mock_config_entry.add_to_hass(hass)
+
+    with patch("custom_components.qolsys_panel._CONNECT_TIMEOUT_SECONDS", 0.05):
+        await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
 
 
 async def test_migrate_future_version_fails(hass: HomeAssistant) -> None:

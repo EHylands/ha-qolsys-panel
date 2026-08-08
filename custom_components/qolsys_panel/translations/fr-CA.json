@@ -11,13 +11,13 @@
       "no_pki_found": "Aucun PKI existant trouvé. Jumelez d'abord le panneau pour en créer un."
     },
     "progress": {
-      "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau. En attente de la fin du jumelage…"
+      "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau. En attente de la connexion du panneau à Home Assistant à {plugin_ip}…"
     },
     "step": {
       "user": {
         "description": "Choisissez une méthode de jumelage :",
         "menu_options": {
-          "pki_autodiscovery_1": "Découverte et jumelage automatiques du panneau",
+          "pki_autodiscovery": "Découverte et jumelage automatiques du panneau",
           "existing_pki": "Utiliser un PKI existant"
         }
       },
@@ -25,16 +25,13 @@
         "title": "Panneau Qolsys - Renouveler l'authentification",
         "description": "Le panneau a rejeté le certificat client enregistré. Jumelez de nouveau le panneau pour générer un nouveau certificat, ou sélectionnez un PKI existant.",
         "menu_options": {
-          "pki_autodiscovery_1": "Découverte et jumelage automatiques du panneau",
+          "pki_autodiscovery": "Découverte et jumelage automatiques du panneau",
           "existing_pki": "Utiliser un PKI existant"
         }
       },
-      "pki_autodiscovery_1": {
+      "pki_autodiscovery": {
         "title": "Panneau Qolsys - Découverte automatique",
-        "description": "Mode de découverte automatique :\n1. Assurez-vous que Home Assistant se trouve sur le même sous-réseau que votre panneau Qolsys\n2. Ouvrez la page de jumelage IQ Remote sur le panneau Qolsys et passez à l'étape suivante"
-      },
-      "pki_autodiscovery_2": {
-        "description": "Cliquez sur le bouton « Soumettre » sur cette page, puis sur le bouton « Pair » de la page de jumelage IQ Remote."
+        "description": "Mode de découverte automatique :\n1. Assurez-vous que Home Assistant et le panneau sont sur le même sous-réseau\n2. Ouvrez la page de jumelage IQ Remote sur le panneau Qolsys\n\nCliquez sur « Soumettre » pour démarrer le jumelage."
       },
       "existing_pki": {
         "title": "Panneau Qolsys - PKI existant",

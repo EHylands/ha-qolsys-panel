@@ -11,13 +11,13 @@
       "no_pki_found": "No existing PKI found. Pair with the panel first to create one."
     },
     "progress": {
-      "pairing": "Press the **Pair** button on the panel's IQ Remote config page. Waiting for the panel to complete pairing…"
+      "pairing": "Press the **Pair** button on the panel's IQ Remote config page. Waiting for the panel to connect to Home Assistant at {plugin_ip}…"
     },
     "step": {
       "user": {
         "description": "Choose pairing method:",
         "menu_options": {
-          "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
+          "pki_autodiscovery": "Automatic Panel Discovery and Pairing",
           "existing_pki": "Use Existing PKI"
         }
       },
@@ -25,16 +25,13 @@
         "title": "Qolsys Panel - Re-authenticate",
         "description": "The panel rejected the stored client certificate. Re-pair the panel to generate a new certificate, or select an existing PKI.",
         "menu_options": {
-          "pki_autodiscovery_1": "Automatic Panel Discovery and Pairing",
+          "pki_autodiscovery": "Automatic Panel Discovery and Pairing",
           "existing_pki": "Use Existing PKI"
         }
       },
-      "pki_autodiscovery_1":{
+      "pki_autodiscovery":{
         "title": "Qolsys Panel - Automatic Panel Discovery",
-        "description": "Autodiscovery Mode:\n1. Ensure Home Assistant is on the same subnet than your Qolsys Panel\n2. Open IQ Remote pairing page on Qolsys Panel and wait for next step"
-      },
-      "pki_autodiscovery_2":{
-        "description": "Press 'Submit' button on this page and then 'Pair' button on IQ Remote pairing page."
+        "description": "Autodiscovery Mode:\n1. Make sure Home Assistant and the panel are on the same subnet\n2. Open the IQ Remote pairing page on the Qolsys Panel\n\nPress Submit to start pairing."
       },
       "existing_pki":{
         "title": "Qolsys Panel - Existing PKI",
