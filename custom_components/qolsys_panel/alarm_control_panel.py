@@ -120,6 +120,9 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         ):
             return AlarmControlPanelState.ARMING
 
+        if alarm_state == PartitionAlarmState.DELAYED:
+            return AlarmControlPanelState.PENDING
+
         if system_status == PartitionSystemStatus.ARM_STAY:
             return AlarmControlPanelState.ARMED_HOME
 
