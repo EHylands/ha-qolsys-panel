@@ -11,7 +11,7 @@
       "no_pki_found": "No existing PKI found. Pair with the panel first to create one."
     },
     "progress": {
-      "pairing": "Press the **Pair** button on the panel's IQ Remote config page. Waiting for the panel to connect to Home Assistant at {plugin_ip}…"
+      "pairing": "Press the **Pair** button on the panel's IQ Remote config page.\n\nWaiting for the panel to connect {plugin_ip}:{port}"
     },
     "step": {
       "user": {

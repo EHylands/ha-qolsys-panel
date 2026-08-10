@@ -11,7 +11,7 @@
       "no_pki_found": "Aucun PKI existant trouvé. Jumelez d'abord le panneau pour en créer un."
     },
     "progress": {
-      "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau. En attente de la connexion du panneau à Home Assistant à {plugin_ip}…"
+      "pairing": "Appuyez sur le bouton **Jumeler** dans la page de configuration IQ Remote du panneau.\n\nEn attente de la connexion du panneau à {plugin_ip}:{port}"
     },
     "step": {
       "user": {

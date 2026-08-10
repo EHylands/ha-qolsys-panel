@@ -6,6 +6,7 @@ import asyncio
 from collections.abc import Mapping
 import logging
 from pathlib import Path
+import random
 import re
 from ssl import SSLError
 from typing import Any
@@ -92,6 +93,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self._error_placeholders: dict[str, str] = {}
         self._pairing_task: asyncio.Task[dict[str, str]] | None = None
         self._plugin_ip: str = ""
+        self._pairing_port: int = 0
 
     @staticmethod
     @callback
@@ -200,9 +202,12 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
         # Run pairing as a background task instead of blocking the flow's HTTP request.
         if self._pairing_task is None:
-            # Cache the local IP for the progress message (the task sets it too, but not
-            # until it runs, which is after this first async_show_progress).
+            # Cache the local IP and pick the pairing port up front so the progress
+            # message can show where the panel should connect. The pairing server binds
+            # and advertises settings.pairing_port when it is set.
             self._plugin_ip = await get_local_ip(hass=self.hass)
+            self._pairing_port = random.randint(50000, 55000)
+            self._QolsysPanel.settings.pairing_port = self._pairing_port
             self._pairing_task = self.hass.async_create_task(
                 self._try_connect(
                     step="pki_autodiscovery",
@@ -220,7 +225,10 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 step_id="pki_autodiscovery",
                 progress_action="pairing",
                 progress_task=self._pairing_task,
-                description_placeholders={"plugin_ip": self._plugin_ip},
+                description_placeholders={
+                    "plugin_ip": self._plugin_ip,
+                    "port": str(self._pairing_port),
+                },
             )
 
         return self.async_show_progress_done(next_step_id="pki_autodiscovery_finish")
