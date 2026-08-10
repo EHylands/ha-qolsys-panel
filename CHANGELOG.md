@@ -2,6 +2,17 @@
 
 <!-- version list -->
 
+## v1.5.0 (2026-08-10)
+
+### Features
+
+- Bump qolsys-controller to 1.6.7
+  ([`633d89a`](https://github.com/EHylands/ha-qolsys-panel/commit/633d89aa547dadbc636ed79b26611fbb17f1ffbb))
+
+- Bump qolsys-controller to 1.6.7
+  ([`bae01b2`](https://github.com/EHylands/ha-qolsys-panel/commit/bae01b2fe2243f64f3e747c1b0957f085314358a))
+
+
 ## v1.4.0 (2026-07-24)
 
 ### Features
