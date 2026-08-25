@@ -116,7 +116,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install semantic-release
-        run: pip install python-semantic-release
+        run: python -m pip install -r requirements_release.txt
 
       - name: Check semantic-release version
         run: semantic-release --version
