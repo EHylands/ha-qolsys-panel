@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v1.6.0 (2026-08-25)
+
+### Chores
+
+- Semantic relase update
+  ([`353160f`](https://github.com/EHylands/ha-qolsys-panel/commit/353160f5f745c5392b4f7e02cacfad536174afe5))
+
+- **deps**: Bump mypy from 2.3.0 to 2.3.1
+  ([#112](https://github.com/EHylands/ha-qolsys-panel/pull/112),
+  [`63cf6d1`](https://github.com/EHylands/ha-qolsys-panel/commit/63cf6d108692b74c02d7390dfd0f42a06f090943))
+
+- **deps**: Bump qolsys-controller from 1.6.7 to 1.7.0
+  ([#110](https://github.com/EHylands/ha-qolsys-panel/pull/110),
+  [`aa53f30`](https://github.com/EHylands/ha-qolsys-panel/commit/aa53f30f1b076700ff2a13cbadd9fd50742ccd92))
+
+### Features
+
+- Show pending status on alarm control panel during entry delay
+  ([`232332b`](https://github.com/EHylands/ha-qolsys-panel/commit/232332b009a22648f2704f41af8c6221d19199af))
+
+
 ## v1.5.0 (2026-08-10)
 
 ### Features
