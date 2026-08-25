@@ -127,7 +127,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          semantic-release version -vv
+          semantic-release version
 
       - name: Run semantic-release (beta)
         if: github.ref == 'refs/heads/dev'
