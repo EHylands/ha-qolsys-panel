@@ -54,15 +54,12 @@ from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
-_LOGGER.setLevel(logging.DEBUG)
 
-# Force the qolsys_controller logger to DEBUG during config flow
-_qolsys_controller_logger = logging.getLogger("qolsys_controller")
-getattr(
-    _qolsys_controller_logger,
-    "orig_setLevel",
-    _qolsys_controller_logger.setLevel,
-)(logging.DEBUG)
+# Loggers raised to DEBUG for the duration of a config-flow session (see
+# QolsysPanelConfigFlow.__init__). This only takes effect while a flow is
+# running; on a normal restart the config flow does not run and these loggers
+# follow the level configured in Home Assistant.
+_CONFIG_FLOW_DEBUG_LOGGERS = ("qolsys_controller", __name__)
 
 
 # Format of PKI directories is a 12-character hex string (MAC address without colons).
@@ -86,6 +83,16 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Init config flow."""
+        # Raise DEBUG logging when a config-flow session starts so pairing and
+        # connection problems are captured in the logs. Uses orig_setLevel when
+        # present to bypass HA's logger-override guard. The level is not
+        # restored, but that is fine: config-flow code only runs while a flow is
+        # active, and a subsequent restart never runs the flow, so the running
+        # integration follows the log level configured in Home Assistant.
+        for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+            logger = logging.getLogger(name)
+            getattr(logger, "orig_setLevel", logger.setLevel)(logging.DEBUG)
+
         self._data: dict[str, Any] = {}
         self._pki_list: list[str] = []
         self._QolsysPanel = qolsys_controller()
