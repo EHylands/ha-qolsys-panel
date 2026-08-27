@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.6.1 (2026-08-27)
+
+### Bug Fixes
+
+- Disable automatic debug log level
+  ([`978c302`](https://github.com/EHylands/ha-qolsys-panel/commit/978c3020b1c472d4224f09207603cd8bc4a32ae8))
+
+### Chores
+
+- **deps**: Bump gitpython in the pip group across 1 directory
+  ([#113](https://github.com/EHylands/ha-qolsys-panel/pull/113),
+  [`17930cf`](https://github.com/EHylands/ha-qolsys-panel/commit/17930cf586d06babd816eae22f2931cddc972232))
+
+
 ## v1.6.0 (2026-08-25)
 
 ### Chores
