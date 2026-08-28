@@ -1,4 +1,4 @@
 pytest-homeassistant-custom-component==0.13.346
 qolsys-controller==1.7.0
 mypy==2.3.1
-GitPython==3.1.58
+GitPython==3.1.59
