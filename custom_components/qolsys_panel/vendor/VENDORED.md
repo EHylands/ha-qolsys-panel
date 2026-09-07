@@ -66,6 +66,16 @@ New module `qolsys_controller/file_permissions.py`: `set_mode`, `secure_file`
 - `controller.py::config_task`: run `secure_existing_material()` on startup so
   installations paired before this fix are repaired, not just new ones.
 
+`secure_tree` and `set_mode` refuse to act through a symlink (review N1), so a
+link planted in the PKI directory cannot make the startup repair pass chmod a
+file elsewhere.
+
+The three PKI files are written and then chmodded, so each exists at the umask
+default for an instant. Left that way on purpose (review N9): the containing
+directory is 0700 by then, so nothing can traverse to the file during the
+window, and reworking three `aiofiles` writes into `os.open(..., 0o600)` buys
+nothing that the directory mode does not already give.
+
 Residual: the private key is still stored unencrypted (PKCS#8, `NoEncryption`).
 Encrypting it needs a passphrase kept outside `/config`, which changes the
 pairing format and cannot be validated without a panel. A `/config` backup taken

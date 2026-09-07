@@ -310,6 +310,11 @@ class QolsysPKI:
         async with aiofiles.open(path, "wb") as f:
             await f.write(private_pem)
         # Audit H2: unencrypted PKCS#8 private key, owner-only.
+        # The file exists at the umask default for the moment between the write
+        # and the chmod. Deliberately not reworked into a single os.open with
+        # mode 0o600 (review N9): the containing directory was chmodded 0700
+        # above, so nothing can traverse to it in that window, and the mode is
+        # right before anything reads or backs it up.
         await secure_file(path)
 
         LOGGER.debug("Creating CER")

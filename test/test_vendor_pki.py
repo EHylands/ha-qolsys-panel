@@ -59,3 +59,19 @@ async def test_existing_material_is_repaired_on_startup(pki: QolsysPKI) -> None:
 def test_secure_tree_ignores_a_missing_directory(tmp_path: Path) -> None:
     """The repair pass is a no-op when nothing has been paired yet."""
     secure_tree(tmp_path / "does-not-exist")
+
+
+async def test_repair_pass_does_not_follow_symlinks(
+    pki: QolsysPKI, tmp_path: Path
+) -> None:
+    """A link planted in the PKI directory never has its target chmodded (review N1)."""
+    assert await pki.create(PKI_ID, 1024) is True
+    outsider = tmp_path / "outside.txt"
+    outsider.write_text("not ours", encoding="utf-8")
+    outsider.chmod(0o644)
+    (pki.key_file_path.parent / "link").symlink_to(outsider)
+
+    await pki.secure_existing_material()
+
+    assert _mode(outsider) == 0o644
+    assert _mode(pki.key_file_path) == SECRET_FILE_MODE

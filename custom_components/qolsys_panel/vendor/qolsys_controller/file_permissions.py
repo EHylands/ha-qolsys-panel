@@ -24,8 +24,16 @@ SECRET_DIR_MODE = 0o700
 
 
 def set_mode(path: Path, mode: int) -> None:
-    """Set path to mode, quietly doing nothing if it is already correct."""
+    """Set path to mode, quietly doing nothing if it is already correct.
+
+    Never follows a symlink (review N1): stat() and chmod() both resolve links,
+    so a link planted in the PKI directory would otherwise have its target
+    chmodded anywhere the Home Assistant user can write.
+    """
     try:
+        if path.is_symlink():
+            LOGGER.warning("Refusing to change permissions through a symlink: %s", path)
+            return
         if stat.S_IMODE(path.stat().st_mode) == mode:
             return
         path.chmod(mode)
@@ -60,11 +68,17 @@ def secure_tree(root: Path) -> None:
     keys; a one-time pass on startup fixes them instead of only protecting new
     pairings.
     """
-    if not root.is_dir():
+    if root.is_symlink() or not root.is_dir():
         return
 
     set_mode(root, SECRET_DIR_MODE)
     for entry in root.rglob("*"):
+        # rglob does not descend into a symlinked directory but does yield the
+        # link itself; set_mode refuses it, and skipping here keeps the log to
+        # one line per link (review N1).
+        if entry.is_symlink():
+            LOGGER.warning("Skipping symlink in the PKI directory: %s", entry)
+            continue
         if entry.is_dir():
             set_mode(entry, SECRET_DIR_MODE)
         elif entry.is_file():
