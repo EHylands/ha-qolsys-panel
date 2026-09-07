@@ -337,7 +337,13 @@ class QolsysController:
                 purpose=ssl.Purpose.SERVER_AUTH,
                 cafile=str(self._pki.qolsys_cer_file_path),
             )
-            ctx.set_ciphers("DEFAULT:@SECLEVEL=0")
+            # Audit M3: SECLEVEL=0 re-enables SHA-1 certificate signatures, RSA keys
+            # under 1024 bits and NULL/export cipher suites, which would make the
+            # pinned panel CA forgeable. SECLEVEL=1 is the lowest level that still
+            # accepts the panel's SHA-1/2048-bit chain without any of that. If a
+            # panel genuinely fails the handshake here, record the exact OpenSSL
+            # error before lowering it again.
+            ctx.set_ciphers("DEFAULT:@SECLEVEL=1")
             ctx.minimum_version = ssl.TLSVersion.TLSv1_2
             # Pin the panel certificate: the broker cert must chain to the .qolsys CA
             # saved during pairing. Hostname checking stays off (we connect by IP and

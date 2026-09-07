@@ -180,3 +180,16 @@ Entities are unavailable whenever the controller is not CONNECTED, so this makes
 calls) and `pki.auto_discover_pki()` (`os.scandir`) directly on the loop, right
 next to a `read_users_file` that was correctly wrapped. Both now run through
 `asyncio.to_thread`.
+
+### M3 - TLS to the panel ran at security level 0
+
+`controller.py::mqtt_open_transport_task` now sets
+`DEFAULT:@SECLEVEL=1` instead of `DEFAULT:@SECLEVEL=0`. The rest of that context
+is unchanged and was already sound: `CERT_REQUIRED` against the pinned `.qolsys`
+CA, `minimum_version = TLSv1_2`, and `tls_insecure=True` only turning off
+hostname checking.
+
+Residual: not verified against a physical panel. SECLEVEL=1 still accepts the
+SHA-1/2048-bit chain these panels are documented to present; if a panel does
+fail the handshake, the OpenSSL error appears as a QolsysSslError in the log and
+the exact message should be recorded here before the level is lowered again.
