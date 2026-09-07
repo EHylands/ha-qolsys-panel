@@ -172,3 +172,11 @@ because a deferred state write happened to land after the flip.
 
 Entities are unavailable whenever the controller is not CONNECTED, so this makes
 "the panel is unreachable" deterministic instead of a scheduling accident.
+
+### M5 - blocking filesystem I/O on the event loop
+
+`controller.py::config_task` called `settings.check_config_directory()`
+(four `is_dir()` probes, up to four `mkdir(parents=True)` and eight `resolve()`
+calls) and `pki.auto_discover_pki()` (`os.scandir`) directly on the loop, right
+next to a `read_users_file` that was correctly wrapped. Both now run through
+`asyncio.to_thread`.

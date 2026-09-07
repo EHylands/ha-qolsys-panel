@@ -174,7 +174,11 @@ class QolsysController:
         await self.set_controller_state(ControllerState.CONFIGURING)
 
         # Check and created config_directory
-        self.settings.check_config_directory(create=start_pairing)
+        # Audit M5: is_dir/mkdir/resolve are blocking calls; config_task runs on
+        # the event loop, and again on every reconnect where _is_configured is
+        # False, so a slow SD card or a network-backed /config stalls all of
+        # Home Assistant.
+        await asyncio.to_thread(self.settings.check_config_directory, start_pairing)
 
         # Audit H2: repair permissions on material written by older versions.
         await self._pki.secure_existing_material()
@@ -185,7 +189,8 @@ class QolsysController:
 
         # Config PKI
         if self.settings.auto_discover_pki:
-            if self._pki.auto_discover_pki():
+            # Audit M5: os.scandir, same reason.
+            if await asyncio.to_thread(self._pki.auto_discover_pki):
                 self.settings.random_mac = self._pki.formatted_id()
         else:
             self._pki.set_id(self.settings.random_mac)
