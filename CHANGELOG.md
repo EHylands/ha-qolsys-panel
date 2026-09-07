@@ -2,6 +2,72 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-09-07)
+
+Security release: the September 2026 audit of the integration and of
+`qolsys-controller` 1.7.1, all 18 findings. The library is now vendored under
+`custom_components/qolsys_panel/vendor/qolsys_controller/` so the findings that
+live in it could be fixed; `custom_components/qolsys_panel/vendor/VENDORED.md`
+records the upstream version, every change and the residual risks.
+
+### Breaking Changes
+
+- **Disarming now requires a user code** (C1). Existing config entries are
+  migrated to 1.1 with the option forced on; add your codes to
+  `config/qolsys_panel/users.conf` and see the README section "User Codes,
+  Arming and Disarming". Arming stays code-optional.
+- **`users.conf` is rewritten as hashes** (H3). A cleartext `user_code` is
+  hashed on the next start and the file is replaced, `0600`. Malformed entries
+  now raise instead of being silently stored as `None`.
+- **`qolsys-controller` is no longer a requirement** of the integration; the
+  manifest declares the vendored code's own dependencies (`aiofiles`,
+  `aiomqtt`, `paho-mqtt`, `cryptography`, `passlib`, `zeroconf`).
+
+### Bug Fixes
+
+- **C1**: disarm requires a code by default (`DEFAULT_DISARM_CODE_REQUIRED`),
+  with a config-entry migration, and the integration validates the code before
+  any disarm command is built.
+- **H1**: the pairing window accepts one peer, enforces the expected panel
+  address when it is known, logs the peer, binds the listener only for the
+  window, and validates the certificate and CA the panel returns before writing
+  them. Full client authentication is not implementable without a panel; the
+  residual is documented.
+- **H2**: PKI key material is written `0600` in `0700` directories, with a
+  one-time repair pass for installations paired before this release.
+- **H3**: user codes are stored as salted PBKDF2-SHA256 hashes and verified in
+  constant time.
+- **M1**: the config flow restores the log levels it raised, instead of leaving
+  the library at DEBUG until a restart.
+- **M2**: the controller notifies observers from the state transition itself, so
+  entities go unavailable on RECONNECTING deterministically.
+- **M3**: TLS to the panel moves from `@SECLEVEL=0` to `@SECLEVEL=1`.
+- **M4**: entities register an explicit state-write callback instead of
+  `schedule_update_ha_state`, which the library was calling with
+  `force_refresh=True` (a Task per event).
+- **M5**: `check_config_directory` and `auto_discover_pki` run off the event
+  loop.
+- **M7**: `Entity` is imported from `homeassistant.helpers.entity`.
+- **M8**: the MQTT bridge is pinned off and setup fails if it is not; its client
+  verifies the broker certificate and its disarm path refuses without a valid
+  code.
+- **L1**: the open-safety-zone arming guard is restored.
+- **L2**: the zone AC-status docstring matches the code.
+- **L3**: `assert` guards that matter became explicit errors.
+- **L4**: `get_local_ip` returns the first IPv4 of the default adapter and logs
+  when there is none.
+- **L5**: covered by H3 (constant-time comparison).
+
+### Testing
+
+- **M6**: the suite runs against Home Assistant 2026.9.1
+  (pytest-homeassistant-custom-component 0.13.364) and against the vendored
+  library, with the PyPI wheel uninstalled.
+- **L6**: 296 tests -> 346, including the previously untested paths: pairing
+  server, PKI file modes, user-code hashing, controller state notification,
+  disarm without a code, and entity availability driven by the real controller.
+
+
 ## v1.6.1 (2026-08-27)
 
 ### Bug Fixes
