@@ -250,3 +250,19 @@ async def test_arm_errors(controller: MagicMock, error: Exception) -> None:
     cast(AsyncMock, entity._partition.arm).side_effect = error
     with pytest.raises(HomeAssistantError):
         await entity.async_alarm_arm_away("1234")
+
+
+async def test_setup_without_unique_id_raises_value_error(
+    hass: HomeAssistant, controller: MagicMock
+) -> None:
+    """A forwarded platform reports a bad entry with ValueError (review N5).
+
+    ConfigEntryNotReady from a forwarded platform is not retried by Home
+    Assistant, it is logged as a mistake.
+    """
+    config_entry = MagicMock()
+    config_entry.runtime_data = controller
+    config_entry.unique_id = None
+
+    with pytest.raises(ValueError):
+        await async_setup_entry(hass, config_entry, MagicMock())

@@ -7,11 +7,12 @@ never shown to anyone.
 
 import json
 from pathlib import Path
+from typing import Any
 
 COMPONENT = Path("custom_components/qolsys_panel")
 
 
-def _load(name: str) -> dict:
+def _load(name: str) -> Any:
     return json.loads((COMPONENT / name).read_text(encoding="utf-8"))
 
 
