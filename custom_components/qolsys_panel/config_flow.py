@@ -11,8 +11,6 @@ import re
 from ssl import SSLError
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 import voluptuous as vol
 
 from homeassistant.components import zeroconf
@@ -52,6 +50,12 @@ from .const import (
 )
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

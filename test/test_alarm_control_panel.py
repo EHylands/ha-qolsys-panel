@@ -5,6 +5,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
+
+from custom_components.qolsys_panel.alarm_control_panel import (
+    PartitionAlarmControlPanel,
+    async_setup_entry,
+)
+from custom_components.qolsys_panel.const import DEFAULT_DISARM_CODE_REQUIRED
 from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
     PartitionAlarmState,
     PartitionArmingType,
@@ -15,19 +21,12 @@ from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
     QolsysUserCodeError,
     QolsysZoneBypassError,
 )
-
-from custom_components.qolsys_panel.alarm_control_panel import (
-    PartitionAlarmControlPanel,
-    async_setup_entry,
-)
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelState,
     CodeFormat,
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-
-from custom_components.qolsys_panel.const import DEFAULT_DISARM_CODE_REQUIRED
 
 UID = PANEL_MAC
 

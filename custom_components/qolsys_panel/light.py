@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_light import LightService
-
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -14,6 +11,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_light import LightService
 
 PARALLEL_UPDATES = 0
 

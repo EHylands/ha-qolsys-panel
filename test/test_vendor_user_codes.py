@@ -1,8 +1,8 @@
 """Tests for hashed user codes in the vendored library (audit H3, L5, L6)."""
 
 import json
-import stat
 from pathlib import Path
+import stat
 from unittest.mock import MagicMock
 
 import pytest
@@ -22,7 +22,7 @@ from custom_components.qolsys_panel.vendor.qolsys_controller.user_codes import (
 FAST = 10
 
 
-def _panel(tmp_path: Path, users: list[dict]) -> QolsysPanel:
+def _panel(tmp_path: Path, users: list[object]) -> QolsysPanel:
     """A panel whose users.conf holds the given rows."""
     path = tmp_path / "users.conf"
     path.write_text(json.dumps(users), encoding="utf-8")
@@ -111,7 +111,7 @@ def test_missing_users_file_is_not_an_error(tmp_path: Path) -> None:
         ["nonsense"],
     ],
 )
-def test_malformed_entries_are_rejected(tmp_path: Path, rows: list) -> None:
+def test_malformed_entries_are_rejected(tmp_path: Path, rows: list[object]) -> None:
     """A malformed row fails loudly instead of storing None (audit H3)."""
     panel = _panel(tmp_path, rows)
 

@@ -6,10 +6,6 @@ import asyncio
 import logging
 import ssl
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from .vendor.qolsys_controller.errors import QolsysMqttError, QolsysSslError
-
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import (
@@ -36,6 +32,9 @@ from .const import (
 from .services import async_setup_services
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from .vendor.qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -6,12 +6,6 @@ from unittest.mock import MagicMock, patch
 
 from conftest import PANEL_MAC
 import pytest
-from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
-    PartitionAlarmType,
-    PartitionQuickExitState,
-    ZoneSensorType,
-    ZoneStatus,
-)
 
 from custom_components.qolsys_panel.binary_sensor import (
     PANEL_SENSOR,
@@ -29,6 +23,12 @@ from custom_components.qolsys_panel.binary_sensor import (
     ZoneSensor_Unreachable,
     ZonesSensor,
     async_setup_entry,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    PartitionAlarmType,
+    PartitionQuickExitState,
+    ZoneSensorType,
+    ZoneStatus,
 )
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,

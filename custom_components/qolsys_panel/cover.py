@@ -5,9 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_cover import CoverService
-
 from homeassistant.components.cover import (
     ATTR_POSITION,
     CoverDeviceClass,
@@ -20,6 +17,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_cover import CoverService
 
 _LOGGER = logging.getLogger(__name__)
 

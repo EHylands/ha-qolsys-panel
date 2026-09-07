@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import logging
 
-from .vendor.qolsys_controller.errors import CommandExecutionError
 import voluptuous as vol
 
 from custom_components.qolsys_panel import entity
@@ -31,6 +30,7 @@ from .const import (
     SERVICE_TRIGGER_POLICE,
 )
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller.errors import CommandExecutionError
 
 _LOGGER = logging.getLogger(__name__)
 

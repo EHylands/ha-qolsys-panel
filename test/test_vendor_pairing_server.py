@@ -1,14 +1,14 @@
 """Tests for the vendored pairing server (audit H1, L6 item 3)."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import pytest
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
+import pytest
 
 from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
     QolsysConfigError,
@@ -32,8 +32,8 @@ def _sign(public_key, issuer_name: str) -> bytes:
         .issuer_name(name)
         .public_key(public_key)
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.now(timezone.utc))
-        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=1))
+        .not_valid_before(datetime.now(UTC))
+        .not_valid_after(datetime.now(UTC) + timedelta(days=1))
         .sign(ca_key, hashes.SHA256())
     )
     return certificate.public_bytes(encoding=serialization.Encoding.PEM)

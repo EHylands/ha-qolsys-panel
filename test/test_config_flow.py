@@ -18,7 +18,6 @@ from conftest import (
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from custom_components.qolsys_panel.vendor.qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
@@ -31,6 +30,11 @@ from custom_components.qolsys_panel.const import (
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
 )
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL

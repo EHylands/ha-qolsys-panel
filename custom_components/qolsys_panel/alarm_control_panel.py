@@ -5,6 +5,22 @@ from __future__ import annotations
 import asyncio
 import logging
 
+from homeassistant.components.alarm_control_panel import (
+    AlarmControlPanelEntity,
+    AlarmControlPanelEntityFeature,
+    AlarmControlPanelState,
+    CodeFormat,
+)
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import (
+    ConfigEntryNotReady,
+    HomeAssistantError,
+    ServiceValidationError,
+)
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
+
+from .entity import QolsysPartitionEntity
+from .types import QolsysPanelConfigEntry
 from .vendor.qolsys_controller import qolsys_controller
 from .vendor.qolsys_controller.enum_qolsys import (
     PartitionAlarmState,
@@ -16,20 +32,6 @@ from .vendor.qolsys_controller.errors import (
     QolsysUserCodeError,
     QolsysZoneBypassError,
 )
-
-from homeassistant.components.alarm_control_panel import (
-    AlarmControlPanelEntity,
-    AlarmControlPanelEntityFeature,
-    AlarmControlPanelState,
-    CodeFormat,
-)
-from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
-from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
-
-from .entity import QolsysPartitionEntity
-from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
 

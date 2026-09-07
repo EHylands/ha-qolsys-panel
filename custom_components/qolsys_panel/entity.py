@@ -5,6 +5,11 @@ from __future__ import annotations
 import logging
 from typing import cast
 
+from homeassistant.core import callback
+from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import Entity
+
+from .const import DOMAIN
 from .vendor.qolsys_controller import qolsys_controller
 from .vendor.qolsys_controller.automation.device import QolsysAutomationDevice
 from .vendor.qolsys_controller.automation.protocol_status import StatusProtocol
@@ -12,12 +17,6 @@ from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotific
 from .vendor.qolsys_controller.observable import Event
 from .vendor.qolsys_controller.partition import QolsysPartition
 from .vendor.qolsys_controller.zone import QolsysZone
-
-from homeassistant.helpers.entity import Entity
-from homeassistant.core import callback
-from homeassistant.helpers.device_registry import DeviceInfo
-
-from .const import DOMAIN
 
 
 class QolsysPanelEntity(Entity):
@@ -90,7 +89,12 @@ class QolsysPartitionEntity(QolsysPanelEntity):
             name=f"Partition{self._partition_id} - {self._partition.name}",
             model="Qolsys Partition",
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
+            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
+            # no longer in the DeviceInfo TypedDict, but it is still resolved at
+            # runtime. via_device_id needs the registry device id, which is not
+            # available here; migrate when the parent device entry is threaded
+            # through to the platforms.
+            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     async def async_added_to_hass(self) -> None:
@@ -128,7 +132,12 @@ class QolsysZoneEntity(QolsysPanelEntity):
             name=f"Zone{self._zone_id} - {self._zone.sensorname}",
             model="Qolsys Zone",
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
+            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
+            # no longer in the DeviceInfo TypedDict, but it is still resolved at
+            # runtime. via_device_id needs the registry device id, which is not
+            # available here; migrate when the parent device entry is threaded
+            # through to the platforms.
+            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     async def async_added_to_hass(self) -> None:
@@ -170,7 +179,12 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
             name=f"Device{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
             model="Automation Device [%s]" % self._autdev.protocol,
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
+            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
+            # no longer in the DeviceInfo TypedDict, but it is still resolved at
+            # runtime. via_device_id needs the registry device id, which is not
+            # available here; migrate when the parent device entry is threaded
+            # through to the platforms.
+            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     @property

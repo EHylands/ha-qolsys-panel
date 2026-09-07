@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import UTC, datetime
 import logging
 
-from .vendor.qolsys_controller import qolsys_controller
-
 from homeassistant.components.weather import (
     Forecast,
     WeatherEntity,
@@ -18,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysWeatherEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
 
 _LOGGER = logging.getLogger(__name__)
 

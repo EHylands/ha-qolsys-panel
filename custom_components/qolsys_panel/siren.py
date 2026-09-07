@@ -5,9 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_siren import SirenService
-
 from homeassistant.components.siren import SirenEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -15,6 +12,8 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_siren import SirenService
 
 _LOGGER = logging.getLogger(__name__)
 

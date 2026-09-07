@@ -5,16 +5,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
+
+from custom_components.qolsys_panel.climate import (
+    AutomationDevice_Climate,
+    async_setup_entry,
+)
 from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
     QolsysFanMode,
     QolsysHvacAction,
     QolsysHvacMode,
     QolsysTemperatureUnit,
-)
-
-from custom_components.qolsys_panel.climate import (
-    AutomationDevice_Climate,
-    async_setup_entry,
 )
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,

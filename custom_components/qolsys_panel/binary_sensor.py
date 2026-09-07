@@ -7,16 +7,6 @@ import logging
 import time
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_status import StatusService
-from .vendor.qolsys_controller.enum_qolsys import (
-    PartitionAlarmType,
-    PartitionQuickExitState,
-    QolsysNotification,
-    ZoneSensorType,
-    ZoneStatus,
-)
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -35,6 +25,15 @@ from .entity import (
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
     QolsysZoneEntity,
+)
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_status import StatusService
+from .vendor.qolsys_controller.enum_qolsys import (
+    PartitionAlarmType,
+    PartitionQuickExitState,
+    QolsysNotification,
+    ZoneSensorType,
+    ZoneStatus,
 )
 
 _LOGGER = logging.getLogger(__name__)

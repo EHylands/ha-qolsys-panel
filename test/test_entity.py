@@ -5,8 +5,6 @@ from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 
 from custom_components.qolsys_panel.entity import (
     QolsysAutomationDeviceEntity,
@@ -16,6 +14,11 @@ from custom_components.qolsys_panel.entity import (
     QolsysWeatherEntity,
     QolsysZoneEntity,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    ControllerState,
+    QolsysNotification,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 
 UID = PANEL_MAC
 
@@ -178,5 +181,5 @@ def test_handle_update_writes_state_without_force_refresh(
     entity._handle_update(Event(QolsysNotification.PANEL_STATUS_UPDATE, controller))
     entity._handle_update()
 
-    assert cast(MagicMock, entity.async_write_ha_state).call_count == 2
-    cast(MagicMock, entity.schedule_update_ha_state).assert_not_called()
+    assert entity.async_write_ha_state.call_count == 2
+    entity.schedule_update_ha_state.assert_not_called()

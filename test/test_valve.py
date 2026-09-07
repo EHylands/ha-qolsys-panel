@@ -5,11 +5,13 @@ from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_valve import ValveService
 
 from custom_components.qolsys_panel.valve import (
     AutomationDevice_Valve,
     async_setup_entry,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_valve import (
+    ValveService,
 )
 from homeassistant.components.valve import ValveEntityFeature
 from homeassistant.core import HomeAssistant

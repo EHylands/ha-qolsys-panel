@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-
 from homeassistant.components.scene import Scene
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -13,6 +11,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
 
 PARALLEL_UPDATES = 0
 

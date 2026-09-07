@@ -5,14 +5,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_thermostat import ThermostatService
-from .vendor.qolsys_controller.enum_qolsys import (
-    QolsysFanMode,
-    QolsysHvacMode,
-    QolsysTemperatureUnit,
-)
-
 from custom_components.qolsys_panel.entity import QolsysAutomationDeviceEntity
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
@@ -27,6 +19,13 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_thermostat import ThermostatService
+from .vendor.qolsys_controller.enum_qolsys import (
+    QolsysFanMode,
+    QolsysHvacMode,
+    QolsysTemperatureUnit,
+)
 
 _LOGGER = logging.getLogger(__name__)
 

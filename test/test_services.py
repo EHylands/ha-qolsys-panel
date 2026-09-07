@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock
 from conftest import PANEL_MAC
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from custom_components.qolsys_panel.vendor.qolsys_controller.errors import CommandExecutionError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
@@ -21,6 +20,9 @@ from custom_components.qolsys_panel.services import (
     async_trigger_auxilliary,
     async_trigger_fire,
     async_trigger_police,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    CommandExecutionError,
 )
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL

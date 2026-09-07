@@ -4,16 +4,6 @@ from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_battery import BatteryService
-from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_meter import MeterService
-from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_sensor import SensorService
-from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
-    PartitionError,
-    QolsysMeterScale,
-    QolsysNotification,
-    QolsysSensorScale,
-)
-from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 
 from custom_components.qolsys_panel.sensor import (
     AutomationDevice_BatteryValue,
@@ -28,6 +18,22 @@ from custom_components.qolsys_panel.sensor import (
     ZoneSensor_PowerG_Temperature,
     async_setup_entry,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_battery import (
+    BatteryService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_meter import (
+    MeterService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_sensor import (
+    SensorService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    PartitionError,
+    QolsysMeterScale,
+    QolsysNotification,
+    QolsysSensorScale,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
 

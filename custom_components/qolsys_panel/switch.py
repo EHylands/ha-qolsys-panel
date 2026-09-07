@@ -4,9 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-from .vendor.qolsys_controller.automation.service_outlet import OutletService
-
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
@@ -15,6 +12,8 @@ from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity, QolsysPartitionEntity
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_outlet import OutletService
 
 PARALLEL_UPDATES = 0
 

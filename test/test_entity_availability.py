@@ -23,7 +23,7 @@ async def test_entity_goes_unavailable_when_the_panel_drops() -> None:
     controller = QolsysController()
     entity = QolsysPanelEntity(controller, UID)
     writes: list[bool] = []
-    entity.async_write_ha_state = lambda: writes.append(entity.available)  # type: ignore[method-assign]
+    entity.async_write_ha_state = lambda: writes.append(entity.available)
 
     await entity.async_added_to_hass()
     await controller.set_controller_state(ControllerState.CONNECTING)
@@ -41,7 +41,7 @@ async def test_entity_stops_following_after_removal() -> None:
     controller = QolsysController()
     entity = QolsysPanelEntity(controller, UID)
     writes: list[bool] = []
-    entity.async_write_ha_state = lambda: writes.append(entity.available)  # type: ignore[method-assign]
+    entity.async_write_ha_state = lambda: writes.append(entity.available)
 
     await entity.async_added_to_hass()
     await entity.async_will_remove_from_hass()

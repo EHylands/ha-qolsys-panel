@@ -1,7 +1,7 @@
 """Tests for the vendored PKI file permissions (audit H2, L6 item 3)."""
 
-import stat
 from pathlib import Path
+import stat
 from unittest.mock import MagicMock
 
 import pytest

@@ -1,8 +1,6 @@
 import logging
 from typing import Any
 
-from .vendor.qolsys_controller import qolsys_controller
-
 from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
 from homeassistant.core import HomeAssistant
@@ -11,6 +9,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
 
 _LOGGER = logging.getLogger(__name__)
 
