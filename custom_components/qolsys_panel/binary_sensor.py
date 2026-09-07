@@ -413,7 +413,11 @@ class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return if this zone ac status is not normal."""
+        """Return True while this zone has AC power (device_class PLUG: on == plugged in).
+
+        The neighbouring battery sensor genuinely does invert ("Normal" means
+        the battery is fine, so is_on is != "Normal"); this one does not.
+        """
         return self._zone.ac_status == "Normal"
 
 
