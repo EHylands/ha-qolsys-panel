@@ -5,16 +5,25 @@
     "@EHylands"
   ],
   "config_flow": true,
-  "dependencies": ["network","zeroconf"],
+  "dependencies": [
+    "network",
+    "zeroconf"
+  ],
   "dhcp": [
-    { "macaddress": "3C3178*" },
-    { "macaddress": "18C1E2*" }
+    {
+      "macaddress": "3C3178*"
+    },
+    {
+      "macaddress": "18C1E2*"
+    }
   ],
   "documentation": "https://github.com/EHylands/ha-qolsys-panel",
   "integration_type": "device",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/EHylands/ha-qolsys-panel/issues",
-  "loggers": ["custom_components.qolsys_panel"],
+  "loggers": [
+    "custom_components.qolsys_panel"
+  ],
   "requirements": [
     "aiofiles>=25.1.0",
     "aiomqtt>=2.5.1",
@@ -23,6 +32,5 @@
     "passlib>=1.7.4",
     "zeroconf>=0.148.0"
   ],
-  "version": "1.7.0"
+  "version": "1.7.1"
 }
-

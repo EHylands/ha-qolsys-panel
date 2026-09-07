@@ -272,3 +272,8 @@ says it in the user-codes section.
 The L1 guard is a behavior change users meet in normal life: a wet water sensor
 or a smoke detector in fault stops arming, where earlier versions armed silently.
 The error names the zones, and the README's alarm-entity description says so.
+
+
+## 2026-09-07 follow-up: SECLEVEL back to 0 (M3 reverted)
+
+The first pairing against a real IQ Panel failed the post-pairing TLS connection with `[SSL: CA_MD_TOO_WEAK] ca md too weak` at `load_cert_chain`: the panel's CA uses a digest that OpenSSL security level 1 rejects. `controller.py` is back to `DEFAULT:@SECLEVEL=0`, as upstream ships. Residual: level 0 permits weak signature digests and small keys in general; what protects this connection is the pin to the panel's own CA saved at pairing, the TLS 1.2 floor, and the LAN-only path. A firmware that moves the panel CA to SHA-256 would allow level 1 again.
