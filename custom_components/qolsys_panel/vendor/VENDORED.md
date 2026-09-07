@@ -152,7 +152,10 @@ What was implemented instead, all in `pairing_server.py`:
   on an unverifiable guess is worse than reporting it.
 
 The config flow now tells the user to pair on a trusted network and to check the
-logged address (`strings.json`).
+logged address (`strings.json` **and** `translations/en.json` - Home Assistant
+serves a custom integration's config-flow text from the translation file, so a
+notice that lands only in `strings.json` is never shown; `test_translations.py`
+keeps the two identical).
 
 **Residual risk.** An attacker already on the LAN who connects during the
 pairing window, before the panel does, still becomes the device Home Assistant
