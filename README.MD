@@ -121,8 +121,21 @@ readable only (`0600`):
 ```
 
 Codes are then verified by a constant-time comparison against that hash. To
-change or add a code, write the `user_code` form again and restart; a malformed
-entry is rejected with an error in the log rather than silently ignored.
+change or add a code, write the `user_code` form again and restart.
+
+**If `users.conf` does not exist, every disarm from Home Assistant is refused.**
+The keypad still appears and every code comes back as "Invalid user code",
+because there is nothing to check it against. Home Assistant raises a repair
+issue and a log warning saying exactly that. The physical panel is unaffected,
+and you can turn the check off again on the integration's **Configure** page.
+
+**A malformed entry is skipped, not fatal.** The row is logged, counted and
+reported as a repair issue, and the rest of the file still loads: a typo in one
+code must not take the zone sensors and the alarm state offline with it. The
+file is left exactly as written in that case (so the entry you need to fix is
+still there), which also means cleartext codes in it are not replaced by hashes
+until the malformed rows are fixed. A `users.conf` that is not valid JSON at all
+*does* fail the integration setup, because no codes could be read.
 
 Note that a 4-digit code has only 10,000 possibilities, so the hash slows an
 attacker down rather than making a stolen file safe. Keep `users.conf` out of
@@ -174,7 +187,7 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 
 ### Partitions
 
-- **Alarm Control Panel** (`alarm_control_panel`): one per partition; reports the arming status and alarm state, and supports arming (home, away, night) and disarming.
+- **Alarm Control Panel** (`alarm_control_panel`): one per partition; reports the arming status and alarm state, and supports arming (home, away, night) and disarming. **Arming fails while a safety zone is open** (smoke, CO or water): those zones cannot be bypassed, so the action returns "Zone bypass required" naming the zones, rather than arming a system that cannot protect them. Earlier versions armed silently in that case.
 - **Binary sensors** (`binary_sensor`): Exit Sounds, Entry Delays and Quick Exit status, plus dedicated Fire, Police, CO and Auxiliary alarm-active sensors.
 - **Switches** (`switch`): toggle Exit Sounds and Entry Delay, and set the Arm Stay Instant (Arm Home with no exit delay) and Arm Stay Silent Disarming modifiers for the partition.
 - **Sensor** (`sensor`): the last error reported by the partition.

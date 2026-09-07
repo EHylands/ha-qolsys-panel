@@ -92,6 +92,7 @@ class QolsysPanel:
         ]
 
         self._users: list[QolsysUser] = []
+        self._users_file_malformed_rows: int = 0
         self._unique_id: str = ""
 
         self._imei: str = ""
@@ -109,12 +110,23 @@ class QolsysPanel:
             {"id": 1, "user_code": "1234"}
 
         The second form is hashed and the file is rewritten in place, so a
-        cleartext code lives on disk only until the next start. Malformed rows
-        are rejected loudly: an unguarded user.get() used to store None, and a
-        stored None then matched a None lookup.
+        cleartext code lives on disk only until the next start.
+
+        A malformed row is logged and skipped, not raised (review N4): raising
+        here fails the config entry and takes every entity with it - the zone
+        sensors, the alarm state, the connection sensor - and losing monitoring
+        because of a typo in one code is worse than losing that one code. The
+        row still cannot be used: an unguarded user.get() used to store None,
+        and a stored None then matched a None lookup. `users_file_malformed_rows`
+        carries the count so the caller can surface it.
+
+        A file that is not readable JSON at all still raises: there are no codes
+        to load, and the operator needs to know before disarm silently stops
+        working.
         """
         # Clear existing users list
         self._users.clear()
+        self._users_file_malformed_rows = 0
 
         path = self._controller.settings.users_file_path
         if not path.is_file():
@@ -138,19 +150,26 @@ class QolsysPanel:
 
         for user in users:
             if not isinstance(user, dict) or not isinstance(user.get("id"), int):
-                raise QolsysConfigError(f"users.conf: malformed entry {user!r}")
+                LOGGER.error("users.conf: ignoring malformed entry %r", user)
+                self._users_file_malformed_rows += 1
+                continue
 
             stored = user.get("user_code_hash") or ""
             code = user.get("user_code") or ""
 
             if not isinstance(stored, str) or not isinstance(code, str):
-                raise QolsysConfigError(f"users.conf: malformed entry {user!r}")
+                LOGGER.error("users.conf: ignoring malformed entry %r", user)
+                self._users_file_malformed_rows += 1
+                continue
 
             if not stored or not is_hash(stored):
                 if not code:
-                    raise QolsysConfigError(
-                        f"users.conf: entry {user.get('id')} has no user_code or user_code_hash"
+                    LOGGER.error(
+                        "users.conf: ignoring entry %s, it has no user_code or user_code_hash",
+                        user.get("id"),
                     )
+                    self._users_file_malformed_rows += 1
+                    continue
                 stored = hash_user_code(code)
                 needs_rewrite = True
 
@@ -159,7 +178,15 @@ class QolsysPanel:
             qolsys_user.user_code_hash = stored
             self._users.append(qolsys_user)
 
-        if needs_rewrite:
+        if self._users_file_malformed_rows:
+            LOGGER.warning(
+                "users.conf: %d entries ignored; fix them and restart. The file is left"
+                " as it is so the entries are still there to fix",
+                self._users_file_malformed_rows,
+            )
+        elif needs_rewrite:
+            # Only rewrite a file we understood completely: rewriting one with a
+            # malformed row would drop the very line the operator has to fix.
             self._write_users_file(path)
 
         return
@@ -180,6 +207,16 @@ class QolsysPanel:
             "users.conf contained cleartext user codes; they have been replaced by hashes in %s",
             path,
         )
+
+    @property
+    def users(self) -> list[QolsysUser]:
+        """The user codes loaded from users.conf, as hashes."""
+        return self._users
+
+    @property
+    def users_file_malformed_rows(self) -> int:
+        """How many users.conf entries were ignored on the last load (review N4)."""
+        return self._users_file_malformed_rows
 
     @property
     def db(self) -> QolsysDB:

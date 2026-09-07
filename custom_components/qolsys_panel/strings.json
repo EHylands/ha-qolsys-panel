@@ -79,6 +79,16 @@
         }
       }
     },
+  "issues": {
+    "no_user_codes": {
+      "title": "Qolsys Panel: no user codes configured",
+      "description": "Disarming requires a user code, but {path} holds no codes, so every disarm from Home Assistant is refused. Add one entry per user to that file, as shown in the integration README, and restart Home Assistant; your codes are replaced by hashes on the next start. The physical panel is unaffected. To go back to disarming without a code, turn the option off on the integration's Configure page."
+    },
+    "malformed_user_codes": {
+      "title": "Qolsys Panel: some user codes could not be read",
+      "description": "{count} entries in {path} were ignored because they are malformed, so those codes will not disarm. The file has been left as it is: fix the entries listed in the log and restart Home Assistant."
+    }
+  },
   "exceptions": {
     "integration_not_found": {
       "message": "Integration \"{target}\" not found in registry."

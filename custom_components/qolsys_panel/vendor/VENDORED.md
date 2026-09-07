@@ -102,6 +102,13 @@ iterations, 16-byte random salt, stored as
 - `commands/panel.py`: `check_user` now derives a KDF, so both call sites run it
   with `asyncio.to_thread` rather than on the event loop.
 
+A malformed row is logged, counted (`QolsysPanel.users_file_malformed_rows`) and
+skipped rather than raising (review N4): raising failed the config entry and took
+every entity with it, and losing the zone sensors and the alarm state because of
+a typo in one code is worse than losing that one code. A file that is not
+readable JSON still raises. A file with a malformed row is never rewritten, so
+the line the operator has to fix is still there afterwards.
+
 Residual: a 4-digit code has 10,000 possibilities, so a stolen users.conf is
 still brute-forceable offline; the hash costs an attacker roughly 25 ms per
 guess and removes the cleartext. The panel still receives only a user id, so
@@ -226,3 +233,20 @@ warning anywhere. The guard is restored: open safety zones raise
 Residual: a safety zone genuinely cannot be bypassed on these panels, so this
 is the behavior the code intended; if a specific panel disagrees the error names
 the zones, which is enough to tell.
+
+### Residual: disarming from Home Assistant needs `users.conf` to exist
+
+Added after review (residual 9). The C1 default means a fresh install refuses
+every disarm until the operator creates `config/qolsys_panel/users.conf`, and
+`read_users_file` returns quietly when the file is absent, so nothing used to
+explain it. Failing closed is right for an alarm and the physical panel is
+unaffected, but it is the change most likely to be experienced as "the
+integration broke", so the integration now logs a warning and raises a repair
+issue naming the file (`__init__.py::_async_report_user_codes`), and the README
+says it in the user-codes section.
+
+### Residual: arming now fails with an open safety zone
+
+The L1 guard is a behavior change users meet in normal life: a wet water sensor
+or a smoke detector in fault stops arming, where earlier versions armed silently.
+The error names the zones, and the README's alarm-entity description says so.

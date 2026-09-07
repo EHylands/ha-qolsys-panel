@@ -25,6 +25,7 @@ from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
 )
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 
 LOST_MESSAGE = "Connection to Qolsys Panel lost, reconnecting"
 RESTORED_MESSAGE = "Connection to Qolsys Panel restored"
@@ -105,6 +106,75 @@ async def test_setup_fails_if_the_bridge_cannot_be_disabled(
         assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
     finally:
         del type(mock_controller.settings).mqtt_bridge_enabled
+
+
+async def test_missing_user_codes_are_reported(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Disarm needs a code but users.conf holds none: say so (review N3)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.settings.users_file_path = "/config/qolsys_panel/users.conf"
+    mock_controller.panel.users = []
+    mock_controller.panel.users_file_malformed_rows = 0
+    mock_config_entry.add_to_hass(hass)
+    caplog.set_level(logging.WARNING)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert "holds no codes" in caplog.text
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(
+        DOMAIN, f"no_user_codes_{mock_config_entry.entry_id}"
+    )
+
+
+async def test_user_codes_present_raises_no_issue(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """With codes loaded there is nothing to report (review N3)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.panel.users = [MagicMock()]
+    mock_controller.panel.users_file_malformed_rows = 0
+    mock_config_entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    issues = ir.async_get(hass)
+    assert (
+        issues.async_get_issue(DOMAIN, f"no_user_codes_{mock_config_entry.entry_id}")
+        is None
+    )
+
+
+async def test_malformed_user_codes_are_reported(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Ignored users.conf rows are surfaced instead of failing setup (review N4)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.panel.users = [MagicMock()]
+    mock_controller.panel.users_file_malformed_rows = 2
+    mock_config_entry.add_to_hass(hass)
+    caplog.set_level(logging.WARNING)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert "were ignored because they are malformed" in caplog.text
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(
+        DOMAIN, f"malformed_user_codes_{mock_config_entry.entry_id}"
+    )
 
 
 async def test_log_when_unavailable(
