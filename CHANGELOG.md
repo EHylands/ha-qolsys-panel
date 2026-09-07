@@ -58,14 +58,54 @@ records the upstream version, every change and the residual risks.
   when there is none.
 - **L5**: covered by H3 (constant-time comparison).
 
+### Review Fixes
+
+An independent review of the audit fixes found two blocking issues in the H1
+mitigation surface and nine smaller ones; all are addressed here.
+
+- **B1**: the "pair on a network you trust" notice was added to `strings.json`
+  only, and Home Assistant serves config-flow text from
+  `translations/<lang>.json`, so no user ever saw it. Copied across, with a test
+  that keeps the two files identical.
+- **B2**: the expected-panel-address check was inert on the autodiscovery path,
+  because the flow started pairing with an empty host and discarded the address
+  DHCP/zeroconf had already found. That check is the only control that stops an
+  attacker winning the mDNS race, so it now gets the discovered address.
+- **N1**: the PKI permission repair pass no longer acts through symlinks.
+- **N2**: the config flow restores its log levels on every exit, including the
+  two `AbortFlow` paths and a dialog the user simply closes.
+- **N3**: a warning and a repair issue when a code is required to disarm but
+  `users.conf` holds none - previously every code was refused with nothing in
+  the log to say why.
+- **N4**: a malformed `users.conf` row is logged, counted and skipped instead of
+  failing the config entry and removing every entity. The file is left as
+  written so the row can be fixed.
+- **N5**: platform setups raise `ValueError` for a missing unique_id;
+  `ConfigEntryNotReady` from a forwarded platform is not retried by HA.
+- **N6**: one raising observer can no longer break the controller's reconnect
+  loop.
+- **N7**: the migration's warning no longer looks up the disarm option with the
+  arm constant.
+- **N8**: `follow_imports = skip` dropped, so call sites into the vendored
+  library are type-checked under any mypy invocation. The decision not to delete
+  the unused `mqtt_bridge` package yet is recorded in VENDORED.md.
+- **N9**: the write-then-chmod window on PKI files is left as is, deliberately,
+  with the reasoning recorded: the containing directory is 0700 before the file
+  exists.
+
+Two behaviours worth knowing about before upgrading, both now in the README:
+**disarming from Home Assistant fails until `config/qolsys_panel/users.conf`
+exists**, and **arming fails while a safety zone (smoke, CO, water) is open**.
+
 ### Testing
 
 - **M6**: the suite runs against Home Assistant 2026.9.1
   (pytest-homeassistant-custom-component 0.13.364) and against the vendored
   library, with the PyPI wheel uninstalled.
-- **L6**: 296 tests -> 346, including the previously untested paths: pairing
-  server, PKI file modes, user-code hashing, controller state notification,
-  disarm without a code, and entity availability driven by the real controller.
+- **L6**: 296 tests -> 365, including the previously untested paths: pairing
+  server (guards and a full handshake), PKI file modes, user-code hashing,
+  controller state notification, disarm without a code, and entity availability
+  driven by the real controller.
 
 
 ## v1.6.1 (2026-08-27)

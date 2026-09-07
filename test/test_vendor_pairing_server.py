@@ -1,9 +1,9 @@
 """Tests for the vendored pairing server (audit H1, L6 item 3)."""
 
 import asyncio
-import stat
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+import stat
 from unittest.mock import AsyncMock, MagicMock
 
 from cryptography import x509
