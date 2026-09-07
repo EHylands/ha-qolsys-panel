@@ -9,10 +9,12 @@ from .vendor.qolsys_controller import qolsys_controller
 from .vendor.qolsys_controller.automation.device import QolsysAutomationDevice
 from .vendor.qolsys_controller.automation.protocol_status import StatusProtocol
 from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from .vendor.qolsys_controller.observable import Event
 from .vendor.qolsys_controller.partition import QolsysPartition
 from .vendor.qolsys_controller.zone import QolsysZone
 
 from homeassistant.components.sensor import Entity
+from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import DOMAIN
@@ -37,16 +39,28 @@ class QolsysPanelEntity(Entity):
         """Return True if entity is available."""
         return self.QolsysPanel.controller_state == ControllerState.CONNECTED
 
+    @callback
+    def _handle_update(self, event: Event | None = None) -> None:
+        """Write the new state.
+
+        The event payload is unused: every property re-reads the library model.
+        Registered instead of schedule_update_ha_state, whose single positional
+        parameter made the observable pass the Event as force_refresh=True, so
+        every zone opening and panel ping built a coroutine and a Task for an
+        update method that does not exist (audit M4).
+        """
+        self.async_write_ha_state()
+
     async def async_added_to_hass(self) -> None:
         """Observe connection_status changes."""
         self.QolsysPanel.state.register(
-            QolsysNotification.PANEL_STATUS_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PANEL_STATUS_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing connection_status changes."""
         self.QolsysPanel.state.unregister(
-            QolsysNotification.PANEL_STATUS_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PANEL_STATUS_UPDATE, self._handle_update
         )
 
 
@@ -83,14 +97,14 @@ class QolsysPartitionEntity(QolsysPanelEntity):
         """Observe changes."""
         await super().async_added_to_hass()
         self._partition.register(
-            QolsysNotification.PARTITION_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PARTITION_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self._partition.unregister(
-            QolsysNotification.PARTITION_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PARTITION_UPDATE, self._handle_update
         )
 
 
@@ -121,14 +135,14 @@ class QolsysZoneEntity(QolsysPanelEntity):
         """Observe changes."""
         await super().async_added_to_hass()
         self._zone.register(
-            QolsysNotification.ZONE_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.ZONE_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self._zone.unregister(
-            QolsysNotification.ZONE_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.ZONE_UPDATE, self._handle_update
         )
 
 
@@ -176,14 +190,14 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
         """Observe changes."""
         await super().async_added_to_hass()
         self._autdev.register(
-            QolsysNotification.AUTOMATION_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.AUTOMATION_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self._autdev.unregister(
-            QolsysNotification.AUTOMATION_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.AUTOMATION_UPDATE, self._handle_update
         )
 
 
@@ -206,14 +220,14 @@ class QolsysPanelSensorEntity(QolsysPanelEntity):
         """Observe changes."""
         await super().async_added_to_hass()
         self.QolsysPanel.state.register(
-            QolsysNotification.PANEL_SETTINGS_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PANEL_SETTINGS_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self.QolsysPanel.state.unregister(
-            QolsysNotification.PANEL_SETTINGS_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.PANEL_SETTINGS_UPDATE, self._handle_update
         )
 
 
@@ -235,12 +249,12 @@ class QolsysWeatherEntity(QolsysPanelEntity):
         """Observe changes."""
         await super().async_added_to_hass()
         self.QolsysPanel.state.weather.register(
-            QolsysNotification.WEATHER_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.WEATHER_UPDATE, self._handle_update
         )
 
     async def async_will_remove_from_hass(self) -> None:
         """Stop observing changes."""
         await super().async_will_remove_from_hass()
         self.QolsysPanel.state.weather.unregister(
-            QolsysNotification.WEATHER_UPDATE, self.schedule_update_ha_state
+            QolsysNotification.WEATHER_UPDATE, self._handle_update
         )
