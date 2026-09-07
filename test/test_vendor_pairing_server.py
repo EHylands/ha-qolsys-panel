@@ -1,5 +1,7 @@
 """Tests for the vendored pairing server (audit H1, L6 item 3)."""
 
+import asyncio
+import stat
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
@@ -22,9 +24,10 @@ PKI_ID = "aa:bb:cc:dd:ee:ff"
 PANEL_IP = "192.168.1.50"
 
 
-def _sign(public_key, issuer_name: str) -> bytes:
+def _sign(public_key, issuer_name: str, ca_key=None) -> bytes:
     """Sign a certificate for public_key, the way a panel would."""
-    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+    if ca_key is None:
+        ca_key = rsa.generate_private_key(public_exponent=65537, key_size=1024)
     name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, issuer_name)])
     certificate = (
         x509.CertificateBuilder()
@@ -159,3 +162,71 @@ async def test_timeout_closes_the_listening_socket(paired) -> None:
         await server.wait_until_paired()
 
     listening.close.assert_called_once()
+
+
+async def test_a_complete_pairing_exchange_succeeds(paired) -> None:
+    """The whole handshake still works with the H1 guards in place.
+
+    The other cases here exercise the guards; this one walks the exchange a real
+    panel performs, so a mitigation that quietly broke pairing would fail a test
+    rather than a house (review, test-review section).
+    """
+    server, settings, pki = paired
+    settings.panel_ip = ""
+    settings.random_mac = "aa:bb:cc:dd:ee:01"
+
+    our_key = serialization.load_pem_private_key(
+        pki.key_file_path.read_bytes(), password=None
+    )
+    ca_key = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+    client_pem = _sign(our_key.public_key(), "panel", ca_key)
+    ca_pem = _sign(ca_key.public_key(), "panel", ca_key)
+
+    panel_mac = b"AA:BB:CC:DD:EE:FF"
+    reader = asyncio.StreamReader()
+    reader.feed_data(len(panel_mac).to_bytes(2, "big") + panel_mac)
+    reader.feed_data(client_pem)
+    reader.feed_data(ca_pem)
+    reader.feed_eof()
+
+    writer = _writer(PANEL_IP)
+    writer.drain = AsyncMock()
+
+    await server.handle_client(reader, writer)
+
+    assert server._pairing_done.is_set()
+    assert server._pairing_error is None
+    assert settings.panel_mac == "AA:BB:CC:DD:EE:FF"
+    assert settings.panel_ip == PANEL_IP
+    assert pki.secure_file_path.read_bytes() == client_pem
+    assert pki.qolsys_cer_file_path.read_bytes() == ca_pem
+    # Audit H2: both files land owner-only.
+    assert stat.S_IMODE(pki.secure_file_path.stat().st_mode) == 0o600
+    assert stat.S_IMODE(pki.qolsys_cer_file_path.stat().st_mode) == 0o600
+    # The panel is sent our MAC and our CSR.
+    sent = b"".join(call.args[0] for call in writer.write.call_args_list)
+    assert b"aa:bb:cc:dd:ee:01" in sent
+    assert pki.csr_file_path.read_bytes() in sent
+
+
+async def test_a_certificate_for_another_key_never_reaches_disk(paired) -> None:
+    """A failed exchange leaves no half-written trust material (audit H1)."""
+    server, settings, pki = paired
+    settings.panel_ip = ""
+    settings.random_mac = "aa:bb:cc:dd:ee:01"
+    attacker = rsa.generate_private_key(public_exponent=65537, key_size=1024)
+
+    panel_mac = b"AA:BB:CC:DD:EE:FF"
+    reader = asyncio.StreamReader()
+    reader.feed_data(len(panel_mac).to_bytes(2, "big") + panel_mac)
+    reader.feed_data(_sign(attacker.public_key(), "attacker"))
+    reader.feed_eof()
+
+    writer = _writer(PANEL_IP)
+    writer.drain = AsyncMock()
+
+    await server.handle_client(reader, writer)
+
+    assert isinstance(server._pairing_error, QolsysConfigError)
+    assert not pki.secure_file_path.exists()
+    assert not pki.qolsys_cer_file_path.exists()

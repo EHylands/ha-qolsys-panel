@@ -1,4 +1,4 @@
-"""Arming refuses to proceed with an open safety zone (audit L1)."""
+"""Library-side arm and disarm guards (audit L1, C1 defence in depth)."""
 
 from unittest.mock import MagicMock
 
@@ -12,6 +12,7 @@ from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import 
     TroubleZoneStatus,
 )
 from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysUserCodeError,
     QolsysZoneBypassError,
 )
 
@@ -56,3 +57,32 @@ async def test_arm_refuses_open_zones_when_auto_bypass_is_off(
 
     with pytest.raises(QolsysZoneBypassError):
         await commands.arm("1", PartitionArmingType.ARM_AWAY)
+
+
+async def test_disarm_refuses_an_unknown_code_in_the_library(
+    commands: PanelCommands,
+) -> None:
+    """The library re-checks the code, so the entity guard cannot be bypassed.
+
+    The integration validates before calling _partition.disarm (audit C1); this
+    asserts the second line of defence for a caller that reaches the command
+    service directly.
+    """
+    commands._controller.settings.check_user_code_on_disarm = True
+    commands._controller.panel.check_user = MagicMock(return_value=-1)
+
+    with pytest.raises(QolsysUserCodeError):
+        await commands.disarm("1", "9999")
+
+    commands._controller.panel.check_user.assert_called_once_with("9999")
+
+
+async def test_disarm_refuses_an_empty_code_in_the_library(
+    commands: PanelCommands,
+) -> None:
+    """An empty code is not a valid code either."""
+    commands._controller.settings.check_user_code_on_disarm = True
+    commands._controller.panel.check_user = MagicMock(return_value=-1)
+
+    with pytest.raises(QolsysUserCodeError):
+        await commands.disarm("1", "")
