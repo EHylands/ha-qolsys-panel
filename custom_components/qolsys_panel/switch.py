@@ -128,10 +128,14 @@ class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEnt
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_exit_sounds = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_exit_sounds = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
@@ -165,10 +169,14 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_entry_delay = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_entry_delay = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_ArmStayInstant(
@@ -204,10 +212,14 @@ class PartitionSwitch_ArmStayInstant(
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_stay_instant = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_stay_instant = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_SilentDisarming(
@@ -243,7 +255,11 @@ class PartitionSwitch_SilentDisarming(
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_stay_silent_disarming = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_stay_silent_disarming = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()

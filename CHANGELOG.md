@@ -1,3 +1,7 @@
+## 1.7.5
+
+- The arm-flag switches redraw after toggling (upstream never wrote the new state, so the dashboard showed the old value until the next update). Tests updated for the 1.7.4 default change.
+
 ## 1.7.4
 
 - The arm-flag switches (exit sounds, entry delay, arm-stay instant, silent disarming) keep the library defaults on a fresh install instead of starting off. Upstream treated a missing saved state as off, so a new install armed from Home Assistant with no entry delay.

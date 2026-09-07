@@ -107,13 +107,32 @@ async def test_partition_switch_restore_on(
 async def test_partition_switch_restore_off(
     controller: MagicMock, switch_cls, attr
 ) -> None:
-    """No restore state leaves the partition command flag false."""
+    """A saved 'off' state sets the partition command flag false."""
     switch = switch_cls(controller, "1", UID)
-    switch.async_get_last_state = AsyncMock(return_value=None)
+    switch.async_get_last_state = AsyncMock(return_value=MagicMock(state="off"))
 
     await switch.async_added_to_hass()
 
     assert getattr(switch._partition, attr) is False
+
+
+@pytest.mark.parametrize(("switch_cls", "attr"), PARTITION_SWITCHES)
+async def test_partition_switch_no_saved_state_keeps_library_default(
+    controller: MagicMock, switch_cls, attr
+) -> None:
+    """A fresh install (no saved state) must not force the flag off.
+
+    Upstream did, which armed a new install with entry delay and exit sounds
+    disabled. The library default is left in place instead.
+    """
+    switch = switch_cls(controller, "1", UID)
+    sentinel = object()
+    setattr(switch._partition, attr, sentinel)
+    switch.async_get_last_state = AsyncMock(return_value=None)
+
+    await switch.async_added_to_hass()
+
+    assert getattr(switch._partition, attr) is sentinel
 
 
 def test_outlet_is_on(controller: MagicMock) -> None:
