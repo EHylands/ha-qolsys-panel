@@ -53,9 +53,11 @@ class QolsysPanelEntity(Entity):
         if (DOMAIN, self._panel_unique_id) in info.get("identifiers", set()):
             return info  # this IS the panel device
         linked = DeviceInfo(**info)
-        if getattr(self, "hass", None) is not None:
-            parent = dr.async_get(self.hass).async_get_device(
-                identifiers={(DOMAIN, self._panel_unique_id)}
+        platform = getattr(self, "platform", None)
+        entry = getattr(platform, "config_entry", None) if platform else None
+        if getattr(self, "hass", None) is not None and entry is not None:
+            parent = dr.async_get(self.hass).async_get_device_by_identifier(
+                (DOMAIN, self._panel_unique_id), entry.entry_id
             )
             if parent is not None:
                 linked["via_device_id"] = parent.id

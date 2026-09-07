@@ -1,3 +1,7 @@
+## 1.7.3
+
+- The parent-device lookup uses `async_get_device_by_identifier` (the current registry API) instead of the deprecated `async_get_device`.
+
 ## 1.7.2
 
 - Child devices (partitions, zones, automation devices) link to the panel with `via_device_id` resolved from the device registry instead of the deprecated `via_device` tuple. On HA 2026.9 the deprecation is raised as an error when an entity is re-added from the settings UI, which is how the alarm entity failed to come back after a rename.
