@@ -6,6 +6,7 @@ from .vendor.qolsys_controller import qolsys_controller
 from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPanelEntity
@@ -24,8 +25,10 @@ async def async_setup_entry(
     """Set up media players."""
     entities: list[MediaPlayerEntity] = []
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     # Add Doorbell Binary Sensor
     entities.append(Qolsys_MediaPlayer(hass, QolsysPanel, unique_id))

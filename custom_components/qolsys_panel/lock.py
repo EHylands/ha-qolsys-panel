@@ -9,6 +9,7 @@ from .vendor.qolsys_controller.automation.service_lock import LockService
 
 from homeassistant.components.lock import LockEntity, LockEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
@@ -23,8 +24,10 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
     entities: list[LockEntity] = []
 
     # Append Automation Device Locks
@@ -55,7 +58,10 @@ class AutomationDeviceLock(QolsysAutomationDeviceEntity, LockEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_lock{endpoint}"
         service = self._autdev.service_get(LockService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no LockService at endpoint {endpoint}"
+            )
         self._service: LockService = service
         self._attr_name = f"Lock{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 

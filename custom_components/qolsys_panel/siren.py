@@ -10,6 +10,7 @@ from .vendor.qolsys_controller.automation.service_siren import SirenService
 
 from homeassistant.components.siren import SirenEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
@@ -27,8 +28,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up External Sirens."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     entities: list[SirenEntity] = []
 
@@ -60,7 +63,10 @@ class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_siren{endpoint}"
         service = self._autdev.service_get(SirenService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no SirenService at endpoint {endpoint}"
+            )
         self._service: SirenService = service
         self._attr_name = f"Siren{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 

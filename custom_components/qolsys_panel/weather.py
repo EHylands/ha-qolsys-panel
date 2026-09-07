@@ -13,6 +13,7 @@ from homeassistant.components.weather import (
     WeatherEntityFeature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysWeatherEntity
@@ -31,8 +32,10 @@ async def async_setup_entry(
     """Set up Weather."""
     entities: list[WeatherSensor] = []
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
     entities.append(WeatherSensor(QolsysPanel, unique_id))
     async_add_entities(entities)
 

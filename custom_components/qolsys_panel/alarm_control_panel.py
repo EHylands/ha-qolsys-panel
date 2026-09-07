@@ -24,6 +24,7 @@ from homeassistant.components.alarm_control_panel import (
     CodeFormat,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
@@ -42,8 +43,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up alarm control panels for each partition."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     entities: list[AlarmControlPanelEntity] = []
 

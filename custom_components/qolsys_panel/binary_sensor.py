@@ -24,6 +24,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
@@ -111,8 +112,10 @@ async def async_setup_entry(
     """Set up binary sensors."""
     entities: list[BinarySensorEntity] = []
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     # Add Doorbell Binary Sensor
     entities.append(QolsysDoorbellSensor(hass, QolsysPanel, unique_id))
@@ -634,7 +637,10 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
         )
 
         service = self._autdev.service_get(StatusService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no StatusService at endpoint {endpoint}"
+            )
         self._service: StatusService = service
 
     @property

@@ -9,6 +9,7 @@ from .vendor.qolsys_controller.automation.service_light import LightService
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
@@ -23,8 +24,10 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
     entities: list[LightEntity] = []
 
     # Add Automation Device Lights
@@ -65,7 +68,10 @@ class AutomationDevice_Light(QolsysAutomationDeviceEntity, LightEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_light{endpoint}"
         service = self._autdev.service_get(LightService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no LightService at endpoint {endpoint}"
+            )
         self._service: LightService = service
         self._attr_name = f"Light{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 

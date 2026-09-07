@@ -15,6 +15,7 @@ from homeassistant.components.cover import (
     CoverEntityFeature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
@@ -32,8 +33,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up Covers."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
     entities: list[CoverEntity] = []
 
     # Add Automation Device Covers
@@ -65,7 +68,10 @@ class AutomationDevice_Cover(QolsysAutomationDeviceEntity, CoverEntity):
         self._attr_unique_id = f"{self._autdev_unique_id}_cover{endpoint}"
         self.device_class = CoverDeviceClass.GARAGE
         cover = self._autdev.service_get(CoverService, endpoint)  # type: ignore[type-abstract]
-        assert cover is not None
+        if cover is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no CoverService at endpoint {endpoint}"
+            )
         self._cover: CoverService = cover
         self._attr_name = f"GarageDoor{'' if endpoint == 0 else endpoint} - {self._cover.automation_device.device_name}"
 

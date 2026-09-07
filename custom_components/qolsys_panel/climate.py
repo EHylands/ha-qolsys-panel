@@ -23,6 +23,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .types import QolsysPanelConfigEntry
@@ -39,8 +40,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
     entities: list[ClimateEntity] = []
 
     # Add Automation Device Thermostats
@@ -69,7 +72,10 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_thermostat{endpoint}"
         service = self._autdev.service_get(ThermostatService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no ThermostatService at endpoint {endpoint}"
+            )
         self._service: ThermostatService = service
         self._attr_name = f"Thermostat{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_target_temperature_step = self._service.target_temperature_step

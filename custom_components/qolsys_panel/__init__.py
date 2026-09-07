@@ -180,8 +180,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
-    unique_id = entry.unique_id
-    assert unique_id is not None
+    if (unique_id := entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,

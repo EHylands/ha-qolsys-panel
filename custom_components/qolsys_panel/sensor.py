@@ -24,6 +24,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
@@ -45,8 +46,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up sensors."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     entities: list[SensorEntity] = []
 
@@ -324,7 +327,10 @@ class AutomationDevice_BatteryValue(QolsysAutomationDeviceEntity, SensorEntity):
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
         service = self._autdev.service_get(BatteryService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no BatteryService at endpoint {endpoint}"
+            )
         self._service: BatteryService = service
 
     @property
@@ -350,10 +356,14 @@ class AutomationDevice_Sensor(QolsysAutomationDeviceEntity, SensorEntity):
         self._endpoint: int = endpoint
         self._unit: QolsysSensorScale = unit
         service = self._autdev.service_get(SensorService, endpoint)
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no SensorService at endpoint {endpoint}"
+            )
         self._service: SensorService = service
         sensor = self._service.sensor(unit)
-        assert sensor is not None
+        if sensor is None:
+            raise ValueError(f"SensorService has no sensor for unit {unit}")
         self._sensor: QolsysSensor = sensor
 
     @property
@@ -404,10 +414,14 @@ class AutomationDevice_Meter(QolsysAutomationDeviceEntity, SensorEntity):
         self._unit: QolsysMeterScale = unit
         self._endpoint: int = endpoint
         service = self._autdev.service_get(MeterService, endpoint)
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no MeterService at endpoint {endpoint}"
+            )
         self._service: MeterService = service
         meter = self._service.meter(unit)
-        assert meter is not None
+        if meter is None:
+            raise ValueError(f"MeterService has no meter for unit {unit}")
         self._meter: QolsysMeter = meter
 
     @property

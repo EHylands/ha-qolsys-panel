@@ -8,6 +8,7 @@ from .vendor.qolsys_controller import qolsys_controller
 
 from homeassistant.components.scene import Scene
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPanelEntity
@@ -24,8 +25,10 @@ async def async_setup_entry(
     """Set up scenes."""
     entities: list[Scene] = []
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     for scene in QolsysPanel.state.scenes:
         entities.append(QolsysPanelScene(QolsysPanel, scene.scene_id, unique_id))
@@ -46,7 +49,8 @@ class QolsysPanelScene(Scene, QolsysPanelEntity):
         self._attr_unique_id = f"{unique_id}_scene_{scene_id}"
         self._scene_id = scene_id
         scene = QolsysPanel.state.scene(scene_id)
-        assert scene is not None
+        if scene is None:
+            raise ValueError(f"Unknown scene id: {scene_id}")
         self._attr_name = f"Qolsys Panel - {scene.name}"
 
     async def async_activate(self, **kwargs: Any) -> None:

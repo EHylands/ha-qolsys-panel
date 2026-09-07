@@ -269,3 +269,16 @@ async def test_migrate_from_v0_adds_disarm_option(hass: HomeAssistant) -> None:
     assert await async_migrate_entry(hass, entry) is True
     assert entry.options[OPTION_DISARM_CODE] is True
     assert entry.version == 1
+
+
+async def test_setup_without_unique_id_is_not_ready(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """An entry with no unique_id is refused instead of asserted (audit L3)."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(mock_config_entry, unique_id=None)
+
+    assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
