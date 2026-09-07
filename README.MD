@@ -1,3 +1,17 @@
+## About this fork
+
+This is Lukas Pleva's audited fork of [EHylands/ha-qolsys-panel](https://github.com/EHylands/ha-qolsys-panel), taken at upstream version 1.6.1; this fork is version 1.7.0. It exists because every integration that holds a login or can act on the house gets a line-by-line audit before it runs in his Home Assistant, and the fixes live here rather than upstream.
+
+**Why it was forked.** This integration arms and disarms the house alarm. As shipped, disarming from Home Assistant required no code by default and the panel itself never checks one, the keypad's private key was written world-readable into the config folder, pairing accepted any device on the network, and user codes were stored in clear.
+
+**What is different.** Disarming now requires a user code that Home Assistant checks (constant-time, against a salted PBKDF2 hash) before any command is sent, and existing installs are migrated to that setting. The `qolsys-controller` library is vendored and hardened: key material is written owner-only (0600 files in 0700 directories, with a repair pass for older installs), user codes are hashed at rest, the pairing window is fenced (one peer, the panel's known address enforced, the returned certificate checked against our own key, the listener alive only during the window), the dormant MQTT bridge is pinned off, the TLS security level raised, the reconnect state reaches entities deterministically so they go unavailable rather than freezing, and the safety-zone arming guard is restored. Tests grew from 296 to 365, run against Home Assistant 2026.9.1. An independent review then found two more issues, both fixed, including the panel-address check being inert on the discovery path. Residual risks are listed in `custom_components/qolsys_panel/vendor/VENDORED.md`; the main one: the disarm code is enforced by Home Assistant, not by the panel. Fixes are not sent upstream; upstream is unchanged by this fork.
+
+**How it is kept current.** A weekly job merges upstream's new commits onto a branch, runs this fork's tests, reviews the diff, and only then pushes; a merge conflict or a failing test stops it. The fork is installed through HACS as a custom repository, so Home Assistant offers each new version as an update.
+
+**Where the detail is.** CHANGELOG.md and custom_components/qolsys_panel/vendor/VENDORED.md record every change by audit finding.
+
+---
+
 # HA Qolsys Panel
 
 [![Build](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/release.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/release.yml)
