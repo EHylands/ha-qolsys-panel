@@ -12,7 +12,11 @@ from .vendor.qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryError,
+    ConfigEntryNotReady,
+)
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
@@ -92,7 +96,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.log_mqtt_messages = False
     QolsysPanel.settings.auto_discover_pki = False
     QolsysPanel.settings.pairing_resume = False
+    # Audit M8: the library's MQTT bridge is a second, unauthenticated way into
+    # the disarm command. This integration never uses it, so pin both switches
+    # off and refuse to start if they do not hold.
     QolsysPanel.settings.mqtt_bridge_enabled = False
+    QolsysPanel.settings.mqtt_bridge_broker_enabled = False
+    if (
+        QolsysPanel.settings.mqtt_bridge_enabled
+        or QolsysPanel.settings.mqtt_bridge_broker_enabled
+    ):
+        raise ConfigEntryError(
+            "Refusing to start: the Qolsys MQTT bridge must stay disabled"
+        )
 
     arm_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
     disarm_code_required = entry.options.get(

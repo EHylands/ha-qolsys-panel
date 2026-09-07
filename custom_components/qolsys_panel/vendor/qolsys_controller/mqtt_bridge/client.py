@@ -69,9 +69,16 @@ class MqttBridgeClient:
                 )
 
                 try:
-                    tls_context = ssl.create_default_context()
+                    # Audit M8: this used to be CERT_NONE, so any host on the
+                    # network could impersonate the broker. Pin the broker
+                    # certificate created by create_mqtt_bridge_certificates.
+                    # Hostname checking stays off: that certificate has no SAN
+                    # and the bridge is reached by address.
+                    tls_context = ssl.create_default_context(
+                        cafile=str(self._bridge._controller._pki.mqtt_bridge_cer_file_path)
+                    )
                     tls_context.check_hostname = False
-                    tls_context.verify_mode = ssl.CERT_NONE
+                    tls_context.verify_mode = ssl.CERT_REQUIRED
 
                     async with aiomqtt.Client(
                         username=self._bridge._controller.settings.mqtt_bridge_client_username,
@@ -565,6 +572,22 @@ class MqttBridgeClient:
                     "command_id": command_id,
                 }
 
+            case "user_code_required":
+                response_dict = {
+                    "success": False,
+                    "error": "user_code_required",
+                    "error_msg": "Partition Command - A user_code is required to disarm",
+                    "command_id": command_id,
+                }
+
+            case "invalid_user_code":
+                response_dict = {
+                    "success": False,
+                    "error": "invalid_user_code",
+                    "error_msg": "Partition Command - Invalid user_code",
+                    "command_id": command_id,
+                }
+
             case "thermostat_temp_missing":
                 response_dict = {
                     "success": False,
@@ -797,6 +820,21 @@ class MqttBridgeClient:
     async def _cmd_disarm(self, partition: QolsysPartition, data: dict[str, Any]) -> None:
         user_code: str = data.get("user_code", "")
         silent_disarm: bool = data.get("silent_disarm", False)
+
+        # Audit M8: anyone able to publish to the bridge topic used to disarm the
+        # house with an empty payload field. Refuse without a code, and always
+        # validate it, whatever check_user_code_on_disarm says - a bridge client
+        # is not the Home Assistant user interface.
+        if not user_code:
+            LOGGER.warning("MQTT Bridge Client - Disarm refused: no user_code in payload")
+            await self._handle_error("user_code_required", data)
+            return
+
+        if await asyncio.to_thread(self._bridge._controller.panel.check_user, user_code) == -1:
+            LOGGER.warning("MQTT Bridge Client - Disarm refused: unknown user_code")
+            await self._handle_error("invalid_user_code", data)
+            return
+
         await self._bridge._controller.commands.panel.disarm(partition.id, user_code, silent_disarm)
         await self._send_success(data)
 

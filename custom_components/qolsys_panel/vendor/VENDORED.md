@@ -96,3 +96,24 @@ Residual: a 4-digit code has 10,000 possibilities, so a stolen users.conf is
 still brute-forceable offline; the hash costs an attacker roughly 25 ms per
 guess and removes the cleartext. The panel still receives only a user id, so
 this validation is enforced by Home Assistant and never by the panel (audit C1).
+
+### M8 - the disabled MQTT bridge carried an unauthenticated disarm and CERT_NONE TLS
+
+- `mqtt_bridge/client.py`: the broker TLS context was
+  `create_default_context()` with `check_hostname = False` and
+  `verify_mode = CERT_NONE`, so any host could impersonate the broker. It now
+  pins the bridge certificate written by `create_mqtt_bridge_certificates`
+  (`CERT_REQUIRED`, `cafile=mqtt_bridge.cer`), hostname checking still off
+  because that certificate has no SAN.
+- `mqtt_bridge/client.py::_cmd_disarm`: refuses a payload with no `user_code`
+  and validates the code against the panel database before disarming, whatever
+  `check_user_code_on_disarm` says. Two new error responses,
+  `user_code_required` and `invalid_user_code`.
+- `settings.py`: `_mqtt_bridge_enabled` now defaults to `False`.
+
+The integration additionally pins both bridge switches off in
+`async_setup_entry` and refuses to start if they do not hold.
+
+Residual: none of this path is exercised by the integration and it cannot be
+tested without a broker, so the changes are defence in depth behind a bridge
+that stays off.

@@ -52,7 +52,9 @@ class QolsysSettings:
         self._mqtt_command_timeout: int = 30
 
         # MQTT BRIDGE
-        self._mqtt_bridge_enabled: bool = True
+        # Audit M8: the bridge carries a second disarm path; default it off so a
+        # caller has to ask for it.
+        self._mqtt_bridge_enabled: bool = False
         self._mqtt_bridge_port: int = 1883
         self._mqtt_bridge_hostname: str = ""
         self._mqtt_bridge_tls_enabled: bool = True

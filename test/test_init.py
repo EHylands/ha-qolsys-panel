@@ -3,7 +3,7 @@
 import asyncio
 from collections.abc import Generator
 import logging
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -66,6 +66,38 @@ def _get_status_callback(controller: MagicMock):
     ]
     assert len(callbacks) == 1
     return callbacks[0]
+
+
+async def test_setup_keeps_the_mqtt_bridge_disabled(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """Setup pins both MQTT bridge switches off (audit M8)."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_controller.settings.mqtt_bridge_enabled is False
+    assert mock_controller.settings.mqtt_bridge_broker_enabled is False
+
+
+async def test_setup_fails_if_the_bridge_cannot_be_disabled(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """A settings object that ignores the switch stops setup (audit M8)."""
+    type(mock_controller.settings).mqtt_bridge_enabled = PropertyMock(
+        return_value=True
+    )
+    mock_config_entry.add_to_hass(hass)
+
+    try:
+        assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+    finally:
+        del type(mock_controller.settings).mqtt_bridge_enabled
 
 
 async def test_log_when_unavailable(
