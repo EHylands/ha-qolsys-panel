@@ -161,3 +161,14 @@ is left at 180 s: shortening it trades a smaller window against a user who
 cannot reach the wall panel in time, and that tradeoff cannot be measured
 without the hardware. Pair on a quiet network, then check the pairing address in
 the log and the stored `panel_ip`.
+
+### M2 - the CONNECTED -> RECONNECTING transition emitted no notification
+
+`controller.py::set_controller_state` now calls `notify_panel_status_update()`
+itself, after the new state is committed and the condition released, and the two
+callers that used to notify by hand no longer do: the one in the `finally` block
+ran while the state still read CONNECTED, and entities went unavailable only
+because a deferred state write happened to land after the flip.
+
+Entities are unavailable whenever the controller is not CONNECTED, so this makes
+"the panel is unreachable" deterministic instead of a scheduling accident.

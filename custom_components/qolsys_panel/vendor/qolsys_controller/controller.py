@@ -264,7 +264,6 @@ class QolsysController:
 
                         await self.set_controller_state(ControllerState.CONNECTED)
                         self._reconnect_attempt = 0
-                        self.notify_panel_status_update()
 
                         await asyncio.Future()  # Run until cancelled or exception
 
@@ -309,8 +308,9 @@ class QolsysController:
                 raise
 
             finally:
+                # No notify here: set_controller_state does it, and this ran while
+                # the state still read CONNECTED (audit M2).
                 self.mqtt_command_queue.fail_all_pending(QolsysMqttError("MQTT Command failed due to disconnection"))
-                self.notify_panel_status_update()
 
             # Only reached on MqttError with reconnect=True; all other paths raise.
             MAX_RECONNECT_DELAY = 300
@@ -538,6 +538,14 @@ class QolsysController:
 
             self._controller_state = new_state
             self._controller_state_condition.notify_all()
+
+        # Audit M2: notify observers here, after the new state is committed, so
+        # that an entity reading controller_state during the callback sees the
+        # state it is being told about. It used to be notified from the callers,
+        # one of them before the flip, and entities went unavailable on
+        # RECONNECTING only because a deferred state write happened to land
+        # after it.
+        self.notify_panel_status_update()
 
     async def wait_until_connected(self) -> None:
         async with self._controller_state_condition:
