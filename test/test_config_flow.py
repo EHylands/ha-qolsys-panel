@@ -325,6 +325,49 @@ async def test_config_flow_restores_log_levels(
     assert library_logger.level == previous_level
 
 
+async def test_abort_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An AbortFlow exit restores the level too (review N2).
+
+    _abort_if_unique_id_configured raises, so anything after it never runs.
+    """
+    mock_config_entry.add_to_hass(hass)
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert library_logger.level == logging.WARNING
+
+
+async def test_abandoned_flow_restores_log_levels(
+    hass: HomeAssistant, mock_qolsys_controller: MagicMock
+) -> None:
+    """A dialog the user simply closes restores the level (review N2)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert library_logger.level == logging.DEBUG
+
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    await hass.async_block_till_done()
+
+    assert library_logger.level == logging.WARNING
+
+
 async def test_failed_pairing_restores_log_levels(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,

@@ -478,13 +478,15 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             if entry.unique_id is not None and entry.unique_id.strip() == mac.strip():
                 unique_id = entry.unique_id
             await self.async_set_unique_id(unique_id)
-            self._abort_if_unique_id_mismatch()
+            # Before the guard, not after: _abort_if_unique_id_* raises AbortFlow
+            # (review N2).
             self._restore_log_levels()
+            self._abort_if_unique_id_mismatch()
             return self.async_update_reload_and_abort(entry, data_updates=self._data)
 
         await self.async_set_unique_id(mac)
-        self._abort_if_unique_id_configured()
         self._restore_log_levels()
+        self._abort_if_unique_id_configured()
         return self.async_create_entry(
             title=f"Qolsys Panel ({mac})",
             data=self._data,
@@ -495,6 +497,18 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Put the loggers back where the flow found them (audit M1)."""
         for name, level in self._saved_log_levels.items():
             _set_log_level(logging.getLogger(name), level)
+
+    @callback
+    def async_remove(self) -> None:
+        """Restore the log levels however the flow ended (review N2).
+
+        Home Assistant calls this whenever a flow leaves the manager: created,
+        aborted, or abandoned because the user closed the dialog. The explicit
+        calls on the normal paths restore earlier, while the flow can still log
+        at DEBUG through its own final steps; this is the catch-all so no exit
+        leaves the library at DEBUG until a restart.
+        """
+        self._restore_log_levels()
 
     async def _async_stop_controller(self) -> None:
         """Stop the controller; never let teardown errors mask the flow result."""
