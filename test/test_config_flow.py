@@ -273,6 +273,39 @@ async def test_pki_autodiscovery_flow(
     assert len(mock_setup_entry.mock_calls) == 1
 
 
+async def test_pairing_uses_the_discovered_panel_address(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Discovery's IP reaches the pairing server, so it can refuse other peers (review B2)."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP),
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "pki_autodiscovery"}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == DISCOVERY_IP
+
+
+async def test_manual_pairing_leaves_the_panel_address_empty(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Without discovery there is no address to enforce, and nothing changes (review B2)."""
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == ""
+
+
 @pytest.mark.parametrize("previous_level", [logging.NOTSET, logging.WARNING])
 async def test_config_flow_restores_log_levels(
     hass: HomeAssistant,

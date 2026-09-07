@@ -135,8 +135,12 @@ What was implemented instead, all in `pairing_server.py`:
   window; a connection from any other address is refused for the rest of it. A
   retry from the same address is still allowed, because a panel that drops
   mid-exchange must be able to come back.
-- **Expected-address check.** When `settings.panel_ip` is already known (the
-  existing-PKI path), only that address may pair at all.
+- **Expected-address check.** When `settings.panel_ip` is already known, only
+  that address may pair at all. That covers both the existing-PKI re-pair path
+  and, since review B2, the common case: DHCP/zeroconf discovery stores the
+  panel's address before the menu is shown, and the config flow now hands it to
+  the pairing server. It is empty only on a manual add with no discovery, where
+  the check stays off.
 - **The peer is logged**, at warning level, with a "confirm this is your panel"
   note, so the address is in the log the operator reads after pairing.
 - **The listener is bound only for the pairing window**: new `_close_listener()`
@@ -159,7 +163,11 @@ keeps the two identical).
 
 **Residual risk.** An attacker already on the LAN who connects during the
 pairing window, before the panel does, still becomes the device Home Assistant
-pairs with, unless the panel IP was known in advance. `settings.pairing_timeout`
+pairs with, unless the panel IP was known in advance - which it now is whenever
+discovery found the panel. The certificate validation does not help against this
+attacker: winning the race lets them sign our own CSR with their own CA, which
+passes every check, and their chain is self-consistent so the CA cross-check
+logs nothing. The expected-address check is the control that stops it. `settings.pairing_timeout`
 is left at 180 s: shortening it trades a smaller window against a user who
 cannot reach the wall panel in time, and that tradeoff cannot be measured
 without the hardware. Pair on a quiet network, then check the pairing address in

@@ -239,7 +239,13 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._pairing_task = self.hass.async_create_task(
                 self._try_connect(
                     step="pki_autodiscovery",
-                    host="",
+                    # Review B2: hand the pairing server the address discovery
+                    # already found, so it can refuse a peer that is not the
+                    # panel. Empty on a manual add, where the check stays off
+                    # and behaviour is unchanged. _try_connect skips its
+                    # check_panel_ip() validation while start_pairing is true,
+                    # so a set host adds no new failure mode.
+                    host=self._data.get(CONF_HOST, ""),
                     random_mac="",
                     resume_pairing=True,
                     start_pairing=True,

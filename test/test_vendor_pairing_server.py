@@ -107,6 +107,20 @@ async def test_connection_from_another_address_is_rejected(paired) -> None:
     writer.close.assert_called_once()
 
 
+async def test_the_expected_panel_is_let_through(paired) -> None:
+    """The known-address check refuses others, not the panel itself (review B2)."""
+    server, settings, _pki = paired
+    settings.panel_ip = PANEL_IP
+    reader, writer = MagicMock(), _writer(PANEL_IP)
+    # Fail the handshake right after the guards, so nothing is written to disk.
+    reader.readexactly = AsyncMock(side_effect=ConnectionResetError)
+
+    await server.handle_client(reader, writer)
+
+    reader.readexactly.assert_awaited_once()
+    assert server._peer_address == PANEL_IP
+
+
 async def test_second_peer_cannot_take_over_the_window(paired) -> None:
     """The first peer owns the pairing window (audit H1)."""
     server, _settings, _pki = paired
