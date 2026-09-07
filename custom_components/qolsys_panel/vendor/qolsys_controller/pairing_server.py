@@ -6,6 +6,8 @@ import random
 import ssl
 
 import aiofiles
+from cryptography import x509
+from cryptography.hazmat.primitives import serialization
 from zeroconf._exceptions import NonUniqueNameException
 
 from .errors import QolsysConfigError
@@ -33,6 +35,9 @@ class QolsysPairingServer:
         self._pairing_port: int = 0
         self._closed = False
         self._client_active = False
+        # Audit H1: the first peer to connect owns the pairing window; a second
+        # address is refused for the rest of it.
+        self._peer_address: str | None = None
 
     @property
     def pairing_port(self) -> int | None:
@@ -70,9 +75,22 @@ class QolsysPairingServer:
         if self._pairing_error is not None:
             raise self._pairing_error
 
+    def _close_listener(self) -> None:
+        """Stop accepting connections (audit H1).
+
+        The listener exists only for the pairing window: it is closed the moment
+        pairing completes, fails or times out, rather than staying bound until
+        the controller gets around to stopping the server.
+        """
+        if self._server is not None and self._server.is_serving():
+            LOGGER.debug("Pairing Server - Closing listening socket")
+            self._server.close()
+
     def _on_pairing_timeout(self) -> None:
         if self._pairing_done.is_set():
             return
+
+        self._close_listener()
 
         LOGGER.warning("Pairing Server - Timed out after %ss with no completed pairing", self._settings.pairing_timeout)
         self._pairing_error = QolsysConfigError(
@@ -146,6 +164,14 @@ class QolsysPairingServer:
         )
 
     def _create_ssl_context(self) -> ssl.SSLContext:
+        # Audit H1: verify_mode stays ssl.CERT_NONE. The panel presents no client
+        # certificate during pairing and there is nothing to pin before pairing
+        # has happened, so requiring one here would simply make pairing fail.
+        # The mitigations that are possible without a panel to test against are
+        # in handle_client: one peer per window, an expected-address check when
+        # the panel IP is known, the peer logged, the listener bound only for the
+        # window, and validation of the material the peer returns. See
+        # vendor/VENDORED.md for the residual risk.
         context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
 
         context.load_cert_chain(
@@ -155,20 +181,110 @@ class QolsysPairingServer:
 
         return context
 
+    def _reject(self, writer: asyncio.StreamWriter, reason: str) -> None:
+        LOGGER.warning(
+            "Pairing Server - Rejecting connection from %s: %s",
+            writer.get_extra_info("peername"),
+            reason,
+        )
+
+    async def _validate_client_certificate(self, pem: bytes) -> None:
+        """Check the signed client certificate before it is stored (audit H1).
+
+        Nothing used to check that the bytes coming back were a certificate at
+        all, let alone one for the key we just sent a CSR for.
+        """
+        try:
+            certificate = x509.load_pem_x509_certificate(pem)
+        except ValueError as err:
+            raise QolsysConfigError(f"Panel returned an unparsable client certificate: {err}") from err
+
+        async with aiofiles.open(self._pki.csr_file_path, mode="rb") as f:
+            csr_pem = await f.read()
+
+        try:
+            csr = x509.load_pem_x509_csr(csr_pem)
+        except ValueError as err:
+            raise QolsysConfigError(f"Cannot read our own CSR: {err}") from err
+
+        def public_bytes(key: object) -> bytes:
+            return key.public_bytes(  # type: ignore[attr-defined]
+                encoding=serialization.Encoding.DER,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+
+        if public_bytes(certificate.public_key()) != public_bytes(csr.public_key()):
+            raise QolsysConfigError("Panel returned a certificate for a different key")
+
+        LOGGER.debug(
+            "Pairing Server - Client certificate accepted: subject=%s issuer=%s serial=%s",
+            certificate.subject.rfc4514_string(),
+            certificate.issuer.rfc4514_string(),
+            certificate.serial_number,
+        )
+
+    async def _validate_panel_ca(self, pem: bytes) -> None:
+        """Check the CA that is about to become the pinned trust anchor (audit H1)."""
+        try:
+            ca = x509.load_pem_x509_certificate(pem)
+        except ValueError as err:
+            raise QolsysConfigError(f"Panel returned an unparsable certificate authority: {err}") from err
+
+        LOGGER.warning(
+            "Pairing Server - Pinning panel certificate authority: subject=%s issuer=%s serial=%s",
+            ca.subject.rfc4514_string(),
+            ca.issuer.rfc4514_string(),
+            ca.serial_number,
+        )
+
+        async with aiofiles.open(self._pki.secure_file_path, mode="rb") as f:
+            client_pem = await f.read()
+
+        try:
+            x509.load_pem_x509_certificate(client_pem).verify_directly_issued_by(ca)
+        except Exception as err:  # noqa: BLE001 - evidence only, see below
+            # Not fatal: a panel that signs through an intermediate would fail
+            # this check, and breaking pairing on it cannot be tested without a
+            # panel. Logged so a mismatch is at least visible.
+            LOGGER.warning(
+                "Pairing Server - The signed client certificate does not verify against the certificate authority the panel sent: %s",
+                err,
+            )
+
     async def handle_client(
         self,
         reader: asyncio.StreamReader,
         writer: asyncio.StreamWriter,
     ) -> None:
+        peername = writer.get_extra_info("peername")
+        peer_address = peername[0] if peername else None
+
         # Single-client guard: reject a concurrent exchange, or any connection once pairing has already completed.
         if self._client_active or self._pairing_done.is_set():
-            LOGGER.warning(
-                "Pairing Server - Rejecting connection from %s (pairing already in progress or completed)",
-                writer.get_extra_info("peername"),
-            )
+            self._reject(writer, "pairing already in progress or completed")
             writer.close()
             await writer.wait_closed()
             return
+
+        # Audit H1: when the panel address is known (re-pairing an existing
+        # install), only that address may pair.
+        expected = self._settings.panel_ip
+        if expected and peer_address != expected:
+            self._reject(writer, f"expected the panel at {expected}")
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        # Audit H1: the first peer of the window owns it. A retry from the same
+        # panel is still allowed; a second device is not.
+        if self._peer_address is not None and peer_address != self._peer_address:
+            self._reject(writer, f"pairing window already belongs to {self._peer_address}")
+            writer.close()
+            await writer.wait_closed()
+            return
+
+        self._peer_address = peer_address
+        LOGGER.warning("Pairing Server - Pairing with %s - confirm this is your panel", peername)
 
         self._client_active = True
 
@@ -229,6 +345,10 @@ class QolsysPairingServer:
                     await reader.readuntil(start_token)
 
                     request = start_token + await reader.readuntil(end_token)
+
+                    # Audit H1: check what came back before trusting it.
+                    await self._validate_client_certificate(request)
+
                     LOGGER.debug("Saving [Signed Client Certificate]")
 
                     async with aiofiles.open(self._pki.secure_file_path, mode="wb") as f:
@@ -245,6 +365,10 @@ class QolsysPairingServer:
                     await reader.readuntil(start_token)
 
                     request = start_token + await reader.readuntil(end_token)
+
+                    # Audit H1: this file becomes the pinned trust anchor.
+                    await self._validate_panel_ca(request)
+
                     LOGGER.debug("Saving [Qolsys Certificate]")
 
                     async with aiofiles.open(self._pki.qolsys_cer_file_path, mode="wb") as f:
@@ -255,6 +379,7 @@ class QolsysPairingServer:
                     received_qolsys_cer = True
                     continue_pairing = False
 
+                    self._close_listener()
                     self._pairing_done.set()
 
         except asyncio.CancelledError:
@@ -275,6 +400,8 @@ class QolsysPairingServer:
                 )
             else:
                 self._pairing_error = QolsysConfigError(f"Pairing failed: {err!r}")
+
+            self._close_listener()
             self._pairing_done.set()
 
         finally:

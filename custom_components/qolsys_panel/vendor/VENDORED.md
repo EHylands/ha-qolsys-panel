@@ -117,3 +117,47 @@ The integration additionally pins both bridge switches off in
 Residual: none of this path is exercised by the integration and it cannot be
 tested without a broker, so the changes are defence in depth behind a bridge
 that stays off.
+
+### H1 - the pairing server authenticated no one
+
+**Not fixed in full, and deliberately so.** The audit's preferred fix
+(`verify_mode = CERT_REQUIRED` with the panel CA pinned) needs something to pin
+before pairing has happened, and the vendor protocol offers nothing: the panel
+presents no client certificate, and the CA it will use is exactly what pairing
+fetches. Requiring a client certificate would make every pairing fail, and
+inventing a challenge the panel does not implement is not something that can be
+designed without a panel to test against. `verify_mode` therefore stays
+`ssl.CERT_NONE`, with the reason written at the call site.
+
+What was implemented instead, all in `pairing_server.py`:
+
+- **One peer per window.** The first address that connects owns the pairing
+  window; a connection from any other address is refused for the rest of it. A
+  retry from the same address is still allowed, because a panel that drops
+  mid-exchange must be able to come back.
+- **Expected-address check.** When `settings.panel_ip` is already known (the
+  existing-PKI path), only that address may pair at all.
+- **The peer is logged**, at warning level, with a "confirm this is your panel"
+  note, so the address is in the log the operator reads after pairing.
+- **The listener is bound only for the pairing window**: new `_close_listener()`
+  closes the accepting socket the moment pairing completes, fails or times out,
+  instead of leaving it bound until the controller stops the server.
+- **The material is validated before it is written**: the signed client
+  certificate must parse as X.509 and must carry the public key from our own
+  CSR (`_validate_client_certificate`), and the `.qolsys` file that becomes the
+  pinned trust anchor must parse as X.509 (`_validate_panel_ca`), which is
+  logged with its subject, issuer and serial. Whether the client certificate
+  verifies against that CA is logged as a warning rather than enforced: a panel
+  that signs through an intermediate would fail the check, and breaking pairing
+  on an unverifiable guess is worse than reporting it.
+
+The config flow now tells the user to pair on a trusted network and to check the
+logged address (`strings.json`).
+
+**Residual risk.** An attacker already on the LAN who connects during the
+pairing window, before the panel does, still becomes the device Home Assistant
+pairs with, unless the panel IP was known in advance. `settings.pairing_timeout`
+is left at 180 s: shortening it trades a smaller window against a user who
+cannot reach the wall panel in time, and that tradeoff cannot be measured
+without the hardware. Pair on a quiet network, then check the pairing address in
+the log and the stored `panel_ip`.

@@ -31,7 +31,7 @@
       },
       "pki_autodiscovery":{
         "title": "Qolsys Panel - Automatic Panel Discovery",
-        "description": "Autodiscovery Mode:\n1. Make sure Home Assistant and the panel are on the same subnet\n2. Open the IQ Remote pairing page on the Qolsys Panel\n\nPress Submit to start pairing."
+        "description": "Autodiscovery Mode:\n1. Make sure Home Assistant and the panel are on the same subnet\n2. Open the IQ Remote pairing page on the Qolsys Panel\n\nPair on a network you trust: during the pairing window the first device that connects becomes the panel Home Assistant talks to, so do not pair while guests or untrusted devices are on the same Wi-Fi. Check the logged pairing address afterwards.\n\nPress Submit to start pairing."
       },
       "existing_pki":{
         "title": "Qolsys Panel - Existing PKI",
