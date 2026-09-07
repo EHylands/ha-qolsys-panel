@@ -56,13 +56,22 @@ from .utils import get_local_ip
 _LOGGER = logging.getLogger(__name__)
 
 # Loggers raised to DEBUG for the duration of a config-flow session (see
-# QolsysPanelConfigFlow.__init__). This only takes effect while a flow is
-# running; on a normal restart the config flow does not run and these loggers
-# follow the level configured in Home Assistant.
+# QolsysPanelConfigFlow.__init__) and put back when the flow ends, so pairing
+# problems are captured without leaving the library logging at DEBUG for the
+# rest of the process.
 _CONFIG_FLOW_DEBUG_LOGGERS = (
     "custom_components.qolsys_panel.vendor.qolsys_controller",
     __name__,
 )
+
+
+def _set_log_level(logger: logging.Logger, level: int) -> None:
+    """Set a level, bypassing HA's logger-override guard the same way both ways.
+
+    Raising the level through orig_setLevel and restoring it through setLevel
+    would leave the logger stuck at DEBUG whenever the guard is active.
+    """
+    getattr(logger, "orig_setLevel", logger.setLevel)(level)
 
 
 # Format of PKI directories is a 12-character hex string (MAC address without colons).
@@ -88,13 +97,18 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Init config flow."""
         # Raise DEBUG logging when a config-flow session starts so pairing and
         # connection problems are captured in the logs. Uses orig_setLevel when
-        # present to bypass HA's logger-override guard. The level is not
-        # restored, but that is fine: config-flow code only runs while a flow is
-        # active, and a subsequent restart never runs the flow, so the running
-        # integration follows the log level configured in Home Assistant.
+        # present to bypass HA's logger-override guard, and remembers the level
+        # it replaced: __init__ also runs for options, reconfigure and reauth
+        # flows, and nothing used to lower the level again, so any one of them
+        # left the library dumping every zone name, MAC and panel setting into
+        # the log until Home Assistant restarted - with the user unable to turn
+        # it down through `logger:`, because the guard had been bypassed
+        # (audit M1).
+        self._saved_log_levels: dict[str, int] = {
+            name: logging.getLogger(name).level for name in _CONFIG_FLOW_DEBUG_LOGGERS
+        }
         for name in _CONFIG_FLOW_DEBUG_LOGGERS:
-            logger = logging.getLogger(name)
-            getattr(logger, "orig_setLevel", logger.setLevel)(logging.DEBUG)
+            _set_log_level(logging.getLogger(name), logging.DEBUG)
 
         self._data: dict[str, Any] = {}
         self._pki_list: list[str] = []
@@ -257,6 +271,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except (Exception, BaseExceptionGroup):
             _LOGGER.exception("Unexpected error in pairing step; aborting flow")
             await self._async_stop_controller()
+            self._restore_log_levels()
             return self.async_abort(
                 reason="pairing_failed",
                 description_placeholders={
@@ -432,6 +447,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 incomplete_reason,
             )
             await self._async_stop_controller()
+            self._restore_log_levels()
             return self.async_abort(
                 reason="pairing_failed",
                 description_placeholders={"reason": incomplete_reason},
@@ -453,14 +469,22 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 unique_id = entry.unique_id
             await self.async_set_unique_id(unique_id)
             self._abort_if_unique_id_mismatch()
+            self._restore_log_levels()
             return self.async_update_reload_and_abort(entry, data_updates=self._data)
 
         await self.async_set_unique_id(mac)
         self._abort_if_unique_id_configured()
+        self._restore_log_levels()
         return self.async_create_entry(
             title=f"Qolsys Panel ({mac})",
             data=self._data,
         )
+
+    @callback
+    def _restore_log_levels(self) -> None:
+        """Put the loggers back where the flow found them (audit M1)."""
+        for name, level in self._saved_log_levels.items():
+            _set_log_level(logging.getLogger(name), level)
 
     async def _async_stop_controller(self) -> None:
         """Stop the controller; never let teardown errors mask the flow result."""
@@ -477,6 +501,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Stop the controller and interrupt the flow with the specific failure reason."""
         await self._async_stop_controller()
+        self._restore_log_levels()
         reason_text = self._error_placeholders.get("reason") or result["base"]
         return self.async_abort(
             reason="pairing_failed",

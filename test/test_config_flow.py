@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Iterable
+import logging
 from pathlib import Path
 from ssl import SSLError
 from typing import cast
@@ -266,6 +267,43 @@ async def test_pki_autodiscovery_flow(
         reconnect=False, run_once=True, start_pairing=True
     )
     assert len(mock_setup_entry.mock_calls) == 1
+
+
+@pytest.mark.parametrize("previous_level", [logging.NOTSET, logging.WARNING])
+async def test_config_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    previous_level: int,
+) -> None:
+    """A finished flow puts the library logger back where it found it (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(previous_level)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert library_logger.level == previous_level
+
+
+async def test_failed_pairing_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An aborted flow restores the level too (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+    mock_qolsys_controller.run_forever.side_effect = QolsysMqttError("boom")
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert library_logger.level == logging.WARNING
 
 
 async def test_pki_autodiscovery_empty_mac_aborts(
