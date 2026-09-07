@@ -200,9 +200,28 @@ async def test_migrate_future_version_fails(hass: HomeAssistant) -> None:
 
 async def test_migrate_current_version_noop(hass: HomeAssistant) -> None:
     """A current-version entry migrates successfully with no changes."""
-    entry = MockConfigEntry(domain=DOMAIN, version=1, minor_version=0)
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=1, minor_version=1, options={OPTION_DISARM_CODE: False}
+    )
     entry.add_to_hass(hass)
     assert await async_migrate_entry(hass, entry) is True
+    assert entry.options[OPTION_DISARM_CODE] is False
+
+
+async def test_migrate_forces_disarm_code_required(hass: HomeAssistant) -> None:
+    """An entry predating the safe default gets the disarm check turned on (audit C1)."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        minor_version=0,
+        options={OPTION_DISARM_CODE: False},
+    )
+    entry.add_to_hass(hass)
+
+    assert await async_migrate_entry(hass, entry) is True
+    assert entry.options[OPTION_DISARM_CODE] is True
+    assert entry.version == 1
+    assert entry.minor_version == 1
 
 
 async def test_migrate_from_v0_adds_disarm_option(hass: HomeAssistant) -> None:

@@ -23,7 +23,7 @@ from homeassistant.components.alarm_control_panel import (
     CodeFormat,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPartitionEntity
@@ -134,8 +134,25 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
 
         return None
 
+    def _validate_user_code(self, code: str | None, action: str) -> None:
+        """Reject a missing or unknown user code before any command is sent.
+
+        The panel disarms on the authority of the paired keypad certificate and
+        never checks a user code itself, so this check is the only one there is
+        (audit C1). The comparison runs in constant time against the stored
+        hash of the code (see the vendored panel.check_user, audit H3/L5).
+        """
+        if not code:
+            raise ServiceValidationError(f"{action}: A user code is required")
+
+        if self.QolsysPanel.panel.check_user(code) == -1:
+            raise ServiceValidationError(f"{action}: Invalid user code")
+
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
+        if self.QolsysPanel.settings.check_user_code_on_disarm:
+            self._validate_user_code(code, "DISARM")
+
         try:
             await self._partition.disarm(user_code=code or "")
         except QolsysUserCodeError as err:
@@ -162,6 +179,9 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         self, arm_mode: PartitionArmingType, code: str | None = None
     ) -> None:
         """Arm with custom mode."""
+        if self.QolsysPanel.settings.check_user_code_on_arm:
+            self._validate_user_code(code, arm_mode.name)
+
         try:
             await self._partition.arm(arm_mode, user_code=code or "")
         except QolsysUserCodeError as err:

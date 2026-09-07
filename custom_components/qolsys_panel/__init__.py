@@ -217,6 +217,23 @@ async def async_migrate_entry(
             config_entry, options=new_options, minor_version=0, version=1
         )
 
+    if config_entry.version == 1 and config_entry.minor_version < 1:
+        # 1.0 -> 1.1: disarming used to default to requiring no code, which made
+        # the house one dashboard tap away from disarmed (audit C1). Force the
+        # safe value on entries that predate the new default; it can be turned
+        # back off in the integration options.
+        new_options = {**config_entry.options}
+        if not new_options.get(OPTION_DISARM_CODE, DEFAULT_ARM_CODE_REQUIRED):
+            _LOGGER.warning(
+                "Qolsys Panel now requires a user code to disarm. Add your codes to"
+                " users.conf; you can turn the check off again in the integration"
+                " options"
+            )
+        new_options[OPTION_DISARM_CODE] = True
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, version=1, minor_version=1
+        )
+
     _LOGGER.debug(
         "Migration to configuration version %s.%s successful",
         config_entry.version,

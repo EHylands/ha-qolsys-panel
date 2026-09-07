@@ -80,6 +80,34 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 
 5. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
 
+## 🔢 User Codes, Arming and Disarming
+
+**Disarming requires a user code, and Home Assistant is what checks it.**
+
+- **Disarm code: required by default.** The alarm entity asks for a code before it
+  disarms, and the integration refuses the command if the code is missing or is not
+  in your `users.conf`. Existing installations are migrated to this setting on
+  upgrade; you can turn it off under **Settings > Devices & Services > Qolsys Panel
+  > Configure**, which is not recommended.
+- **Arm code: optional, off by default.** Arming home/away/night without a code is
+  the normal behavior of an alarm panel. The same **Configure** page has an
+  *Enable or Disable User Code* option for arming; when it is on, arming validates
+  the code exactly the way disarming does.
+
+### ⚠️ The panel does not check the code, Home Assistant does
+
+The panel disarms on the authority of the paired IQ Remote certificate. The MQTT
+disarm message carries a user *ID*, never the code itself, so there is no second
+line of defence behind Home Assistant:
+
+- Anyone who can call `alarm_control_panel.alarm_disarm` **with a valid code from
+  your `users.conf`** disarms the alarm. That includes every Home Assistant user
+  account regardless of admin status, every automation and script, anything holding
+  a long-lived access token, and any other custom integration in the same process.
+- Treat Home Assistant administrator access as equivalent to knowing the alarm code.
+- Do not expose this Home Assistant instance to the internet without multi-factor
+  authentication.
+
 ## 🛠️ PKI Auto-Discovery and Pairing Troubleshooting
 
 If pairing is not working, please verify the following:

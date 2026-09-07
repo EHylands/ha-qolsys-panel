@@ -27,6 +27,8 @@ from homeassistant.components.alarm_control_panel import (
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 
+from custom_components.qolsys_panel.const import DEFAULT_DISARM_CODE_REQUIRED
+
 UID = PANEL_MAC
 
 
@@ -150,6 +152,59 @@ async def test_disarm(controller: MagicMock) -> None:
     entity = _panel(controller)
     await entity.async_alarm_disarm("1234")
     cast(AsyncMock, entity._partition.disarm).assert_awaited_once_with(user_code="1234")
+
+
+def test_disarm_requires_a_code_by_default() -> None:
+    """A fresh install must not offer a one-click disarm (audit C1)."""
+    assert DEFAULT_DISARM_CODE_REQUIRED is True
+
+
+async def test_disarm_without_code_is_rejected(controller: MagicMock) -> None:
+    """With the code check on, an empty code never reaches the panel (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_disarm(None)
+
+    cast(AsyncMock, entity._partition.disarm).assert_not_awaited()
+
+
+async def test_disarm_with_unknown_code_is_rejected(controller: MagicMock) -> None:
+    """An unknown code is refused by the integration, not by the panel (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+    controller.panel.check_user = MagicMock(return_value=-1)
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_disarm("9999")
+
+    controller.panel.check_user.assert_called_once_with("9999")
+    cast(AsyncMock, entity._partition.disarm).assert_not_awaited()
+
+
+async def test_disarm_with_valid_code_is_sent(controller: MagicMock) -> None:
+    """A code the panel database knows is forwarded (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+    controller.panel.check_user = MagicMock(return_value=2)
+
+    await entity.async_alarm_disarm("1234")
+
+    cast(AsyncMock, entity._partition.disarm).assert_awaited_once_with(user_code="1234")
+
+
+async def test_arm_without_code_is_rejected_when_required(
+    controller: MagicMock,
+) -> None:
+    """Arming with the code option on also validates before sending (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_arm = True
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_arm_away(None)
+
+    cast(AsyncMock, entity._partition.arm).assert_not_awaited()
 
 
 @pytest.mark.parametrize(

@@ -82,7 +82,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
 
     VERSION = 1
-    MINOR_VERSION = 0
+    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         """Init config flow."""
