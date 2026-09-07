@@ -71,3 +71,28 @@ Encrypting it needs a passphrase kept outside `/config`, which changes the
 pairing format and cannot be validated without a panel. A `/config` backup taken
 by a user who can already read files as the Home Assistant user still contains
 the key.
+
+### H3 / L5 - user codes were stored in cleartext and compared with `==`
+
+New module `qolsys_controller/user_codes.py`: PBKDF2-HMAC-SHA256, 210,000
+iterations, 16-byte random salt, stored as
+`pbkdf2_sha256$<iterations>$<salt>$<hash>`, verified with
+`hmac.compare_digest`.
+
+- `users.py`: `QolsysUser.user_code` becomes `user_code_hash`; the cleartext
+  code is never held in memory.
+- `panel.py::read_users_file`: chmods users.conf 0o600, rejects malformed rows
+  with `QolsysConfigError` (an unguarded `user.get()` used to store `None`, and
+  a stored `None` then matched a `None` lookup), hashes any hand-written
+  cleartext `user_code` and rewrites the file in place through a temporary file
+  that is chmodded before the rename.
+- `panel.py::check_user`: constant-time verification, and it checks every user
+  instead of returning at the first match, so the answer does not depend on
+  position in the list.
+- `commands/panel.py`: `check_user` now derives a KDF, so both call sites run it
+  with `asyncio.to_thread` rather than on the event loop.
+
+Residual: a 4-digit code has 10,000 possibilities, so a stolen users.conf is
+still brute-forceable offline; the hash costs an attacker roughly 25 ms per
+guess and removes the cleartext. The panel still receives only a user id, so
+this validation is enforced by Home Assistant and never by the panel (audit C1).

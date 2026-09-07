@@ -4,6 +4,7 @@ import base64
 import json
 import logging
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from .automation.device import QolsysAutomationDevice
@@ -12,6 +13,7 @@ from .automation_powerg.device import QolsysAutomationDevicePowerG
 from .automation_zigbee.device import QolsysAutomationDeviceZigbee
 from .automation_zwave.device import QolsysAutomationDeviceZwave
 from .errors import QolsysConfigError
+from .file_permissions import SECRET_FILE_MODE, secure_file_sync
 from .observable import Event
 
 from .database.db import QolsysDB
@@ -26,6 +28,7 @@ from .enum_qolsys import (
 )
 from .partition import QolsysPartition
 from .scene import QolsysScene
+from .user_codes import hash_user_code, is_hash, verify_user_code
 from .users import QolsysUser
 from .weather import QolsysForecast, QolsysWeather
 from .zone import QolsysZone
@@ -95,29 +98,88 @@ class QolsysPanel:
         self._product_type: QolsysPanelType = QolsysPanelType.UNKNOWN
 
     def read_users_file(self) -> None:
+        """Load the user codes, as hashes (audit H3).
+
+        users.conf holds one entry per user, either
+
+            {"id": 1, "user_code_hash": "pbkdf2_sha256$..."}
+
+        or, for a file the operator has just written by hand,
+
+            {"id": 1, "user_code": "1234"}
+
+        The second form is hashed and the file is rewritten in place, so a
+        cleartext code lives on disk only until the next start. Malformed rows
+        are rejected loudly: an unguarded user.get() used to store None, and a
+        stored None then matched a None lookup.
+        """
         # Clear existing users list
         self._users.clear()
 
-        # Loading user_code data from users.conf file if exists
-        if self._controller.settings.users_file_path.is_file():
-            try:
-                path = self._controller.settings.users_file_path
-                with path.open("r", encoding="utf-8") as file:
-                    try:
-                        users = json.load(file)
-                        for user in users:
-                            qolsys_user = QolsysUser()
-                            qolsys_user.id = user.get("id")
-                            qolsys_user.user_code = user.get("user_code")
-                            self._users.append(qolsys_user)
+        path = self._controller.settings.users_file_path
+        if not path.is_file():
+            return
 
-                    except json.JSONDecodeError:
-                        raise QolsysConfigError("users.conf file json error")
+        # Audit H3: the file holds the codes the family types on the panel.
+        secure_file_sync(path)
 
-            except FileNotFoundError:
-                raise QolsysConfigError("users.conf file not found")
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                users = json.load(file)
+        except json.JSONDecodeError as err:
+            raise QolsysConfigError("users.conf file json error") from err
+        except FileNotFoundError as err:
+            raise QolsysConfigError("users.conf file not found") from err
+
+        if not isinstance(users, list):
+            raise QolsysConfigError("users.conf: expected a list of users")
+
+        needs_rewrite = False
+
+        for user in users:
+            if not isinstance(user, dict) or not isinstance(user.get("id"), int):
+                raise QolsysConfigError(f"users.conf: malformed entry {user!r}")
+
+            stored = user.get("user_code_hash") or ""
+            code = user.get("user_code") or ""
+
+            if not isinstance(stored, str) or not isinstance(code, str):
+                raise QolsysConfigError(f"users.conf: malformed entry {user!r}")
+
+            if not stored or not is_hash(stored):
+                if not code:
+                    raise QolsysConfigError(
+                        f"users.conf: entry {user.get('id')} has no user_code or user_code_hash"
+                    )
+                stored = hash_user_code(code)
+                needs_rewrite = True
+
+            qolsys_user = QolsysUser()
+            qolsys_user.id = user["id"]
+            qolsys_user.user_code_hash = stored
+            self._users.append(qolsys_user)
+
+        if needs_rewrite:
+            self._write_users_file(path)
 
         return
+
+    def _write_users_file(self, path: Path) -> None:
+        """Replace users.conf with the hashed form (audit H3)."""
+        payload = [{"id": user.id, "user_code_hash": user.user_code_hash} for user in self._users]
+        temporary = path.with_name(path.name + ".tmp")
+
+        with temporary.open("w", encoding="utf-8") as file:
+            json.dump(payload, file, indent=2)
+
+        # Restrict before the file is in place, so there is no readable window.
+        temporary.chmod(SECRET_FILE_MODE)
+        temporary.replace(path)
+
+        LOGGER.warning(
+            "users.conf contained cleartext user codes; they have been replaced by hashes in %s",
+            path,
+        )
 
     @property
     def db(self) -> QolsysDB:
@@ -872,12 +934,19 @@ class QolsysPanel:
                 LOGGER.debug(data)
 
     def check_user(self, user_code: str) -> int:
-        for user in self._users:
-            if user.user_code == user_code:
-                return user.id
+        """Return the id of the user holding this code, or -1.
 
-        # No valid user code found
-        return -1
+        Audit H3/L5: the comparison is a constant-time compare against the
+        stored PBKDF2 hash, and every user is checked so the answer does not
+        depend on where in the list a match sits.
+        """
+        matched = -1
+
+        for user in self._users:
+            if verify_user_code(user_code, user.user_code_hash):
+                matched = user.id
+
+        return matched
 
     def get_automation_devices_from_db(self) -> list[QolsysAutomationDevice]:
         allowed_protocols = [

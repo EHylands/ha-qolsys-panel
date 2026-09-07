@@ -94,6 +94,41 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
   *Enable or Disable User Code* option for arming; when it is on, arming validates
   the code exactly the way disarming does.
 
+### Where the codes live: `config/qolsys_panel/users.conf`
+
+The panel does not expose its user database, so the integration keeps its own
+list. Create `users.conf` in the integration's config directory with one entry
+per user:
+
+```json
+[
+  { "id": 1, "user_code": "1234" },
+  { "id": 2, "user_code": "5678" }
+]
+```
+
+`id` is the panel user id reported to the panel with the command; `user_code` is
+the code you will type in Home Assistant.
+
+**Codes are not kept in cleartext.** On the next start the integration replaces
+each `user_code` with a salted PBKDF2-SHA256 hash and rewrites the file, owner
+readable only (`0600`):
+
+```json
+[
+  { "id": 1, "user_code_hash": "pbkdf2_sha256$210000$..." }
+]
+```
+
+Codes are then verified by a constant-time comparison against that hash. To
+change or add a code, write the `user_code` form again and restart; a malformed
+entry is rejected with an error in the log rather than silently ignored.
+
+Note that a 4-digit code has only 10,000 possibilities, so the hash slows an
+attacker down rather than making a stolen file safe. Keep `users.conf` out of
+version control and out of shared backups, and prefer codes you do not reuse on
+the front-door lock.
+
 ### ⚠️ The panel does not check the code, Home Assistant does
 
 The panel disarms on the authority of the paired IQ Remote certificate. The MQTT

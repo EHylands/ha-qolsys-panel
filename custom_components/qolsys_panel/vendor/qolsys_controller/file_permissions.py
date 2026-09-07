@@ -38,6 +38,11 @@ def set_mode(path: Path, mode: int) -> None:
         LOGGER.warning("Could not restrict permissions on %s: %s", path, err)
 
 
+def secure_file_sync(path: Path) -> None:
+    """Make a file owner-only from synchronous (executor) code."""
+    set_mode(path, SECRET_FILE_MODE)
+
+
 async def secure_file(path: Path) -> None:
     """Make a file readable and writable by its owner only."""
     await asyncio.to_thread(set_mode, path, SECRET_FILE_MODE)

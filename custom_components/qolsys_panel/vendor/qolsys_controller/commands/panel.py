@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import time
@@ -84,7 +85,8 @@ class PanelCommands:
 
         if self._controller.settings.check_user_code_on_arm:
             # Do local user code verification to arm
-            user_id = self._controller.panel.check_user(user_code)
+            # Audit H3: check_user derives a PBKDF2 hash, so keep it off the loop.
+            user_id = await asyncio.to_thread(self._controller.panel.check_user, user_code)
             if user_id == -1:
                 LOGGER.debug("MQTT Panel Client - arm command error - user_code error")
                 raise QolsysUserCodeError()
@@ -259,7 +261,8 @@ class PanelCommands:
         # Do local user code verification
         user_id = 1
         if self._controller.settings.check_user_code_on_disarm:
-            user_id = self._controller.panel.check_user(user_code)
+            # Audit H3: check_user derives a PBKDF2 hash, so keep it off the loop.
+            user_id = await asyncio.to_thread(self._controller.panel.check_user, user_code)
             if user_id == -1:
                 LOGGER.debug("MQTT Panel Client - disarm command error - user_code error")
                 raise QolsysUserCodeError()
