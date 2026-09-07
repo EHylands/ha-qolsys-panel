@@ -6,6 +6,7 @@ import logging
 from typing import cast
 
 from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
@@ -27,11 +28,38 @@ class QolsysPanelEntity(Entity):
     def __init__(self, QolsysPanel: qolsys_controller, unique_id: str) -> None:
         """Set up a entity for a Qolsys Panel."""
         self.QolsysPanel = QolsysPanel
+        self._panel_unique_id = unique_id
         self._attr_should_poll = False
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id)},
             manufacturer="Johnson Controls",
         )
+
+    @property
+    def device_info(self) -> DeviceInfo | None:
+        """Device info, with child devices linked to the panel by registry id.
+
+        `via_device` (an identifier tuple) is deprecated in Home Assistant 2026.9
+        and, when an entity is re-added from the settings UI, the deprecation is
+        raised as an error rather than logged, which is how the alarm entity
+        failed to come back after a rename (2026-09-07). `via_device_id` needs the
+        parent's registry id, which is only known at read time; the panel device
+        is created in async_setup_entry before any platform loads, so the lookup
+        succeeds. If it ever misses, the child is simply left unlinked.
+        """
+        info = self._attr_device_info
+        if info is None:
+            return None
+        if (DOMAIN, self._panel_unique_id) in info.get("identifiers", set()):
+            return info  # this IS the panel device
+        linked = DeviceInfo(**info)
+        if getattr(self, "hass", None) is not None:
+            parent = dr.async_get(self.hass).async_get_device(
+                identifiers={(DOMAIN, self._panel_unique_id)}
+            )
+            if parent is not None:
+                linked["via_device_id"] = parent.id
+        return linked
 
     @property
     def available(self) -> bool:
@@ -89,12 +117,6 @@ class QolsysPartitionEntity(QolsysPanelEntity):
             name=f"Partition{self._partition_id} - {self._partition.name}",
             model="Qolsys Partition",
             manufacturer="Johnson Controls",
-            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
-            # no longer in the DeviceInfo TypedDict, but it is still resolved at
-            # runtime. via_device_id needs the registry device id, which is not
-            # available here; migrate when the parent device entry is threaded
-            # through to the platforms.
-            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     async def async_added_to_hass(self) -> None:
@@ -132,12 +154,6 @@ class QolsysZoneEntity(QolsysPanelEntity):
             name=f"Zone{self._zone_id} - {self._zone.sensorname}",
             model="Qolsys Zone",
             manufacturer="Johnson Controls",
-            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
-            # no longer in the DeviceInfo TypedDict, but it is still resolved at
-            # runtime. via_device_id needs the registry device id, which is not
-            # available here; migrate when the parent device entry is threaded
-            # through to the platforms.
-            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     async def async_added_to_hass(self) -> None:
@@ -179,12 +195,6 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
             name=f"Device{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
             model="Automation Device [%s]" % self._autdev.protocol,
             manufacturer="Johnson Controls",
-            # via_device is deprecated in HA 2026.9 (removed in 2027.8.0) and is
-            # no longer in the DeviceInfo TypedDict, but it is still resolved at
-            # runtime. via_device_id needs the registry device id, which is not
-            # available here; migrate when the parent device entry is threaded
-            # through to the platforms.
-            via_device=(DOMAIN, unique_id),  # type: ignore[typeddict-unknown-key]
         )
 
     @property

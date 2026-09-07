@@ -1,3 +1,7 @@
+## 1.7.2
+
+- Child devices (partitions, zones, automation devices) link to the panel with `via_device_id` resolved from the device registry instead of the deprecated `via_device` tuple. On HA 2026.9 the deprecation is raised as an error when an entity is re-added from the settings UI, which is how the alarm entity failed to come back after a rename.
+
 ## 1.7.1
 
 - TLS security level for the panel connection back to 0 (M3 reverted): a real IQ Panel fails level 1 with `CA_MD_TOO_WEAK`. Trust remains the pinned panel CA plus the TLS 1.2 floor; see VENDORED.md.
