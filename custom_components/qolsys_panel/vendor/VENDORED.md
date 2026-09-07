@@ -193,3 +193,15 @@ Residual: not verified against a physical panel. SECLEVEL=1 still accepts the
 SHA-1/2048-bit chain these panels are documented to present; if a panel does
 fail the handshake, the OpenSSL error appears as a QolsysSslError in the log and
 the exact message should be recorded here before the level is lowered again.
+
+### L1 - the open-safety-zone arming guard was commented out
+
+`commands/panel.py::arm` built `open_safety_zones` and then used it only inside
+a comment, so the panel armed with an open smoke, CO or water sensor and no
+warning anywhere. The guard is restored: open safety zones raise
+`QolsysZoneBypassError`, which the integration already surfaces as
+"Zone bypass required".
+
+Residual: a safety zone genuinely cannot be bypassed on these panels, so this
+is the behavior the code intended; if a specific panel disagrees the error names
+the zones, which is enough to tell.
