@@ -44,7 +44,23 @@ The library's own requirements are now declared directly in
 `mqtt_bridge/broker.py` and `mqtt_bridge/auth_plugin.py` additionally need
 `amqtt`, which upstream ships as the optional `bridge` extra. It is deliberately
 NOT declared: the broker is disabled and the modules that import `amqtt` are
-imported lazily (`broker.py::_import_amqtt`) or not at all.
+imported lazily (`broker.py::_import_amqtt`) or not at all. `auth_plugin.py` is
+therefore the one vendored module that cannot be imported, which is expected -
+only amqtt's plugin loader ever loads it, by dotted path.
+
+`passlib` must stay declared even though the new `user_codes.py` uses stdlib
+`hashlib`: `mqtt_bridge/bridge.py` imports it at module scope and `controller.py`
+imports that module.
+
+**Decision on deleting `mqtt_bridge/` (review N8).** 1,240 lines that cannot run,
+containing a disarm path, is dead weight in code that guards a house, and
+deleting the package (plus the `MqttBridge` import in `controller.py`) would
+close M8 by construction rather than by three guards, and drop `passlib` from
+the manifest. Kept for now: it is a large deviation to re-apply at every
+re-vendor, and the three guards (both settings pinned off with a startup check,
+the broker certificate pinned, the disarm path requiring a valid code) are
+tested. Revisit at the next upstream re-vendor, when the deviation can be judged
+against the new upstream layout.
 
 ## Audit fixes applied to the vendored copy
 
