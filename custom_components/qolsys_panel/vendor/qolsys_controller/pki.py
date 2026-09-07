@@ -12,6 +12,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+from .file_permissions import secure_directory, secure_file, secure_tree
 from .settings import QolsysSettings
 
 LOGGER = logging.getLogger(__name__)
@@ -120,6 +121,11 @@ class QolsysPKI:
 
         return False
 
+    async def secure_existing_material(self) -> None:
+        """Repair the modes of PKI material written before audit H2 was fixed."""
+        await asyncio.to_thread(secure_tree, self._settings.pki_directory)
+        await asyncio.to_thread(secure_tree, self._settings.mqtt_bridge_directory)
+
     async def check_key_file(self) -> bool:
         if await asyncio.to_thread(self.key_file_path.exists):
             LOGGER.debug("Found KEY")
@@ -212,6 +218,8 @@ class QolsysPKI:
         )
         async with aiofiles.open(self.mqtt_bridge_key_file_path, "wb") as f:
             await f.write(private_pem)
+        # Audit H2: private key, owner-only.
+        await secure_file(self.mqtt_bridge_key_file_path)
 
         LOGGER.debug("MQTT Bridge Broker: Creating CER")
         subject = issuer = x509.Name(
@@ -253,6 +261,7 @@ class QolsysPKI:
 
         async with aiofiles.open(self.mqtt_bridge_cer_file_path, "wb") as f:
             await f.write(cert_pem)
+        await secure_file(self.mqtt_bridge_cer_file_path)
 
         return True
 
@@ -287,6 +296,8 @@ class QolsysPKI:
         LOGGER.debug("Creating PKI: %s", self.formatted_id())
         LOGGER.debug("Creating PKI Directory")
         await asyncio.to_thread(self._subkeys_directory.resolve().mkdir, parents=True, exist_ok=True)
+        # Audit H2: this directory holds the keypad private key.
+        await secure_directory(self._subkeys_directory.resolve())
 
         LOGGER.debug("Creating KEY")
         private_key = rsa.generate_private_key(public_exponent=65537, key_size=key_size)
@@ -298,6 +309,8 @@ class QolsysPKI:
         path = self._subkeys_directory.joinpath(self.id + ".key")
         async with aiofiles.open(path, "wb") as f:
             await f.write(private_pem)
+        # Audit H2: unencrypted PKCS#8 private key, owner-only.
+        await secure_file(path)
 
         LOGGER.debug("Creating CER")
         subject = issuer = x509.Name(
@@ -340,6 +353,7 @@ class QolsysPKI:
         path = self._subkeys_directory.joinpath(self.id + ".cer")
         async with aiofiles.open(path, "wb") as f:
             await f.write(cert_pem)
+        await secure_file(path)
 
         LOGGER.debug("Creating CSR")
         csr = (
@@ -359,5 +373,6 @@ class QolsysPKI:
         path = self._subkeys_directory.joinpath(self.id + ".csr")
         async with aiofiles.open(path, "wb") as f:
             await f.write(csr_pem)
+        await secure_file(path)
 
         return True

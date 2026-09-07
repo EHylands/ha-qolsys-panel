@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from zeroconf.asyncio import AsyncZeroconf
 
 from .errors import QolsysConfigError
+from .file_permissions import SECRET_DIR_MODE, set_mode
 
 LOGGER = logging.getLogger(__name__)
 
@@ -388,6 +389,9 @@ class QolsysSettings:
             except Exception:
                 raise QolsysConfigError(f"Error creating pki_directory: {self.pki_directory.resolve()}")
 
+        # Audit H2: the PKI tree holds the keypad private key.
+        set_mode(self.pki_directory, SECRET_DIR_MODE)
+
         LOGGER.debug("Using pki_directory: %s", self.pki_directory.resolve())
 
         # Create media directory if not found
@@ -411,6 +415,8 @@ class QolsysSettings:
                 raise QolsysConfigError(f"Permission denied: Unable to create: {self.mqtt_bridge_directory.resolve()}")
             except Exception:
                 raise QolsysConfigError(f"Error creating mqtt_bridge_directory: {self.mqtt_bridge_directory.resolve()}")
+
+        set_mode(self.mqtt_bridge_directory, SECRET_DIR_MODE)
 
         LOGGER.debug("Using mqtt_bridge: %s", self.mqtt_bridge_directory.resolve())
 

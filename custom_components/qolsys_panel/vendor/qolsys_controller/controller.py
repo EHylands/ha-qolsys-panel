@@ -176,6 +176,9 @@ class QolsysController:
         # Check and created config_directory
         self.settings.check_config_directory(create=start_pairing)
 
+        # Audit H2: repair permissions on material written by older versions.
+        await self._pki.secure_existing_material()
+
         # Read user file for access codes
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self.panel.read_users_file)

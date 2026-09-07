@@ -50,3 +50,24 @@ imported lazily (`broker.py::_import_amqtt`) or not at all.
 
 Each entry names the audit ID; see the repository CHANGELOG for the matching
 commit.
+
+### H2 - PKI material was world readable (0o644) and went into every backup
+
+New module `qolsys_controller/file_permissions.py`: `set_mode`, `secure_file`
+(0o600), `secure_directory` (0o700) and `secure_tree` (a repair pass).
+
+- `pki.py`: chmod the per-MAC subkeys directory 0o700 and the `.key`, `.cer`,
+  `.csr` and MQTT-bridge key/cert files 0o600 right after writing them; new
+  `QolsysPKI.secure_existing_material()`.
+- `pairing_server.py`: same for the `.secure` client certificate and the
+  `.qolsys` pinned CA.
+- `settings.py::check_config_directory`: chmod the pki and mqtt_bridge
+  directories 0o700.
+- `controller.py::config_task`: run `secure_existing_material()` on startup so
+  installations paired before this fix are repaired, not just new ones.
+
+Residual: the private key is still stored unencrypted (PKCS#8, `NoEncryption`).
+Encrypting it needs a passphrase kept outside `/config`, which changes the
+pairing format and cannot be validated without a panel. A `/config` backup taken
+by a user who can already read files as the Home Assistant user still contains
+the key.

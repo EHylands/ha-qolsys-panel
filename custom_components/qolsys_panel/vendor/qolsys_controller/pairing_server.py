@@ -9,6 +9,7 @@ import aiofiles
 from zeroconf._exceptions import NonUniqueNameException
 
 from .errors import QolsysConfigError
+from .file_permissions import secure_file
 from .mdns import QolsysMDNS
 from .pki import QolsysPKI
 from .settings import QolsysSettings
@@ -233,6 +234,10 @@ class QolsysPairingServer:
                     async with aiofiles.open(self._pki.secure_file_path, mode="wb") as f:
                         await f.write(request)
 
+                    # Audit H2: the signed client certificate authenticates as the
+                    # keypad; it must not be world readable.
+                    await secure_file(self._pki.secure_file_path)
+
                     received_signed_client_certificate = True
 
                 # Receive Qolsys certificate
@@ -244,6 +249,8 @@ class QolsysPairingServer:
 
                     async with aiofiles.open(self._pki.qolsys_cer_file_path, mode="wb") as f:
                         await f.write(request)
+
+                    await secure_file(self._pki.qolsys_cer_file_path)
 
                     received_qolsys_cer = True
                     continue_pairing = False
