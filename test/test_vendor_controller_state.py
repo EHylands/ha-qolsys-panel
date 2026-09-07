@@ -1,5 +1,7 @@
 """The controller notifies observers when its state changes (audit M2, L6 item 1)."""
 
+from unittest.mock import MagicMock
+
 import pytest
 
 from custom_components.qolsys_panel.vendor.qolsys_controller.controller import (
@@ -78,3 +80,24 @@ async def test_an_invalid_transition_raises_and_does_not_notify() -> None:
 
     assert seen == []
     assert controller.controller_state is ControllerState.STOPPED
+
+
+async def test_a_raising_observer_does_not_break_the_transition() -> None:
+    """One bad observer must not stop the reconnect loop (review N6)."""
+    controller = QolsysController()
+    controller.state.register(
+        QolsysNotification.PANEL_STATUS_UPDATE,
+        MagicMock(side_effect=RuntimeError("observer is broken")),
+    )
+    seen = _watch(controller)
+
+    await controller.set_controller_state(ControllerState.CONNECTING)
+    await controller.set_controller_state(ControllerState.CONNECTED)
+    await controller.set_controller_state(ControllerState.RECONNECTING)
+
+    assert seen == [
+        ControllerState.CONNECTING,
+        ControllerState.CONNECTED,
+        ControllerState.RECONNECTING,
+    ]
+    assert controller.controller_state is ControllerState.RECONNECTING

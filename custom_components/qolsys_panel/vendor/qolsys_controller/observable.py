@@ -1,7 +1,10 @@
 import inspect
+import logging
 from typing import Any, Protocol
 
 from .enum_qolsys import QolsysNotification
+
+LOGGER = logging.getLogger(__name__)
 
 
 class Callback(Protocol):
@@ -59,6 +62,19 @@ class QolsysObservable:
         else:
             callback()
 
+    def _call_callback_safely(self, callback: Callback, event: Event) -> None:
+        """Deliver to one observer without letting it break the others.
+
+        Review N6: the M2 fix moved notification onto the reconnect path, where
+        run_supervised catches only CancelledError. An observer that raised
+        would stop the controller reconnecting while entities sat on their last
+        written state - the exact failure M2 was fixed to prevent.
+        """
+        try:
+            self._call_callback(callback, event)
+        except Exception:
+            LOGGER.exception("Observer for %s raised; continuing", event.type)
+
     def notify(self, event: Event) -> None:
         notification = event.type
 
@@ -68,7 +84,7 @@ class QolsysObservable:
             self._batch_update_data[notification] = event_dict
         else:
             for callback in self._observers.get(notification, []):
-                self._call_callback(callback, event)
+                self._call_callback_safely(callback, event)
 
     def start_batch_update(self) -> None:
         self._batch_update_data.clear()
@@ -79,7 +95,7 @@ class QolsysObservable:
         for event_type, event_data in self._batch_update_data.items():
             event = Event(notification=event_type, source=self, data=event_data)
             for callback in self._observers.get(event_type, []):
-                self._call_callback(callback, event)
+                self._call_callback_safely(callback, event)
         self._batch_update_data.clear()
 
     def cancel_batch_update(self) -> None:

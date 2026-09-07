@@ -311,7 +311,9 @@ async def async_migrate_entry(
         # safe value on entries that predate the new default; it can be turned
         # back off in the integration options.
         new_options = {**config_entry.options}
-        if not new_options.get(OPTION_DISARM_CODE, DEFAULT_ARM_CODE_REQUIRED):
+        # An entry that never set the option was running without a disarm code
+        # (review N7: the default here is about disarming, not arming).
+        if not new_options.get(OPTION_DISARM_CODE, False):
             _LOGGER.warning(
                 "Qolsys Panel now requires a user code to disarm. Add your codes to"
                 " users.conf; you can turn the check off again in the integration"

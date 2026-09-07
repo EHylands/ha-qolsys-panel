@@ -201,6 +201,12 @@ because a deferred state write happened to land after the flip.
 Entities are unavailable whenever the controller is not CONNECTED, so this makes
 "the panel is unreachable" deterministic instead of a scheduling accident.
 
+`observable.py` gained a per-observer guard (review N6): notification now
+happens on the reconnect path, where `run_supervised` catches only
+`CancelledError`, so an observer that raised would stop the controller
+reconnecting while entities sat on their last written state. Each callback is
+delivered inside a try/except that logs and continues.
+
 ### M5 - blocking filesystem I/O on the event loop
 
 `controller.py::config_task` called `settings.check_config_directory()`
