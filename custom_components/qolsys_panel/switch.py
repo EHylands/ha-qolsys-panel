@@ -114,10 +114,11 @@ class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEnt
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_exit_sounds = True
-        else:
-            self._partition.command_exit_sounds = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_exit_sounds = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -150,10 +151,11 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_entry_delay = True
-        else:
-            self._partition.command_arm_entry_delay = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_entry_delay = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -188,10 +190,11 @@ class PartitionSwitch_ArmStayInstant(
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_stay_instant = True
-        else:
-            self._partition.command_arm_stay_instant = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_stay_instant = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -226,10 +229,11 @@ class PartitionSwitch_SilentDisarming(
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_stay_silent_disarming = True
-        else:
-            self._partition.command_arm_stay_silent_disarming = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_stay_silent_disarming = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:

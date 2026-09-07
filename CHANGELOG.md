@@ -1,3 +1,7 @@
+## 1.7.4
+
+- The arm-flag switches (exit sounds, entry delay, arm-stay instant, silent disarming) keep the library defaults on a fresh install instead of starting off. Upstream treated a missing saved state as off, so a new install armed from Home Assistant with no entry delay.
+
 ## 1.7.3
 
 - The parent-device lookup uses `async_get_device_by_identifier` (the current registry API) instead of the deprecated `async_get_device`.
