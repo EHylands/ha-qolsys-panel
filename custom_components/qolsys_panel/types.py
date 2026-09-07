@@ -1,6 +1,6 @@
 """Types for the Qolsys Panel integration."""
 
-from qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller import qolsys_controller
 
 from homeassistant.config_entries import ConfigEntry
 

@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_qolsys import (
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.enum_qolsys import (
     PartitionAlarmState,
     PartitionArmingType,
     PartitionSystemStatus,
 )
-from qolsys_controller.errors import (
+from .vendor.qolsys_controller.errors import (
     QolsysOperationTimeoutError,
     QolsysUserCodeError,
     QolsysZoneBypassError,

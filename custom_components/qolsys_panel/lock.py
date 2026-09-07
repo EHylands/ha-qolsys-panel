@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_lock import LockService
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_lock import LockService
 
 from homeassistant.components.lock import LockEntity, LockEntityFeature
 from homeassistant.core import HomeAssistant

@@ -5,17 +5,17 @@ from __future__ import annotations
 import logging
 from typing import cast
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_battery import BatteryService
-from qolsys_controller.automation.service_meter import MeterService, QolsysMeter
-from qolsys_controller.automation.service_sensor import QolsysSensor, SensorService
-from qolsys_controller.enum_qolsys import (
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_battery import BatteryService
+from .vendor.qolsys_controller.automation.service_meter import MeterService, QolsysMeter
+from .vendor.qolsys_controller.automation.service_sensor import QolsysSensor, SensorService
+from .vendor.qolsys_controller.enum_qolsys import (
     PartitionError,
     QolsysMeterScale,
     QolsysNotification,
     QolsysSensorScale,
 )
-from qolsys_controller.observable import Event
+from .vendor.qolsys_controller.observable import Event
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,

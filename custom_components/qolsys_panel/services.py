@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from qolsys_controller.errors import CommandExecutionError
+from .vendor.qolsys_controller.errors import CommandExecutionError
 import voluptuous as vol
 
 from custom_components.qolsys_panel import entity

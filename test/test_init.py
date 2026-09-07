@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel import async_migrate_entry
 from custom_components.qolsys_panel.const import (

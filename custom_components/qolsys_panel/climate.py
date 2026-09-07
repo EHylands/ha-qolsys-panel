@@ -5,9 +5,9 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_thermostat import ThermostatService
-from qolsys_controller.enum_qolsys import (
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_thermostat import ThermostatService
+from .vendor.qolsys_controller.enum_qolsys import (
     QolsysFanMode,
     QolsysHvacMode,
     QolsysTemperatureUnit,

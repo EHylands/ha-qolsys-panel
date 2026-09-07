@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import (
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
     PartitionAlarmType,
     PartitionQuickExitState,
     ZoneSensorType,

@@ -5,8 +5,8 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_siren import SirenService
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_siren import SirenService
 
 from homeassistant.components.siren import SirenEntity
 from homeassistant.core import HomeAssistant

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_outlet import OutletService
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_outlet import OutletService
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant

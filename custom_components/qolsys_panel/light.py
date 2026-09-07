@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_light import LightService
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_light import LightService
 
 from homeassistant.components.light import ATTR_BRIGHTNESS, ColorMode, LightEntity
 from homeassistant.core import HomeAssistant

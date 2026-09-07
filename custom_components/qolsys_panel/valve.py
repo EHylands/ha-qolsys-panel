@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_valve import ValveService
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_valve import ValveService
 
 from homeassistant.components.valve import (
     ValveDeviceClass,

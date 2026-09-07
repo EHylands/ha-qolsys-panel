@@ -11,8 +11,8 @@ import re
 from ssl import SSLError
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 import voluptuous as vol
 
 from homeassistant.components import zeroconf
@@ -59,7 +59,10 @@ _LOGGER = logging.getLogger(__name__)
 # QolsysPanelConfigFlow.__init__). This only takes effect while a flow is
 # running; on a normal restart the config flow does not run and these loggers
 # follow the level configured in Home Assistant.
-_CONFIG_FLOW_DEBUG_LOGGERS = ("qolsys_controller", __name__)
+_CONFIG_FLOW_DEBUG_LOGGERS = (
+    "custom_components.qolsys_panel.vendor.qolsys_controller",
+    __name__,
+)
 
 
 # Format of PKI directories is a 12-character hex string (MAC address without colons).

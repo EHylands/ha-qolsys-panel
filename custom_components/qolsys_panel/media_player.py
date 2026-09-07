@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller import qolsys_controller
 
 from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature

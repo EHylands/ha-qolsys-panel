@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller import qolsys_controller
 
 from homeassistant.components.scene import Scene
 from homeassistant.core import HomeAssistant

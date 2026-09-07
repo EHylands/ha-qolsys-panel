@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock
 from conftest import PANEL_MAC
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.errors import CommandExecutionError
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import CommandExecutionError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,

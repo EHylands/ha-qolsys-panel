@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import cast
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.device import QolsysAutomationDevice
-from qolsys_controller.automation.protocol_status import StatusProtocol
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.partition import QolsysPartition
-from qolsys_controller.zone import QolsysZone
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.device import QolsysAutomationDevice
+from .vendor.qolsys_controller.automation.protocol_status import StatusProtocol
+from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from .vendor.qolsys_controller.partition import QolsysPartition
+from .vendor.qolsys_controller.zone import QolsysZone
 
 from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo

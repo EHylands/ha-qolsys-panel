@@ -7,9 +7,9 @@ import logging
 import time
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_status import StatusService
-from qolsys_controller.enum_qolsys import (
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_status import StatusService
+from .vendor.qolsys_controller.enum_qolsys import (
     PartitionAlarmType,
     PartitionQuickExitState,
     QolsysNotification,

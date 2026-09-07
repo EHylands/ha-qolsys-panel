@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 
 from custom_components.qolsys_panel.entity import (
     QolsysAutomationDeviceEntity,

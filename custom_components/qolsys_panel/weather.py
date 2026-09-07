@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 import logging
 
-from qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller import qolsys_controller
 
 from homeassistant.components.weather import (
     Forecast,

@@ -6,9 +6,9 @@ import asyncio
 import logging
 import ssl
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.errors import QolsysMqttError, QolsysSslError
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from .vendor.qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant

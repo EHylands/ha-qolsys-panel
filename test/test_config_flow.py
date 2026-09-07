@@ -17,7 +17,7 @@ from conftest import (
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
