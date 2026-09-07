@@ -13,7 +13,7 @@ from .vendor.qolsys_controller.observable import Event
 from .vendor.qolsys_controller.partition import QolsysPartition
 from .vendor.qolsys_controller.zone import QolsysZone
 
-from homeassistant.components.sensor import Entity
+from homeassistant.helpers.entity import Entity
 from homeassistant.core import callback
 from homeassistant.helpers.device_registry import DeviceInfo
 
