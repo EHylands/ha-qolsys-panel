@@ -1,3 +1,7 @@
+## 1.7.8
+
+- Unknown panel database tables: the two the panel is known to ship and nothing reads (`UNUSED_TABLE_URIS`: Yale lock ids, keyboard data) are skipped at debug level; a table the library has never seen logs one warning naming it, instead of 1.7.7's silent skip or upstream's three errors.
+
 ## 1.7.7
 
 - The panel's database tables the library does not use (Yale lock ids, keyboard data) no longer log three ERROR lines each at every start; they are skipped with one debug line.

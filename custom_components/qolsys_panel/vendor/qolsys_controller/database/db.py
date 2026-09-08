@@ -42,6 +42,13 @@ from .table_zwave_other import QolsysTableZwaveOther
 
 LOGGER = logging.getLogger(__name__)
 
+# Tables the IQ Panel sends in its database dump that this library has no reader
+# for and nothing depends on. Seen on an IQ Panel 4, 2026-09-07.
+UNUSED_TABLE_URIS = frozenset({
+    "content://com.qolsys.qolsysprovider.YaleAuthIdsProvider/yale_auth_ids",
+    "content://com.qolsys.qolsysprovider.ImeDataContentProvider/ime_data",
+})
+
 
 class QolsysDB:
     def __init__(self) -> None:  # noqa: PLR0915
@@ -406,14 +413,20 @@ class QolsysDB:
             table = self.get_table(uri.get("uri", ""))
 
             if table is None:
-                # The panel ships tables this library never reads (Yale lock ids,
-                # keyboard data, ...). Upstream logged three ERROR lines per table
-                # at every start; they are not a fault, so say so once, quietly.
-                LOGGER.debug(
-                    "Database: skipping table %s the library does not use (%d rows)",
-                    uri.get("uri", "?"),
-                    len(uri.get("resultSet") or []),
-                )
+                name = uri.get("uri", "?")
+                rows = len(uri.get("resultSet") or [])
+                if name in UNUSED_TABLE_URIS:
+                    # Known and deliberately not read; upstream logged three ERROR
+                    # lines per table at every start for these.
+                    LOGGER.debug("Database: skipping unused table %s (%d rows)", name, rows)
+                else:
+                    # A table this library has never seen: worth a look, once per load.
+                    LOGGER.warning(
+                        "Database: panel sent a table this library does not know, %s (%d rows); "
+                        "add it to UNUSED_TABLE_URIS if it can be ignored",
+                        name,
+                        rows,
+                    )
                 continue
 
             for u in uri.get("resultSet", ""):
