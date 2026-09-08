@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel base entities."""
 
+import threading
 from typing import cast
 from unittest.mock import MagicMock
 
@@ -183,3 +184,43 @@ def test_handle_update_writes_state_without_force_refresh(
 
     assert entity.async_write_ha_state.call_count == 2
     entity.schedule_update_ha_state.assert_not_called()
+
+
+def test_handle_update_writes_directly_on_the_loop_thread(controller: MagicMock) -> None:
+    """On the event-loop thread the state is written straight away."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.hass = MagicMock(loop_thread_id=threading.get_ident())
+    entity.async_write_ha_state = MagicMock()
+
+    entity._handle_update(None)
+
+    entity.async_write_ha_state.assert_called_once_with()
+    entity.hass.loop.call_soon_threadsafe.assert_not_called()
+
+
+def test_handle_update_marshals_to_the_loop_from_another_thread(
+    controller: MagicMock,
+) -> None:
+    """Off the loop (the library notifying from an executor) the write is handed to the loop."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.hass = MagicMock(loop_thread_id=threading.get_ident())
+    entity.async_write_ha_state = MagicMock()
+
+    worker = threading.Thread(target=entity._handle_update)
+    worker.start()
+    worker.join()
+
+    entity.async_write_ha_state.assert_not_called()
+    entity.hass.loop.call_soon_threadsafe.assert_called_once_with(
+        entity.async_write_ha_state
+    )
+
+
+def test_handle_update_without_hass_writes_directly(controller: MagicMock) -> None:
+    """With no hass there is no loop to marshal to; the write goes straight through."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.async_write_ha_state = MagicMock()
+
+    entity._handle_update(None)
+
+    entity.async_write_ha_state.assert_called_once_with()

@@ -1,3 +1,7 @@
+## 1.7.6
+
+- State updates are written on Home Assistant's event loop no matter which thread the library notified on. A failed arm (open zone, Auto Bypass off) notified from an executor thread; HA refused the write, the observer logged `Observer for PARTITION_UPDATE raised` and the update was dropped. The doorbell and chime handlers get the same guard, since they also start a timer.
+
 ## 1.7.5
 
 - The arm-flag switches redraw after toggling (upstream never wrote the new state, so the dashboard showed the old value until the next update). Tests updated for the 1.7.4 default change.

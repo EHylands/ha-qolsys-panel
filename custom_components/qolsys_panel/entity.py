@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from typing import cast
 
 from homeassistant.core import callback
@@ -68,7 +69,25 @@ class QolsysPanelEntity(Entity):
         """Return True if entity is available."""
         return self.QolsysPanel.controller_state == ControllerState.CONNECTED
 
-    @callback
+    def _on_loop_thread(self) -> bool:
+        """True when running on Home Assistant's event-loop thread."""
+        hass = self.hass
+        return hass is None or threading.get_ident() == hass.loop_thread_id
+
+    def _write_state_threadsafe(self) -> None:
+        """Write the state from whichever thread the library notified on.
+
+        The library fires observers synchronously on the thread that changed
+        the model, and that is not always the event loop: a failed arm on
+        2026-09-07 notified from an executor thread, HA raised on
+        async_write_ha_state, the observer logged the error and the update was
+        dropped. Off the loop, hand the write to the loop instead.
+        """
+        if self._on_loop_thread():
+            self.async_write_ha_state()
+        else:
+            self.hass.loop.call_soon_threadsafe(self.async_write_ha_state)
+
     def _handle_update(self, event: Event | None = None) -> None:
         """Write the new state.
 
@@ -78,7 +97,7 @@ class QolsysPanelEntity(Entity):
         every zone opening and panel ping built a coroutine and a Task for an
         update method that does not exist (audit M4).
         """
-        self.async_write_ha_state()
+        self._write_state_threadsafe()
 
     async def async_added_to_hass(self) -> None:
         """Observe connection_status changes."""

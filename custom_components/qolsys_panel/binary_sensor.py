@@ -531,6 +531,11 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
 
     def _handle_doorbell_event(self, event_dict: dict[str, Any]) -> None:
         """Called when Qolsys doorbell is pressed."""
+        if not self._on_loop_thread():
+            # The library notifies on its own thread; the timer and the
+            # state write below both belong to the event loop.
+            self.hass.loop.call_soon_threadsafe(self._handle_doorbell_event, event_dict)
+            return
         now = time.monotonic()
 
         # Debounce: ignore rapid presses
@@ -584,6 +589,11 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
 
     def _handle_chime_event(self, event_dict: dict[str, Any]) -> None:
         """Called when Qolsys chime is called."""
+        if not self._on_loop_thread():
+            # The library notifies on its own thread; the timer and the
+            # state write below both belong to the event loop.
+            self.hass.loop.call_soon_threadsafe(self._handle_chime_event, event_dict)
+            return
         now = time.monotonic()
 
         # Debounce: ignore rapid presses
