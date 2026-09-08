@@ -1,3 +1,7 @@
+## 1.7.7
+
+- The panel's database tables the library does not use (Yale lock ids, keyboard data) no longer log three ERROR lines each at every start; they are skipped with one debug line.
+
 ## 1.7.6
 
 - State updates are written on Home Assistant's event loop no matter which thread the library notified on. A failed arm (open zone, Auto Bypass off) notified from an executor thread; HA refused the write, the observer logged `Observer for PARTITION_UPDATE raised` and the update was dropped. The doorbell and chime handlers get the same guard, since they also start a timer.

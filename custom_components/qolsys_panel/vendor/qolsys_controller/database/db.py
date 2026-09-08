@@ -406,9 +406,14 @@ class QolsysDB:
             table = self.get_table(uri.get("uri", ""))
 
             if table is None:
-                LOGGER.error("Please Report")
-                LOGGER.error("Loading Unknown databse URI")
-                LOGGER.error(uri)
+                # The panel ships tables this library never reads (Yale lock ids,
+                # keyboard data, ...). Upstream logged three ERROR lines per table
+                # at every start; they are not a fault, so say so once, quietly.
+                LOGGER.debug(
+                    "Database: skipping table %s the library does not use (%d rows)",
+                    uri.get("uri", "?"),
+                    len(uri.get("resultSet") or []),
+                )
                 continue
 
             for u in uri.get("resultSet", ""):
