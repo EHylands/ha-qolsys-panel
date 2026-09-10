@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.4 (2026-09-10)
+
+### Bug Fixes
+
+- Backport @ipleva commit 265fe75
+  ([`b16729d`](https://github.com/EHylands/ha-qolsys-panel/commit/b16729d794164eeca9d1a0d1d5ab255815f3a69f))
+
+
 ## v1.6.3 (2026-09-10)
 
 ### Bug Fixes
