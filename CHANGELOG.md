@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v1.6.2 (2026-09-10)
+
+### Bug Fixes
+
+- Backport changes from @ipleva commit 9786917
+  ([`dd6b9f0`](https://github.com/EHylands/ha-qolsys-panel/commit/dd6b9f0b57e6426c37822df2dd293bcfbc94600b))
+
+### Chores
+
+- **deps**: Bump gitpython from 3.1.43 to 3.1.61
+  ([#119](https://github.com/EHylands/ha-qolsys-panel/pull/119),
+  [`a7b4361`](https://github.com/EHylands/ha-qolsys-panel/commit/a7b4361a0ffbca80722382f2569dbb3a78796808))
+
+- **deps**: Bump qolsys-controller from 1.7.0 to 1.7.1
+  ([#120](https://github.com/EHylands/ha-qolsys-panel/pull/120),
+  [`79ea073`](https://github.com/EHylands/ha-qolsys-panel/commit/79ea073c317561c8b1517c37a655ff63c3f8fc0b))
+
+
 ## v1.6.1 (2026-08-27)
 
 ### Bug Fixes
