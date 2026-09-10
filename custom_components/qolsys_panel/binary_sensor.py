@@ -24,6 +24,7 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
@@ -111,8 +112,9 @@ async def async_setup_entry(
     """Set up binary sensors."""
     entities: list[BinarySensorEntity] = []
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
 
     # Add Doorbell Binary Sensor
     entities.append(QolsysDoorbellSensor(hass, QolsysPanel, unique_id))

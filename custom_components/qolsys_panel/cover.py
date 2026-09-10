@@ -15,6 +15,7 @@ from homeassistant.components.cover import (
     CoverEntityFeature,
 )
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
@@ -32,8 +33,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up Covers."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+
     entities: list[CoverEntity] = []
 
     # Add Automation Device Covers

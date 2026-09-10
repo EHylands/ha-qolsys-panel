@@ -8,6 +8,7 @@ import pytest
 from custom_components.qolsys_panel.lock import AutomationDeviceLock, async_setup_entry
 from homeassistant.components.lock import LockEntityFeature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 
 UID = PANEL_MAC
 
@@ -23,6 +24,21 @@ def controller() -> MagicMock:
     device.service_get_protocol.return_value = [service]
     c.state.automation_devices = [device]
     return c
+
+
+async def test_async_setup_entry_missing_unique_id_raises(
+    hass: HomeAssistant, controller: MagicMock
+) -> None:
+    """Setup raises ConfigEntryError when the config entry has no unique_id."""
+    config_entry = MagicMock()
+    config_entry.runtime_data = controller
+    config_entry.unique_id = None
+    add_entities = MagicMock()
+
+    with pytest.raises(ConfigEntryError):
+        await async_setup_entry(hass, config_entry, add_entities)
+
+    add_entities.assert_not_called()
 
 
 async def test_async_setup_entry_creates_entities(

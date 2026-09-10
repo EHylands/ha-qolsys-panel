@@ -9,6 +9,7 @@ from qolsys_controller.automation.service_outlet import OutletService
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
@@ -25,8 +26,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up switch."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
 
     entities: list[SwitchEntity] = []
 

@@ -23,6 +23,7 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .types import QolsysPanelConfigEntry
@@ -39,8 +40,9 @@ async def async_setup_entry(
 ) -> None:
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
-    unique_id = config_entry.unique_id
-    assert unique_id is not None
+    if (unique_id := config_entry.unique_id) is None:
+        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+
     entities: list[ClimateEntity] = []
 
     # Add Automation Device Thermostats
