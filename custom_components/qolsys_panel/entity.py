@@ -12,8 +12,8 @@ from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.partition import QolsysPartition
 from qolsys_controller.zone import QolsysZone
 
-from homeassistant.components.sensor import Entity
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
 
