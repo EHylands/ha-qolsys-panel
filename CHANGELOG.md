@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.6.5 (2026-09-10)
+
+### Bug Fixes
+
+- Set DEFAULT_DISARM_CODE_REQUIRED = True
+  ([`e15cf82`](https://github.com/EHylands/ha-qolsys-panel/commit/e15cf82a39fd8b25a3514203ae54f76aef5dbca5))
+
+
 ## v1.6.4 (2026-09-10)
 
 ### Bug Fixes
