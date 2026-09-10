@@ -16,13 +16,19 @@ class QolsysMqttCommandQueue:
         requestID = response.get("requestID")
 
         if not requestID:
-            LOGGER.error("MQTT Command response missing requestID: %s", response)
+            # Broadcasts are routed elsewhere by the controller; reaching here means a
+            # routing regression, worth a debug line, never an error per message.
+            LOGGER.debug("MQTT Command response without requestID reached the queue: %s", response.get("eventName"))
             return
 
         async with self.lock:
             future = self.waiters.pop(requestID, None)
 
-        if future and not future.done():
+        if future is None:
+            # A reply nobody waits for any more: the command timed out or was cancelled.
+            LOGGER.debug("MQTT Command late or unmatched response for requestID %s", requestID)
+            return
+        if not future.done():
             future.set_result(response)
 
     async def wait_for_response(self, request_id: str, timeout: int = 30) -> dict[str, Any]:

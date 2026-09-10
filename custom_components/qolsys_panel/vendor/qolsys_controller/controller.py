@@ -34,6 +34,7 @@ from .errors import (
 )
 from .mqtt_bridge.bridge import MqttBridge
 from .mqtt_command_queue import QolsysMqttCommandQueue
+from .panel_broadcasts import QolsysPanelBroadcasts
 from .panel import QolsysPanel
 from .pki import QolsysPKI
 from .settings import QolsysSettings
@@ -72,6 +73,7 @@ class QolsysController:
 
         # Plugin
         self._mqtt_command_queue = QolsysMqttCommandQueue()
+        self._panel_broadcasts = QolsysPanelBroadcasts()
         self._zone_id: str = "1"
         self._pairing_server: QolsysPairingServer | None = None
         self._supervisor_task: asyncio.Task[None] | None = None
@@ -415,9 +417,14 @@ class QolsysController:
             if self.settings.log_mqtt_messages:
                 LOGGER.debug("MQTT TOPIC: %s\n%s", message.topic, data_str)
 
-            # Panel response to MQTT Commands and Panel Commands to IQ Remote
+            # The response topic carries two kinds of message: replies to commands we
+            # sent (they echo our requestID) and the panel's own broadcasts to every
+            # keypad (no requestID; the daily weather, for one). Route by shape.
             if message.topic.matches("response_" + self.settings.random_mac):
-                await self._mqtt_command_queue.handle_response(data_json)
+                if data_json.get("requestID"):
+                    await self._mqtt_command_queue.handle_response(data_json)
+                else:
+                    self._panel_broadcasts.handle(data_json)
 
             # Panel updates to IQ2MEID database
             elif message.topic.matches("iq2meid"):

@@ -1,3 +1,7 @@
+## 1.7.9
+
+- The panel's own broadcasts to keypads (no requestID; the daily weather `splitMessage`) are routed to a broadcast handler instead of the command queue, which had logged them as errors every evening. Known broadcast types are skipped at debug level; a type never seen before is logged once by name. The queue itself now treats a stray reply (no requestID, or nobody waiting) as a debug line. Tests for both.
+
 ## 1.7.8
 
 - Unknown panel database tables: the two the panel is known to ship and nothing reads (`UNUSED_TABLE_URIS`: Yale lock ids, keyboard data) are skipped at debug level; a table the library has never seen logs one warning naming it, instead of 1.7.7's silent skip or upstream's three errors.
