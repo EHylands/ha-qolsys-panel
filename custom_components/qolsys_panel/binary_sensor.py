@@ -415,12 +415,12 @@ class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return if this zone ac status is not normal."""
+        """Return True while this zone has AC power (device_class PLUG: on == plugged in)."""
         return self._zone.ac_status == "Normal"
 
 
 class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
-    """A binary sensor entity for a zone in a Qolsys Panel."""
+    "A binary sensor entity for a zone in a Qolsys Panel."
 
     _attr_name = None
 
