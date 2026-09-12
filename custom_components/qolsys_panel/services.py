@@ -35,6 +35,100 @@ from .types import QolsysPanelConfigEntry
 _LOGGER = logging.getLogger(__name__)
 
 
+async def async_change_master_volume(
+    ent: entity.QolsysPanelEntity, call: ServiceCall
+) -> None:
+    """Change the master volume on the Qolsys Panel."""
+    entity_id: str = ent.entity_id
+
+    # Get the entity registry entry
+    er = entity_registry.async_get(call.hass)
+    entry = er.async_get(entity_id)
+
+    if entry is None:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
+
+    # Get the config entry associated with the entity
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
+    if config_entry is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="integration_not_found",
+            translation_placeholders={"target": entity_id},
+        )
+
+    if config_entry.state is not ConfigEntryState.LOADED:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="not_loaded",
+            translation_placeholders={"target": config_entry.title},
+        )
+
+    QolsysPanel = config_entry.runtime_data
+    volume_level: int = call.data["volume"]
+    try:
+        await QolsysPanel.commands.panel.change_master_volume_level(volume_level)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
+
+
+async def async_change_doorbell_volume(
+    ent: entity.QolsysPanelEntity, call: ServiceCall
+) -> None:
+    """Change the doorbell volume on the Qolsys Panel."""
+    entity_id: str = ent.entity_id
+
+    # Get the entity registry entry
+    er = entity_registry.async_get(call.hass)
+    entry = er.async_get(entity_id)
+
+    if entry is None:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="entity_not_found",
+            translation_placeholders={"entity_id": entity_id},
+        )
+
+    # Get the config entry associated with the entity
+    config_entry: QolsysPanelConfigEntry | None = None
+    if entry.config_entry_id is not None:
+        config_entry = call.hass.config_entries.async_get_entry(entry.config_entry_id)
+    if config_entry is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="integration_not_found",
+            translation_placeholders={"target": entity_id},
+        )
+
+    if config_entry.state is not ConfigEntryState.LOADED:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="not_loaded",
+            translation_placeholders={"target": config_entry.title},
+        )
+
+    QolsysPanel = config_entry.runtime_data
+    volume_level: int = call.data["volume"]
+    try:
+        await QolsysPanel.commands.panel.change_doorbell_volume_level(volume_level)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
+
+
 async def async_trigger_police(
     ent: entity.QolsysPartitionEntity, call: ServiceCall
 ) -> None:

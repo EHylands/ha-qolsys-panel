@@ -18,6 +18,8 @@ SERVICE_TRIGGER_POLICE = "trigger_police"
 SERVICE_TRIGGER_AUXILLIARY = "trigger_auxilliary"
 SERVICE_TRIGGER_FIRE = "trigger_fire"
 SERVICE_QUICK_EXIT = "quick_exit"
+SERVICE_CHANGE_MASTER_VOLUME = "change_master_volume"
+SERVICE_CHANGE_DOORBELL_VOLUME = "change_doorbell_volume"
 
 DEFAULT_QUICK_EXIT_DURATION = 120
 
