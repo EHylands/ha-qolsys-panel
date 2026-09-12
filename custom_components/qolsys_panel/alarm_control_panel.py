@@ -15,6 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import DOMAIN
 from .entity import QolsysPartitionEntity
 from .types import QolsysPanelConfigEntry
 from .vendor.qolsys_controller import qolsys_controller
@@ -30,6 +31,14 @@ from .vendor.qolsys_controller.errors import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# What the user was trying to do, in the words the error message uses.
+ACTION_WORDS = {
+    "DISARM": "disarm",
+    "ARM_STAY": "arm home",
+    "ARM_AWAY": "arm away",
+    "ARM_NIGHT": "arm night",
+}
 
 PARALLEL_UPDATES = 0
 
@@ -146,13 +155,21 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         hash of the code (see the vendored panel.check_user, audit H3/L5).
         """
         if not code:
-            raise ServiceValidationError(f"{action}: A user code is required")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="user_code_required",
+                translation_placeholders={"action": ACTION_WORDS[action]},
+            )
 
         # check_user derives a PBKDF2 hash per stored code (audit H3), so it runs
         # in an executor rather than on the event loop.
         user_id = await asyncio.to_thread(self.QolsysPanel.panel.check_user, code)
         if user_id == -1:
-            raise ServiceValidationError(f"{action}: Invalid user code")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="user_code_invalid",
+                translation_placeholders={"action": ACTION_WORDS[action]},
+            )
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
         """Disarm this panel."""
@@ -162,7 +179,11 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         try:
             await self._partition.disarm(user_code=code or "")
         except QolsysUserCodeError as err:
-            raise HomeAssistantError("DISARM: Invalid user code") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="user_code_invalid",
+                translation_placeholders={"action": ACTION_WORDS["DISARM"]},
+            ) from err
         except QolsysOperationTimeoutError as err:
             raise HomeAssistantError("DISARM: Operation timed out") from err
         except Exception as err:
@@ -191,7 +212,11 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         try:
             await self._partition.arm(arm_mode, user_code=code or "")
         except QolsysUserCodeError as err:
-            raise HomeAssistantError(f"{arm_mode.name}: Invalid user code") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="user_code_invalid",
+                translation_placeholders={"action": ACTION_WORDS[arm_mode.name]},
+            ) from err
         except QolsysOperationTimeoutError as err:
             raise HomeAssistantError(f"{arm_mode.name}: Operation timed out") from err
         except QolsysZoneBypassError as err:

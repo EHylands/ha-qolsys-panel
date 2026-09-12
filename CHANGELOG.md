@@ -1,3 +1,7 @@
+## 1.8.1
+
+- The user-code errors are sentences a person can act on ("Enter your user code to disarm.", "That user code is not valid. Check it and try to arm home again."), raised through Home Assistant's translation system so the dashboard shows them without a "Validation error: DISARM:" prefix. English and French.
+
 ## 1.8.0
 
 - New service `qolsys_panel.change_master_volume` (target: the panel's config entry; volume 0 to 15), from upstream 1.7.0-beta. Upstream's doorbell-volume service was added and removed the same day and is not carried.
