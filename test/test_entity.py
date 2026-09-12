@@ -1,11 +1,11 @@
 """Tests for the Qolsys Panel base entities."""
 
+import threading
 from typing import cast
 from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 
 from custom_components.qolsys_panel.entity import (
     QolsysAutomationDeviceEntity,
@@ -15,6 +15,11 @@ from custom_components.qolsys_panel.entity import (
     QolsysWeatherEntity,
     QolsysZoneEntity,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    ControllerState,
+    QolsysNotification,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 
 UID = PANEL_MAC
 
@@ -44,12 +49,12 @@ async def test_panel_entity_register_unregister(controller: MagicMock) -> None:
 
     await entity.async_added_to_hass()
     controller.state.register.assert_any_call(
-        QolsysNotification.PANEL_STATUS_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PANEL_STATUS_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     controller.state.unregister.assert_any_call(
-        QolsysNotification.PANEL_STATUS_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PANEL_STATUS_UPDATE, entity._handle_update
     )
 
 
@@ -59,12 +64,12 @@ async def test_partition_entity_register_unregister(controller: MagicMock) -> No
 
     await entity.async_added_to_hass()
     cast(MagicMock, entity._partition).register.assert_any_call(
-        QolsysNotification.PARTITION_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PARTITION_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     cast(MagicMock, entity._partition).unregister.assert_any_call(
-        QolsysNotification.PARTITION_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PARTITION_UPDATE, entity._handle_update
     )
 
 
@@ -74,12 +79,12 @@ async def test_zone_entity_register_unregister(controller: MagicMock) -> None:
 
     await entity.async_added_to_hass()
     cast(MagicMock, entity._zone).register.assert_any_call(
-        QolsysNotification.ZONE_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.ZONE_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     cast(MagicMock, entity._zone).unregister.assert_any_call(
-        QolsysNotification.ZONE_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.ZONE_UPDATE, entity._handle_update
     )
 
 
@@ -89,12 +94,12 @@ async def test_panel_sensor_entity_register_unregister(controller: MagicMock) ->
 
     await entity.async_added_to_hass()
     controller.state.register.assert_any_call(
-        QolsysNotification.PANEL_SETTINGS_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PANEL_SETTINGS_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     controller.state.unregister.assert_any_call(
-        QolsysNotification.PANEL_SETTINGS_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.PANEL_SETTINGS_UPDATE, entity._handle_update
     )
 
 
@@ -104,12 +109,12 @@ async def test_weather_entity_register_unregister(controller: MagicMock) -> None
 
     await entity.async_added_to_hass()
     controller.state.weather.register.assert_any_call(
-        QolsysNotification.WEATHER_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.WEATHER_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     controller.state.weather.unregister.assert_any_call(
-        QolsysNotification.WEATHER_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.WEATHER_UPDATE, entity._handle_update
     )
 
 
@@ -119,12 +124,12 @@ async def test_automation_device_register_unregister(controller: MagicMock) -> N
 
     await entity.async_added_to_hass()
     cast(MagicMock, entity._autdev).register.assert_any_call(
-        QolsysNotification.AUTOMATION_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.AUTOMATION_UPDATE, entity._handle_update
     )
 
     await entity.async_will_remove_from_hass()
     cast(MagicMock, entity._autdev).unregister.assert_any_call(
-        QolsysNotification.AUTOMATION_UPDATE, entity.schedule_update_ha_state
+        QolsysNotification.AUTOMATION_UPDATE, entity._handle_update
     )
 
 
@@ -158,3 +163,64 @@ def test_automation_device_missing_raises(controller: MagicMock) -> None:
     controller.state.automation_device.return_value = None
     with pytest.raises(ValueError, match="virtual_node_id"):
         QolsysAutomationDeviceEntity(controller, "5", UID)
+
+
+def test_handle_update_writes_state_without_force_refresh(
+    controller: MagicMock,
+) -> None:
+    """The observer callback writes the state directly (audit M4).
+
+    The library calls the observer with an Event when the callback takes a
+    positional argument; schedule_update_ha_state read that Event as
+    force_refresh=True and sent HA down the create-a-Task path for an update
+    method these entities do not define.
+    """
+    entity = QolsysPanelEntity(controller, UID)
+    entity.async_write_ha_state = MagicMock()
+    entity.schedule_update_ha_state = MagicMock()
+
+    entity._handle_update(Event(QolsysNotification.PANEL_STATUS_UPDATE, controller))
+    entity._handle_update()
+
+    assert entity.async_write_ha_state.call_count == 2
+    entity.schedule_update_ha_state.assert_not_called()
+
+
+def test_handle_update_writes_directly_on_the_loop_thread(controller: MagicMock) -> None:
+    """On the event-loop thread the state is written straight away."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.hass = MagicMock(loop_thread_id=threading.get_ident())
+    entity.async_write_ha_state = MagicMock()
+
+    entity._handle_update(None)
+
+    entity.async_write_ha_state.assert_called_once_with()
+    entity.hass.loop.call_soon_threadsafe.assert_not_called()
+
+
+def test_handle_update_marshals_to_the_loop_from_another_thread(
+    controller: MagicMock,
+) -> None:
+    """Off the loop (the library notifying from an executor) the write is handed to the loop."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.hass = MagicMock(loop_thread_id=threading.get_ident())
+    entity.async_write_ha_state = MagicMock()
+
+    worker = threading.Thread(target=entity._handle_update)
+    worker.start()
+    worker.join()
+
+    entity.async_write_ha_state.assert_not_called()
+    entity.hass.loop.call_soon_threadsafe.assert_called_once_with(
+        entity.async_write_ha_state
+    )
+
+
+def test_handle_update_without_hass_writes_directly(controller: MagicMock) -> None:
+    """With no hass there is no loop to marshal to; the write goes straight through."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+    entity.async_write_ha_state = MagicMock()
+
+    entity._handle_update(None)
+
+    entity.async_write_ha_state.assert_called_once_with()

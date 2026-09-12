@@ -1,4 +1,8 @@
-pytest-homeassistant-custom-component==0.13.346
-qolsys-controller==1.7.1
+# Test harness. pytest-homeassistant-custom-component pins the Home Assistant
+# version the suite runs against: 0.13.364 pins 2026.9.1, the deployment target.
+# qolsys-controller is not listed on purpose - it is vendored under
+# custom_components/qolsys_panel/vendor/, so the tests cannot run against a
+# different version of the library than the integration ships.
+pytest-homeassistant-custom-component==0.13.364
 mypy==2.3.1
-GitPython==3.1.61
+GitPython==3.1.58

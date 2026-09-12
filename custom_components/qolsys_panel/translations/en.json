@@ -31,7 +31,7 @@
       },
       "pki_autodiscovery":{
         "title": "Qolsys Panel - Automatic Panel Discovery",
-        "description": "Autodiscovery Mode:\n1. Make sure Home Assistant and the panel are on the same subnet\n2. Open the IQ Remote pairing page on the Qolsys Panel\n\nPress Submit to start pairing."
+        "description": "Autodiscovery Mode:\n1. Make sure Home Assistant and the panel are on the same subnet\n2. Open the IQ Remote pairing page on the Qolsys Panel\n\nPair on a network you trust: during the pairing window the first device that connects becomes the panel Home Assistant talks to, so do not pair while guests or untrusted devices are on the same Wi-Fi. Check the logged pairing address afterwards.\n\nPress Submit to start pairing."
       },
       "existing_pki":{
         "title": "Qolsys Panel - Existing PKI",
@@ -79,7 +79,23 @@
         }
       }
     },
+  "issues": {
+    "no_user_codes": {
+      "title": "Qolsys Panel: no user codes configured",
+      "description": "Disarming requires a user code, but {path} holds no codes, so every disarm from Home Assistant is refused. Add one entry per user to that file, as shown in the integration README, and restart Home Assistant; your codes are replaced by hashes on the next start. The physical panel is unaffected. To go back to disarming without a code, turn the option off on the integration's Configure page."
+    },
+    "malformed_user_codes": {
+      "title": "Qolsys Panel: some user codes could not be read",
+      "description": "{count} entries in {path} were ignored because they are malformed, so those codes will not disarm. The file has been left as it is: fix the entries listed in the log and restart Home Assistant."
+    }
+  },
   "exceptions": {
+    "user_code_required": {
+      "message": "Enter your user code to {action}."
+    },
+    "user_code_invalid": {
+      "message": "That user code is not valid. Check it and try to {action} again."
+    },
     "integration_not_found": {
       "message": "Integration \"{target}\" not found in registry."
     },
@@ -220,6 +236,16 @@
     }
   },
   "services": {
+    "change_master_volume": {
+      "description": "Change the master volume on the panel.",
+      "fields": {
+        "volume": {
+          "description": "The new master volume level (0-15).",
+          "name": "Volume"
+        }
+      },
+      "name": "Qolsys Panel - Change Master Volume"
+    },
     "trigger_police": {
       "description": "Trigger Police Alarm on the panel.",
       "fields": {

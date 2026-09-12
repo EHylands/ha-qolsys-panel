@@ -1,6 +1,6 @@
 [project]
 name = "ha-qolsys-panel"
-version = "1.6.5"
+version = "1.7.0"
 authors = [
   { name="Eric Hylands"},
 ]
@@ -42,6 +42,9 @@ prerelease_token = "beta"
 
 [tool.ruff]
 required-version = ">=0.11.0"
+# Vendored upstream library (see custom_components/qolsys_panel/vendor/VENDORED.md):
+# upstream code in upstream style, linted by its own project.
+extend-exclude = ["custom_components/qolsys_panel/vendor"]
 
 [tool.ruff.lint]
 select = [

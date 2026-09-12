@@ -5,16 +5,14 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_siren import SirenService
-
 from homeassistant.components.siren import SirenEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysAutomationDeviceEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_siren import SirenService
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -29,7 +27,10 @@ async def async_setup_entry(
     """Set up External Sirens."""
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        # A forwarded platform must not raise ConfigEntryNotReady: HA logs a
+        # complaint rather than retrying, and __init__.async_setup_entry already
+        # refuses a None unique_id before any platform is set up (review N5).
+        raise ValueError("Config entry has no unique_id; re-add the integration")
 
     entities: list[SirenEntity] = []
 
@@ -61,7 +62,10 @@ class AutomationDevice_Siren(QolsysAutomationDeviceEntity, SirenEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_siren{endpoint}"
         service = self._autdev.service_get(SirenService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no SirenService at endpoint {endpoint}"
+            )
         self._service: SirenService = service
         self._attr_name = f"Siren{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
 

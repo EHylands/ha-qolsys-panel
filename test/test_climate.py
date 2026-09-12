@@ -5,16 +5,16 @@ from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import (
-    QolsysFanMode,
-    QolsysHvacAction,
-    QolsysHvacMode,
-    QolsysTemperatureUnit,
-)
 
 from custom_components.qolsys_panel.climate import (
     AutomationDevice_Climate,
     async_setup_entry,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    QolsysFanMode,
+    QolsysHvacAction,
+    QolsysHvacMode,
+    QolsysTemperatureUnit,
 )
 from homeassistant.components.climate.const import (
     ATTR_TARGET_TEMP_HIGH,
@@ -24,7 +24,6 @@ from homeassistant.components.climate.const import (
 )
 from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 
 UID = PANEL_MAC
 
@@ -50,21 +49,6 @@ def _climate(controller: MagicMock) -> AutomationDevice_Climate:
     entity._service.turn_off = AsyncMock()
     entity._service.set_temperature = AsyncMock()
     return entity
-
-
-async def test_async_setup_entry_missing_unique_id_raises(
-    hass: HomeAssistant, controller: MagicMock
-) -> None:
-    """Setup raises ConfigEntryError when the config entry has no unique_id."""
-    config_entry = MagicMock()
-    config_entry.runtime_data = controller
-    config_entry.unique_id = None
-    add_entities = MagicMock()
-
-    with pytest.raises(ConfigEntryError):
-        await async_setup_entry(hass, config_entry, add_entities)
-
-    add_entities.assert_not_called()
 
 
 async def test_async_setup_entry_creates_entities(

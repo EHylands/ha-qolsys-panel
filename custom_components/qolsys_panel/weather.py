@@ -5,19 +5,17 @@ from __future__ import annotations
 from datetime import UTC, datetime
 import logging
 
-from qolsys_controller import qolsys_controller
-
 from homeassistant.components.weather import (
     Forecast,
     WeatherEntity,
     WeatherEntityFeature,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysWeatherEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -33,8 +31,10 @@ async def async_setup_entry(
     entities: list[WeatherSensor] = []
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
-
+        # A forwarded platform must not raise ConfigEntryNotReady: HA logs a
+        # complaint rather than retrying, and __init__.async_setup_entry already
+        # refuses a None unique_id before any platform is set up (review N5).
+        raise ValueError("Config entry has no unique_id; re-add the integration")
     entities.append(WeatherSensor(QolsysPanel, unique_id))
     async_add_entities(entities)
 

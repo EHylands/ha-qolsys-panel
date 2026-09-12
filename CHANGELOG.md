@@ -1,47 +1,157 @@
+## 1.8.1
+
+- The user-code errors are sentences a person can act on ("Enter your user code to disarm.", "That user code is not valid. Check it and try to arm home again."), raised through Home Assistant's translation system so the dashboard shows them without a "Validation error: DISARM:" prefix. English and French.
+
+## 1.8.0
+
+- New service `qolsys_panel.change_master_volume` (target: the panel's config entry; volume 0 to 15), from upstream 1.7.0-beta. Upstream's doorbell-volume service was added and removed the same day and is not carried.
+- Vendored `qolsys_controller` brought from 1.7.1 to 1.8.0: the volume commands and panel settings above, and the Z-Wave binary-switch parser stops after the first matching service and adds a default outlet for an unknown endpoint. 1.7.2's two new database tables are deliberately not taken; see `vendor/VENDORED.md`.
+- Reviewed and already present, so nothing to take: upstream 1.6.2 to 1.6.4 backported this fork's own commits (platform `unique_id` guard, entity import path, binary-sensor fix) and 1.6.5 set `DEFAULT_DISARM_CODE_REQUIRED = True`, which this fork has had since 1.7.0.
+
+## 1.7.9
+
+- The panel's own broadcasts to keypads (no requestID; the daily weather `splitMessage`) are routed to a broadcast handler instead of the command queue, which had logged them as errors every evening. Known broadcast types are skipped at debug level; a type never seen before is logged once by name. The queue itself now treats a stray reply (no requestID, or nobody waiting) as a debug line. Tests for both.
+
+## 1.7.8
+
+- Unknown panel database tables: the two the panel is known to ship and nothing reads (`UNUSED_TABLE_URIS`: Yale lock ids, keyboard data) are skipped at debug level; a table the library has never seen logs one warning naming it, instead of 1.7.7's silent skip or upstream's three errors.
+
+## 1.7.7
+
+- The panel's database tables the library does not use (Yale lock ids, keyboard data) no longer log three ERROR lines each at every start; they are skipped with one debug line.
+
+## 1.7.6
+
+- State updates are written on Home Assistant's event loop no matter which thread the library notified on. A failed arm (open zone, Auto Bypass off) notified from an executor thread; HA refused the write, the observer logged `Observer for PARTITION_UPDATE raised` and the update was dropped. The doorbell and chime handlers get the same guard, since they also start a timer.
+
+## 1.7.5
+
+- The arm-flag switches redraw after toggling (upstream never wrote the new state, so the dashboard showed the old value until the next update). Tests updated for the 1.7.4 default change.
+
+## 1.7.4
+
+- The arm-flag switches (exit sounds, entry delay, arm-stay instant, silent disarming) keep the library defaults on a fresh install instead of starting off. Upstream treated a missing saved state as off, so a new install armed from Home Assistant with no entry delay.
+
+## 1.7.3
+
+- The parent-device lookup uses `async_get_device_by_identifier` (the current registry API) instead of the deprecated `async_get_device`.
+
+## 1.7.2
+
+- Child devices (partitions, zones, automation devices) link to the panel with `via_device_id` resolved from the device registry instead of the deprecated `via_device` tuple. On HA 2026.9 the deprecation is raised as an error when an entity is re-added from the settings UI, which is how the alarm entity failed to come back after a rename.
+
+## 1.7.1
+
+- TLS security level for the panel connection back to 0 (M3 reverted): a real IQ Panel fails level 1 with `CA_MD_TOO_WEAK`. Trust remains the pinned panel CA plus the TLS 1.2 floor; see VENDORED.md.
+
 # CHANGELOG
 
 <!-- version list -->
 
-## v1.6.5 (2026-09-10)
+## v1.7.0 (2026-09-07)
+
+Security release: the September 2026 audit of the integration and of
+`qolsys-controller` 1.7.1, all 18 findings. The library is now vendored under
+`custom_components/qolsys_panel/vendor/qolsys_controller/` so the findings that
+live in it could be fixed; `custom_components/qolsys_panel/vendor/VENDORED.md`
+records the upstream version, every change and the residual risks.
+
+### Breaking Changes
+
+- **Disarming now requires a user code** (C1). Existing config entries are
+  migrated to 1.1 with the option forced on; add your codes to
+  `config/qolsys_panel/users.conf` and see the README section "User Codes,
+  Arming and Disarming". Arming stays code-optional.
+- **`users.conf` is rewritten as hashes** (H3). A cleartext `user_code` is
+  hashed on the next start and the file is replaced, `0600`. Malformed entries
+  now raise instead of being silently stored as `None`.
+- **`qolsys-controller` is no longer a requirement** of the integration; the
+  manifest declares the vendored code's own dependencies (`aiofiles`,
+  `aiomqtt`, `paho-mqtt`, `cryptography`, `passlib`, `zeroconf`).
 
 ### Bug Fixes
 
-- Set DEFAULT_DISARM_CODE_REQUIRED = True
-  ([`e15cf82`](https://github.com/EHylands/ha-qolsys-panel/commit/e15cf82a39fd8b25a3514203ae54f76aef5dbca5))
+- **C1**: disarm requires a code by default (`DEFAULT_DISARM_CODE_REQUIRED`),
+  with a config-entry migration, and the integration validates the code before
+  any disarm command is built.
+- **H1**: the pairing window accepts one peer, enforces the expected panel
+  address when it is known, logs the peer, binds the listener only for the
+  window, and validates the certificate and CA the panel returns before writing
+  them. Full client authentication is not implementable without a panel; the
+  residual is documented.
+- **H2**: PKI key material is written `0600` in `0700` directories, with a
+  one-time repair pass for installations paired before this release.
+- **H3**: user codes are stored as salted PBKDF2-SHA256 hashes and verified in
+  constant time.
+- **M1**: the config flow restores the log levels it raised, instead of leaving
+  the library at DEBUG until a restart.
+- **M2**: the controller notifies observers from the state transition itself, so
+  entities go unavailable on RECONNECTING deterministically.
+- **M3**: TLS to the panel moves from `@SECLEVEL=0` to `@SECLEVEL=1`.
+- **M4**: entities register an explicit state-write callback instead of
+  `schedule_update_ha_state`, which the library was calling with
+  `force_refresh=True` (a Task per event).
+- **M5**: `check_config_directory` and `auto_discover_pki` run off the event
+  loop.
+- **M7**: `Entity` is imported from `homeassistant.helpers.entity`.
+- **M8**: the MQTT bridge is pinned off and setup fails if it is not; its client
+  verifies the broker certificate and its disarm path refuses without a valid
+  code.
+- **L1**: the open-safety-zone arming guard is restored.
+- **L2**: the zone AC-status docstring matches the code.
+- **L3**: `assert` guards that matter became explicit errors.
+- **L4**: `get_local_ip` returns the first IPv4 of the default adapter and logs
+  when there is none.
+- **L5**: covered by H3 (constant-time comparison).
 
+### Review Fixes
 
-## v1.6.4 (2026-09-10)
+An independent review of the audit fixes found two blocking issues in the H1
+mitigation surface and nine smaller ones; all are addressed here.
 
-### Bug Fixes
+- **B1**: the "pair on a network you trust" notice was added to `strings.json`
+  only, and Home Assistant serves config-flow text from
+  `translations/<lang>.json`, so no user ever saw it. Copied across, with a test
+  that keeps the two files identical.
+- **B2**: the expected-panel-address check was inert on the autodiscovery path,
+  because the flow started pairing with an empty host and discarded the address
+  DHCP/zeroconf had already found. That check is the only control that stops an
+  attacker winning the mDNS race, so it now gets the discovered address.
+- **N1**: the PKI permission repair pass no longer acts through symlinks.
+- **N2**: the config flow restores its log levels on every exit, including the
+  two `AbortFlow` paths and a dialog the user simply closes.
+- **N3**: a warning and a repair issue when a code is required to disarm but
+  `users.conf` holds none - previously every code was refused with nothing in
+  the log to say why.
+- **N4**: a malformed `users.conf` row is logged, counted and skipped instead of
+  failing the config entry and removing every entity. The file is left as
+  written so the row can be fixed.
+- **N5**: platform setups raise `ValueError` for a missing unique_id;
+  `ConfigEntryNotReady` from a forwarded platform is not retried by HA.
+- **N6**: one raising observer can no longer break the controller's reconnect
+  loop.
+- **N7**: the migration's warning no longer looks up the disarm option with the
+  arm constant.
+- **N8**: `follow_imports = skip` dropped, so call sites into the vendored
+  library are type-checked under any mypy invocation. The decision not to delete
+  the unused `mqtt_bridge` package yet is recorded in VENDORED.md.
+- **N9**: the write-then-chmod window on PKI files is left as is, deliberately,
+  with the reasoning recorded: the containing directory is 0700 before the file
+  exists.
 
-- Backport @ipleva commit 265fe75
-  ([`b16729d`](https://github.com/EHylands/ha-qolsys-panel/commit/b16729d794164eeca9d1a0d1d5ab255815f3a69f))
+Two behaviours worth knowing about before upgrading, both now in the README:
+**disarming from Home Assistant fails until `config/qolsys_panel/users.conf`
+exists**, and **arming fails while a safety zone (smoke, CO, water) is open**.
 
+### Testing
 
-## v1.6.3 (2026-09-10)
-
-### Bug Fixes
-
-- Backport @ipleva commit cc5edbf
-  ([`5cb4ed7`](https://github.com/EHylands/ha-qolsys-panel/commit/5cb4ed7798045096e47a9ea64e11b3ec6abd13fd))
-
-
-## v1.6.2 (2026-09-10)
-
-### Bug Fixes
-
-- Backport changes from @ipleva commit 9786917
-  ([`dd6b9f0`](https://github.com/EHylands/ha-qolsys-panel/commit/dd6b9f0b57e6426c37822df2dd293bcfbc94600b))
-
-### Chores
-
-- **deps**: Bump gitpython from 3.1.43 to 3.1.61
-  ([#119](https://github.com/EHylands/ha-qolsys-panel/pull/119),
-  [`a7b4361`](https://github.com/EHylands/ha-qolsys-panel/commit/a7b4361a0ffbca80722382f2569dbb3a78796808))
-
-- **deps**: Bump qolsys-controller from 1.7.0 to 1.7.1
-  ([#120](https://github.com/EHylands/ha-qolsys-panel/pull/120),
-  [`79ea073`](https://github.com/EHylands/ha-qolsys-panel/commit/79ea073c317561c8b1517c37a655ff63c3f8fc0b))
+- **M6**: the suite runs against Home Assistant 2026.9.1
+  (pytest-homeassistant-custom-component 0.13.364) and against the vendored
+  library, with the PyPI wheel uninstalled.
+- **L6**: 296 tests -> 365, including the previously untested paths: pairing
+  server (guards and a full handshake), PKI file modes, user-code hashing,
+  controller state notification, disarm without a code, and entity availability
+  driven by the real controller.
 
 
 ## v1.6.1 (2026-08-27)
