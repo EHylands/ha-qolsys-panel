@@ -346,6 +346,32 @@ async def async_quick_exit(
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up the services for the Qolsys Panel integration."""
 
+    # Change Master Volume Service
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        "change_master_volume",
+        entity_domain=ALARM_CONTROL_PANEL_DOMAIN,
+        schema={
+            vol.Required("entity_id"): cv.entity_ids,
+            vol.Required("volume"): vol.All(vol.Coerce(int), vol.Range(min=0, max=15)),
+        },
+        func=async_change_master_volume,
+    )
+
+    # Change Doorbell Volume Service
+    service.async_register_platform_entity_service(
+        hass,
+        DOMAIN,
+        "change_doorbell_volume",
+        entity_domain=ALARM_CONTROL_PANEL_DOMAIN,
+        schema={
+            vol.Required("entity_id"): cv.entity_ids,
+            vol.Required("volume"): vol.All(vol.Coerce(int), vol.Range(min=0, max=7)),
+        },
+        func=async_change_doorbell_volume,
+    )
+
     # Trigger Police Service
     service.async_register_platform_entity_service(
         hass,
