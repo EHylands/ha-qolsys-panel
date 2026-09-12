@@ -230,6 +230,16 @@
     }
   },
   "services": {
+    "change_master_volume": {
+      "description": "Change the master volume on the panel.",
+      "fields": {
+        "volume": {
+          "description": "The new master volume level (0-15).",
+          "name": "Volume"
+        }
+      },
+      "name": "Qolsys Panel - Change Master Volume"
+    },
     "trigger_police": {
       "description": "Trigger Police Alarm on the panel.",
       "fields": {

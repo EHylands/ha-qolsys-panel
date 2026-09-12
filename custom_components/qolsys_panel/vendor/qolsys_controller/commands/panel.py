@@ -16,6 +16,7 @@ from ..enum_qolsys import (
 from ..errors import (
     CommandExecutionError,
     QolsysInvalidPartitionIdError,
+    QolsysOperationError,
     QolsysUserCodeError,
     QolsysZoneBypassError,
 )
@@ -44,6 +45,8 @@ class PanelCommandStrings(StrEnum):
     SYNC_DATABASE = "syncdatabase"
     TIMESYNC = "timeSync"
     UI_DELAY = "ui_delay"
+    CHANGE_MASTER_VOLUME_LEVEL = "changeMasterVolumeLevel"
+    CHANGE_DOORBELL_VOLUME_LEVEL = "changeDoorBellVolumeLevel"
 
 
 class PanelCommands:
@@ -157,6 +160,59 @@ class PanelCommands:
         command.append_ipc_request(ipc_request)
         response = await command.send_command()
         LOGGER.debug("MQTT Panel Client - Receiving arm command: partition%s", partition_id)
+        return response
+
+    async def change_master_volume_level(self, volume_level: int) -> dict[str, Any] | None:
+        LOGGER.debug("MQTT Panel Client - Sending change_master_volume_level command: volume_level:%s", volume_level)
+
+        if not isinstance(volume_level, int) or not 0 <= volume_level <= 15:
+            raise QolsysOperationError(f"Invalid master volume level: {volume_level} (must be an int in range 0-15)")
+
+        volume_command = {
+            "operation_name": PanelCommandStrings.CHANGE_MASTER_VOLUME_LEVEL,
+            "volume_level": volume_level,
+        }
+
+        ipc_request = [
+            {
+                "dataType": "string",
+                "dataValue": json.dumps(volume_command),
+            }
+        ]
+
+        command = MQTTCommand_Panel(self._controller)
+        command.append_ipc_request(ipc_request)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving change_master_volume_level command")
+        return response
+
+    async def change_doorbell_volume_level(self, volume_level: int) -> dict[str, Any] | None:
+        LOGGER.debug(
+            "MQTT Panel Client - Sending change_doorbell_volume_level command: volume_level:%s",
+            volume_level,
+        )
+
+        if not isinstance(volume_level, int) or not 0 <= volume_level <= 7:
+            raise QolsysOperationError(f"Invalid doorbell volume level: {volume_level} (must be an int in range 0-7)")
+
+        volume_command = {
+            "operation_name": PanelCommandStrings.CHANGE_DOORBELL_VOLUME_LEVEL,
+            "stream_type": 0,
+            "volume_level": volume_level,
+            "request_id": "",
+        }
+
+        ipc_request = [
+            {
+                "dataType": "string",
+                "dataValue": json.dumps(volume_command),
+            }
+        ]
+
+        command = MQTTCommand_Panel(self._controller)
+        command.append_ipc_request(ipc_request)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving change_doorbell_volume_level command")
         return response
 
     async def quick_exit(self, partition_id: str, delay_page_time: int = 120) -> dict[str, Any] | None:

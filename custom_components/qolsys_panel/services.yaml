@@ -1,3 +1,18 @@
+change_master_volume:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: qolsys_panel
+    volume:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          step: 1
+          mode: slider
 trigger_police:
   fields:
     entity_id:

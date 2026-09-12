@@ -1,3 +1,9 @@
+## 1.8.0
+
+- New service `qolsys_panel.change_master_volume` (target: the panel's config entry; volume 0 to 15), from upstream 1.7.0-beta. Upstream's doorbell-volume service was added and removed the same day and is not carried.
+- Vendored `qolsys_controller` brought from 1.7.1 to 1.8.0: the volume commands and panel settings above, and the Z-Wave binary-switch parser stops after the first matching service and adds a default outlet for an unknown endpoint. 1.7.2's two new database tables are deliberately not taken; see `vendor/VENDORED.md`.
+- Reviewed and already present, so nothing to take: upstream 1.6.2 to 1.6.4 backported this fork's own commits (platform `unique_id` guard, entity import path, binary-sensor fix) and 1.6.5 set `DEFAULT_DISARM_CODE_REQUIRED = True`, which this fork has had since 1.7.0.
+
 ## 1.7.9
 
 - The panel's own broadcasts to keypads (no requestID; the daily weather `splitMessage`) are routed to a broadcast handler instead of the command queue, which had logged them as errors every evening. Known broadcast types are skipped at debug level; a type never seen before is logged once by name. The queue itself now treats a stray reply (no requestID, or nobody waiting) as a debug line. Tests for both.

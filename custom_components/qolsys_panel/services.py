@@ -11,6 +11,7 @@ from homeassistant.components.alarm_control_panel import (
     DOMAIN as ALARM_CONTROL_PANEL_DOMAIN,
 )
 from homeassistant.config_entries import ConfigEntryState
+from homeassistant.const import ATTR_CONFIG_ENTRY_ID
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, entity_registry, service
@@ -24,6 +25,7 @@ from .const import (
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+    SERVICE_CHANGE_MASTER_VOLUME,
     SERVICE_QUICK_EXIT,
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
@@ -248,9 +250,47 @@ async def async_quick_exit(
         ) from e
 
 
+
+async def async_change_master_volume(call: ServiceCall) -> None:
+    """Change the panel's master volume (0 to 15).
+
+    Targets the config entry, not an entity: the volume belongs to the panel as a
+    whole. From upstream 1.7.0-beta (2026-09-12); the doorbell-volume service that
+    came with it was removed upstream the same day and is not carried here.
+    """
+    config_entry: QolsysPanelConfigEntry = service.async_get_config_entry(
+        call.hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
+
+    QolsysPanel = config_entry.runtime_data
+    volume_level: int = call.data["volume"]
+    try:
+        await QolsysPanel.commands.panel.change_master_volume_level(volume_level)
+    except CommandExecutionError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up the services for the Qolsys Panel integration."""
+
+    # Change Master Volume Service (targets the Qolsys Panel config entry)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_CHANGE_MASTER_VOLUME,
+        async_change_master_volume,
+        schema=vol.Schema(
+            {
+                vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string,
+                vol.Required("volume"): vol.All(
+                    vol.Coerce(int), vol.Range(min=0, max=15)
+                ),
+            }
+        ),
+    )
 
     # Trigger Police Service
     service.async_register_platform_entity_service(

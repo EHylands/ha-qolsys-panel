@@ -1,7 +1,8 @@
 # Vendored `qolsys_controller`
 
 Upstream: [EHylands/QolsysController](https://github.com/EHylands/QolsysController),
-PyPI package `qolsys-controller`, **version 1.7.1**, taken from the
+PyPI package `qolsys-controller`, **version 1.8.0** (1.7.1 vendored 2026-09-07; the 1.7.2 and 1.8.0 changes applied
+2026-09-12 from the PyPI wheels, see "Upstream versions" below), taken from the
 `qolsys_controller-1.7.1-py3-none-any.whl` wheel published on PyPI.
 License: MIT, kept verbatim at `qolsys_controller/LICENSE`.
 
@@ -277,3 +278,18 @@ The error names the zones, and the README's alarm-entity description says so.
 ## 2026-09-07 follow-up: SECLEVEL back to 0 (M3 reverted)
 
 The first pairing against a real IQ Panel failed the post-pairing TLS connection with `[SSL: CA_MD_TOO_WEAK] ca md too weak` at `load_cert_chain`: the panel's CA uses a digest that OpenSSL security level 1 rejects. `controller.py` is back to `DEFAULT:@SECLEVEL=0`, as upstream ships. Residual: level 0 permits weak signature digests and small keys in general; what protects this connection is the pin to the panel's own CA saved at pairing, the TLS 1.2 floor, and the LAN-only path. A firmware that moves the panel CA to SHA-256 would allow level 1 again.
+
+## Upstream versions taken after the initial vendoring
+
+- **1.7.2 to 1.8.0 (applied 2026-09-12):** `commands/panel.py` gains
+  `change_master_volume_level` (0 to 15) and `change_doorbell_volume_level`
+  (0 to 7), `panel.py` reads the `PANEL_VOLUME` and `VOLUME_DOORBELL` settings,
+  and `automation_zwave/device.py` stops after the first matching service per
+  endpoint and adds a default outlet service for an endpoint it has no service
+  for. **Not taken:** 1.7.2's two new database tables (`table_yale_auth_ids.py`,
+  `table_ime_data.py`, registered in `database/db.py`). Upstream declares them
+  implemented with a single `_id` column and `_report_new_columns = True`, so
+  every row the panel sends would log four "New column found ... Please Report"
+  warnings at each load. This fork keeps those two tables in
+  `UNUSED_TABLE_URIS` (skipped at debug level, 1.7.8), which reads nothing from
+  them either. Revisit if upstream fills in their columns.

@@ -89,6 +89,8 @@ class QolsysPanel:
             "NO_ARM_LOW_BATTERY",
             "MAC_ADDRESS",
             "LAST_UPDATE_IQ_REMOTE_PATCH_CKECKSUM_N",
+            "VOLUME_DOORBELL",
+            "PANEL_VOLUME",
         ]
 
         self._users: list[QolsysUser] = []
@@ -221,6 +223,16 @@ class QolsysPanel:
     @property
     def db(self) -> QolsysDB:
         return self._db
+
+    @property
+    def PANEL_VOLUME(self) -> str:
+        self._PANEL_VOLUME = self.db.get_setting_panel("PANEL_VOLUME")
+        return self._PANEL_VOLUME
+
+    @property
+    def VOLUME_DOORBELL(self) -> str:
+        self._VOLUME_DOORBELL = self.db.get_setting_panel("VOLUME_DOORBELL")
+        return self._VOLUME_DOORBELL
 
     @property
     def PANEL_TAMPER_STATE(self) -> str:
@@ -1226,3 +1238,6 @@ class QolsysPanel:
         LOGGER.debug("*** Plugin Information ***")
         LOGGER.debug("Motion Delay Enabled: %s", self._controller.settings.motion_sensor_delay)
         LOGGER.debug("Motion Delay Value: %s", self._controller.settings.motion_sensor_delay_sec)
+
+        LOGGER.debug("Panel Volume: %s", self.PANEL_VOLUME)
+        LOGGER.debug("Doorbell Volume Level: %s", self.VOLUME_DOORBELL)

@@ -79,6 +79,13 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
 
         super().update_automation_services()
 
+        # Discover Z-Wave Services not already added on main IQ Panel
+        self.discover_zwave_services()
+
+    def discover_zwave_services(self) -> None:
+        for endpoint in self._endpoint_details:
+            pass
+
     def update_zwave_device(self, data: dict[str, str]) -> None:
         self.start_batch_update()
 
@@ -137,6 +144,7 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
                     LOGGER.warning("Unexpected Binary Switch value 0x%02X for node %s", payload[2], self.virtual_node_id)
 
                 valve_service.is_closed = payload[2] == 0x00
+                return
 
             # Update Siren Service at specified endpoint
             siren_service = self.service_get(SirenServiceZwave, endpoint)
@@ -147,11 +155,24 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
                     siren_service._is_on = False
                 else:
                     LOGGER.warning("Unexpected Binary Switch value 0x%02X for node %s", payload[2], self.virtual_node_id)
+                return
 
             # Update Outlet Service at specified endpoint
             outlet_service = self.service_get(OutletServiceZwave, endpoint)
             if isinstance(outlet_service, OutletServiceZwave):
                 outlet_service.is_on = payload[2] == 0xFF
+                return
+
+            # Update Light Service at specified endpoint
+            light_service = self.service_get(LightServiceZwave, endpoint)
+            if isinstance(light_service, LightServiceZwave):
+                return
+
+            # No service found for this endpoint
+            # Add new default outlet service (auto discovery)
+            outlet_service = OutletServiceZwave(self, endpoint)
+            outlet_service.is_on = payload[2] == 0xFF
+            self.service_add(outlet_service)
 
     def parse_command_32(self, payload: bytes, endpoint: int) -> None:
         command = payload[1]

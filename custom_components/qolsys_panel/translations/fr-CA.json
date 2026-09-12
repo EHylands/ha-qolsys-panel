@@ -220,6 +220,16 @@
     }
   },
   "services": {
+    "change_master_volume": {
+      "description": "Modifie le volume principal sur le panneau.",
+      "fields": {
+        "volume": {
+          "description": "Le nouveau niveau de volume principal (0-15).",
+          "name": "Volume"
+        }
+      },
+      "name": "Panneau Qolsys - Modifier le volume principal"
+    },
     "trigger_police": {
       "description": "Déclenche l'alarme policière sur le panneau.",
       "fields": {
