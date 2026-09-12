@@ -1,23 +1,19 @@
 change_master_volume:
-  target:
-    device:
-      integration: qolsys_panel
-
   fields:
-    volume:
+    device_id:
       required: true
       selector:
-        number:
-          min: 0
-          max: 15
-          step: 1
-          mode: slider
+        device:
+          filter:
+            - integration: qolsys_panel
 change_doorbell_volume:
-  target:
-    device:
-      integration: qolsys_panel
-
   fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          filter:
+            - integration: qolsys_panel
     volume:
       required: true
       selector:
@@ -26,6 +22,15 @@ change_doorbell_volume:
           max: 7
           step: 1
           mode: slider
+    volume:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          step: 1
+          mode: slider
+  
 trigger_police:
   fields:
     entity_id:
