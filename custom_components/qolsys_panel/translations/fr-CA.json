@@ -230,16 +230,6 @@
       },
       "name": "Panneau Qolsys - Modifier le volume principal"
     },
-    "change_doorbell_volume": {
-      "description": "Modifie le volume de la sonnette sur le panneau.",
-      "fields": {
-        "volume": {
-          "description": "Le nouveau niveau de volume de la sonnette (0-7).",
-          "name": "Volume"
-        }
-      },
-      "name": "Panneau Qolsys - Modifier le volume de la sonnette"
-    },
     "trigger_police": {
       "description": "Déclenche l'alarme policière sur le panneau.",
       "fields": {

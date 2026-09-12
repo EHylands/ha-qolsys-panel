@@ -17,13 +17,14 @@ from custom_components.qolsys_panel.const import (
     OPTION_TRIGGER_POLICE,
 )
 from custom_components.qolsys_panel.services import (
+    async_change_master_volume,
     async_quick_exit,
     async_trigger_auxilliary,
     async_trigger_fire,
     async_trigger_police,
 )
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
+from homeassistant.const import ATTR_CONFIG_ENTRY_ID, CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
@@ -48,6 +49,7 @@ def _make_panel() -> MagicMock:
     panel.commands.panel.trigger_auxilliary = AsyncMock()
     panel.commands.panel.trigger_fire = AsyncMock()
     panel.commands.panel.quick_exit = AsyncMock()
+    panel.commands.panel.change_master_volume_level = AsyncMock()
     return panel
 
 
@@ -146,6 +148,59 @@ async def test_quick_exit(hass: HomeAssistant) -> None:
     entry.runtime_data.commands.panel.quick_exit.assert_awaited_once_with(
         PARTITION_ID, 45
     )
+
+
+async def test_change_master_volume(hass: HomeAssistant) -> None:
+    """Master volume forwards the level to the controller for the config entry."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+
+    await async_change_master_volume(
+        _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id, "volume": 8})
+    )
+
+    entry.runtime_data.commands.panel.change_master_volume_level.assert_awaited_once_with(
+        8
+    )
+
+
+@pytest.mark.parametrize(
+    ("handler", "command"),
+    [(async_change_master_volume, "change_master_volume_level")],
+)
+async def test_change_volume_command_error(
+    hass: HomeAssistant, handler, command
+) -> None:
+    """A controller command error surfaces as a HomeAssistantError."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+    getattr(
+        entry.runtime_data.commands.panel, command
+    ).side_effect = CommandExecutionError("boom")
+
+    with pytest.raises(HomeAssistantError):
+        await handler(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id, "volume": 1})
+        )
+
+
+@pytest.mark.parametrize("handler", [async_change_master_volume])
+async def test_change_volume_unknown_config_entry(hass: HomeAssistant, handler) -> None:
+    """An unknown config entry raises a ServiceValidationError."""
+    with pytest.raises(ServiceValidationError):
+        await handler(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: "does_not_exist", "volume": 1})
+        )
+
+
+@pytest.mark.parametrize("handler", [async_change_master_volume])
+async def test_change_volume_not_loaded(hass: HomeAssistant, handler) -> None:
+    """A config entry that is not loaded raises a ServiceValidationError."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+    entry.mock_state(hass, ConfigEntryState.SETUP_ERROR)
+
+    with pytest.raises(ServiceValidationError):
+        await handler(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id, "volume": 1})
+        )
 
 
 # (handler, controller command attribute, call data) for every service handler.

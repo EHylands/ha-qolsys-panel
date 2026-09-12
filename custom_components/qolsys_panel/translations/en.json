@@ -230,16 +230,6 @@
       },
       "name": "Qolsys Panel - Change Master Volume"
     },
-    "change_doorbell_volume": {
-      "description": "Change the doorbell volume on the panel.",
-      "fields": {
-        "volume": {
-          "description": "The new doorbell volume level (0-7).",
-          "name": "Volume"
-        }
-      },
-      "name": "Qolsys Panel - Change Doorbell Volume"
-    },
     "trigger_police": {
       "description": "Trigger Police Alarm on the panel.",
       "fields": {

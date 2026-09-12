@@ -199,7 +199,7 @@ class QolsysPanelSensorEntity(QolsysPanelEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id)},
             manufacturer="Johnson Controls",
-            model=f"Qolsys IQ Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
+            model="Qolsys Panel Sensor",
         )
 
     async def async_added_to_hass(self) -> None:
@@ -228,7 +228,7 @@ class QolsysWeatherEntity(QolsysPanelEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, unique_id)},
             manufacturer="Johnson Controls",
-            model=f"Qolsys IQ Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
+            model="Qolsys Weather",
         )
 
     async def async_added_to_hass(self) -> None:
