@@ -6,6 +6,15 @@ change_master_volume:
         device:
           filter:
             - integration: qolsys_panel
+            - model: Qolsys IQ Panel*
+    volume:
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 15
+          step: 1
+          mode: slider
 change_doorbell_volume:
   fields:
     device_id:
@@ -14,6 +23,7 @@ change_doorbell_volume:
         device:
           filter:
             - integration: qolsys_panel
+            - model: Qolsys IQ Panel*
     volume:
       required: true
       selector:
