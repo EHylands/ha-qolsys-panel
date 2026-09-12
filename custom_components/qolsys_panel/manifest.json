@@ -32,5 +32,5 @@
     "passlib>=1.7.4",
     "zeroconf>=0.148.0"
   ],
-  "version": "1.8.0"
+  "version": "1.8.1"
 }
