@@ -17,9 +17,9 @@ class OutletServiceZwave(OutletService):
         super().__init__(automation_device=automation_device, endpoint=endpoint)
 
     async def turn_on(self) -> None:
-        if self.is_on:
-            LOGGER.debug("%s - turn_on: already on", self.prefix)
-            return
+        #if self.is_on:
+        #   LOGGER.debug("%s - turn_on: already on", self.prefix)
+        #    return
 
         if ZwaveCommandClass.SwitchBinary not in self.automation_device.command_class_list:  # type: ignore[attr-defined]
             LOGGER.error("%s - outlet does not support SwitchBinary command class", self.prefix)
@@ -30,9 +30,9 @@ class OutletServiceZwave(OutletService):
         )
 
     async def turn_off(self) -> None:
-        if not self.is_on:
-            LOGGER.debug("%s - turn_off: already off", self.prefix)
-            return
+        #if not self.is_on:
+        #    LOGGER.debug("%s - turn_off: already off", self.prefix)
+        #    return
 
         if ZwaveCommandClass.SwitchBinary not in self.automation_device.command_class_list:  # type: ignore[attr-defined]
             LOGGER.error("%s - outlet does not support SwitchBinary command class", self.prefix)

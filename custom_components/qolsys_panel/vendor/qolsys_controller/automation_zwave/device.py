@@ -61,7 +61,8 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
         self._multisensor_capabilities: str = ""
 
         self._notification_capabilities = zwave_dict.get("notification_capabilities", "")
-        self._multi_channel_details = zwave_dict.get("multi_channel_details", "")
+        self._multi_channel_details:str = ""
+        self.multi_channel_details = zwave_dict.get("multi_channel_details", "")
         self._endpoint = zwave_dict.get("endpoint", "")
         self._endpoint_details = zwave_dict.get("endpoint_details", "")
 
@@ -72,19 +73,12 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
         self._protocol = AutomationDeviceProtocol.ZWAVE
 
         # Add Base Services
-        self.service_add_status_service(endpoint=0)
-        self.service_add_battery_service(endpoint=0)
+        self.service_add_status_service(endpoint=int(self.end_point))
+        self.service_add_battery_service(endpoint=int(self.end_point))
         self.multisensor_capabilities: str = zwave_dict.get("multisensor_capabilities", "")
         self.meter_capabilities: str = zwave_dict.get("meter_capabilities", "")
 
         super().update_automation_services()
-
-        # Discover Z-Wave Services not already added on main IQ Panel
-        self.discover_zwave_services()
-
-    def discover_zwave_services(self) -> None:
-        for endpoint in self._endpoint_details:
-            pass
 
     def update_zwave_device(self, data: dict[str, str]) -> None:
         self.start_batch_update()
@@ -114,6 +108,9 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
                 case ZwaveCommandClass.SwitchBinary:
                     self.parse_command_25(payload, endpoint)
 
+                case ZwaveCommandClass.SwitchMultilevel:
+                    self.parse_command_26(payload, endpoint)
+
                 case ZwaveCommandClass.Meter:
                     if self._FIX_MULTICHANNEL_METER_ENDPOINT:
                         self.parse_command_32(payload, endpoint)
@@ -128,6 +125,15 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
 
         except IndexError:
             LOGGER.debug("update_raw: invalid payload:%s", payload)
+
+    def parse_command_26(self, payload: bytes, endpoint: int) -> None:
+        command = payload[1]
+
+        if command == 0x03:
+            light_service = self.service_get(LightServiceZwave, endpoint)
+            if isinstance(light_service, LightServiceZwave):
+                light_service.level = payload[2]
+                light_service.is_on = payload[2] != 0
 
     def parse_command_25(self, payload: bytes, endpoint: int) -> None:
         command = payload[1]
@@ -166,6 +172,7 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
             # Update Light Service at specified endpoint
             light_service = self.service_get(LightServiceZwave, endpoint)
             if isinstance(light_service, LightServiceZwave):
+                light_service.is_on = payload[2] == 0xFF
                 return
 
             # No service found for this endpoint
@@ -210,6 +217,15 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
                 if meter.unit == qolsys_scale:
                     meter.value = value
                     return
+
+    def update_automation_services(self) -> None:
+        if len(self._services) > 1:
+            LOGGER.debug("More than 1 one endpoint, failing back to raw zwave update")
+            return
+
+        for endpoint, services_list in self._services.items():
+            for service in services_list:
+                service.update_automation_service()
 
     async def zwave_report(self) -> None:
         for endpoint, service_list in self.services.items():
@@ -403,6 +419,43 @@ class QolsysAutomationDeviceZwave(QolsysAutomationDevice):
             except json.JSONDecodeError:
                 LOGGER.error("%s - Error parsing meter_capabilities:%s", self.prefix)
                 return
+
+    @property
+    def multi_channel_details(self) -> str:
+        return self._multi_channel_details
+
+    @multi_channel_details.setter
+    def multi_channel_details(self, value: str) -> None:
+        # parse endpoint dict and add new services
+        if self._multi_channel_details != value:
+            self._multi_channel_details = value
+
+            try:
+                details: dict[str, int | list[int]] = (
+                    json.loads(value) if isinstance(value, str) and value.strip() else {}
+                )
+            except json.JSONDecodeError:
+                details = {}
+
+            if not isinstance(details, dict):
+                details = {}
+
+            endpoints: dict[int, list[int]] = {
+                int(k): v for k, v in details.items() if k.isdigit() and isinstance(v, list)
+            }
+
+            for ep, command_classes in sorted(endpoints.items()):
+                if ZwaveCommandClass.SwitchMultilevel in command_classes:
+                    if self.service_get(LightServiceZwave, ep) is None:
+                        self.service_add_light_service(endpoint=ep)
+
+                if ZwaveCommandClass.SwitchBinary in command_classes:
+                    # check if a service is already regisrered with pannel
+                    if (self.service_get(ValveServiceZwave, ep) is None
+                        and self.service_get(LightServiceZwave, ep) is None
+                        and self.service_get(SirenServiceZwave, ep) is None):
+                        # Add new Binary switch
+                        self.service_add_outlet_service(endpoint=ep)
 
     @property
     def node_status(self) -> str:

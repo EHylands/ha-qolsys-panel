@@ -1,3 +1,7 @@
+## 1.8.3
+
+- Vendored `qolsys_controller` brought from 1.8.0 to 1.8.6 (upstream's six manifest bumps of 2026-09-14 to 09-18 were pin changes to this library; the library delta itself is what was reviewed). All of it is Z-Wave automation-device handling, which this house's panel does not use (no automation devices are paired): multi-channel endpoint discovery from `multi_channel_details` (a light service per SwitchMultilevel endpoint, an outlet per SwitchBinary endpoint with no other service), an `is_main_endpoint_service` flag on every service and the base status/battery services placed on the device's own endpoint instead of 0, SwitchMultilevel (0x26) reports update a light's level and on/off, SwitchBinary (0x25) reports update a light's on/off, `switch_binary_set` accepts outlets, and the outlet's turn_on/turn_off no longer skip the command when the cached state already matches. Audit: no new network endpoints, dependencies or logging of panel data; the JSON parse of `multi_channel_details` is guarded; the new `int(self.end_point)` calls follow the pattern the 1.8.0 base already used at construction. Import lines rewritten to the package-relative form the vendored copy uses, nothing else changed.
+
 ## 1.8.1
 
 - The user-code errors are sentences a person can act on ("Enter your user code to disarm.", "That user code is not valid. Check it and try to arm home again."), raised through Home Assistant's translation system so the dashboard shows them without a "Validation error: DISARM:" prefix. English and French.

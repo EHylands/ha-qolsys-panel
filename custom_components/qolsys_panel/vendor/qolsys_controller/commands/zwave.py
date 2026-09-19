@@ -7,6 +7,7 @@ from ..automation_zwave.device import QolsysAutomationDeviceZwave
 from ..automation_zwave.service_cover import CoverServiceZwave
 from ..automation_zwave.service_light import LightServiceZwave
 from ..automation_zwave.service_lock import LockServiceZwave
+from ..automation_zwave.service_outlet import OutletServiceZwave
 from ..automation_zwave.service_siren import SirenServiceZwave
 from ..automation_zwave.service_thermostat import ThermostatServiceZwave
 from ..automation_zwave.service_valve import ValveServiceZwave
@@ -106,8 +107,10 @@ class ZWaveCommands:
         if not isinstance(node, QolsysAutomationDeviceZwave):
             raise InvalidVirtualNodeError(node_id)
 
-        service = node.service_get(LightServiceZwave, int(endpoint))
-        if not isinstance(service, (LightServiceZwave, ValveServiceZwave, SirenServiceZwave)):
+        if (node.service_get(LightServiceZwave, int(endpoint)) is None
+            and node.service_get(ValveServiceZwave, int(endpoint)) is None
+            and node.service_get(OutletServiceZwave, int(endpoint)) is None
+            and node.service_get(SirenServiceZwave, int(endpoint)) is None):
             raise ServiceNotFoundError(node_id, endpoint, "LightServiceZwave, ValveService or SirenService")
 
         level = 0
