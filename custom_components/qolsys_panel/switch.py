@@ -4,17 +4,15 @@ from __future__ import annotations
 
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_outlet import OutletService
-
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import QolsysPanelConfigEntry
 from .entity import QolsysAutomationDeviceEntity, QolsysPartitionEntity
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_outlet import OutletService
 
 PARALLEL_UPDATES = 0
 
@@ -27,7 +25,10 @@ async def async_setup_entry(
     """Set up switch."""
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        # A forwarded platform must not raise ConfigEntryNotReady: HA logs a
+        # complaint rather than retrying, and __init__.async_setup_entry already
+        # refuses a None unique_id before any platform is set up (review N5).
+        raise ValueError("Config entry has no unique_id; re-add the integration")
 
     entities: list[SwitchEntity] = []
 
@@ -77,7 +78,10 @@ class AutomationDevice_Outlet(QolsysAutomationDeviceEntity, SwitchEntity):
         super().__init__(QolsysPanel, virtual_node_id, unique_id)
         self._attr_unique_id = f"{self._autdev_unique_id}_outlet{endpoint}"
         service = self._autdev.service_get(OutletService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no OutletService at endpoint {endpoint}"
+            )
         self._service: OutletService = service
         self._attr_name = f"Outlet{'' if endpoint == 0 else endpoint} - {self._service.automation_device.device_name}"
         self._attr_device_class = SwitchDeviceClass.OUTLET
@@ -110,10 +114,11 @@ class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEnt
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_exit_sounds = True
-        else:
-            self._partition.command_exit_sounds = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_exit_sounds = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -123,10 +128,14 @@ class PartitionSwitch_ExitSounds(QolsysPartitionEntity, SwitchEntity, RestoreEnt
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_exit_sounds = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_exit_sounds = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEntity):
@@ -146,10 +155,11 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_entry_delay = True
-        else:
-            self._partition.command_arm_entry_delay = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_entry_delay = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -159,10 +169,14 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_entry_delay = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_entry_delay = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_ArmStayInstant(
@@ -184,10 +198,11 @@ class PartitionSwitch_ArmStayInstant(
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_stay_instant = True
-        else:
-            self._partition.command_arm_stay_instant = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_stay_instant = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -197,10 +212,14 @@ class PartitionSwitch_ArmStayInstant(
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_stay_instant = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_stay_instant = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
 
 class PartitionSwitch_SilentDisarming(
@@ -222,10 +241,11 @@ class PartitionSwitch_SilentDisarming(
         await super().async_added_to_hass()
         last_state = await self.async_get_last_state()
 
-        if last_state and last_state.state == "on":
-            self._partition.command_arm_stay_silent_disarming = True
-        else:
-            self._partition.command_arm_stay_silent_disarming = False
+        # Only a saved state overrides the library default. Upstream treated "no
+        # saved state" as off, so a fresh install armed with entry delay and exit
+        # sounds disabled (found on first use 2026-09-07).
+        if last_state is not None and last_state.state in ("on", "off"):
+            self._partition.command_arm_stay_silent_disarming = last_state.state == "on"
 
     @property
     def is_on(self) -> bool:
@@ -235,7 +255,11 @@ class PartitionSwitch_SilentDisarming(
     def turn_on(self, **kwargs: Any) -> None:
         """Turn the switch on."""
         self._partition.command_arm_stay_silent_disarming = True
+        if self.hass is not None:
+            self.schedule_update_ha_state()
 
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_stay_silent_disarming = False
+        if self.hass is not None:
+            self.schedule_update_ha_state()

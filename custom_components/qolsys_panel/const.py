@@ -18,10 +18,16 @@ SERVICE_TRIGGER_POLICE = "trigger_police"
 SERVICE_TRIGGER_AUXILLIARY = "trigger_auxilliary"
 SERVICE_TRIGGER_FIRE = "trigger_fire"
 SERVICE_QUICK_EXIT = "quick_exit"
+SERVICE_CHANGE_MASTER_VOLUME = "change_master_volume"
 
 DEFAULT_QUICK_EXIT_DURATION = 120
 
+# Arming without a code is normal for an alarm panel and stays opt-in.
 DEFAULT_ARM_CODE_REQUIRED = False
+# Disarming must not be a one-click action: the panel authenticates the paired
+# keypad certificate and never checks a user code itself, so this check, done by
+# the integration, is the only thing between a Home Assistant user and a
+# disarmed house (audit C1).
 DEFAULT_DISARM_CODE_REQUIRED = True
 DEFAULT_TRIGGER_POLICE = False
 DEFAULT_TRIGGER_AUXILLIARY = False

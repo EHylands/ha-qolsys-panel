@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Iterable
+import logging
 from pathlib import Path
 from ssl import SSLError
 from typing import cast
@@ -17,7 +18,6 @@ from conftest import (
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
@@ -30,6 +30,11 @@ from custom_components.qolsys_panel.const import (
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
 )
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
@@ -266,6 +271,119 @@ async def test_pki_autodiscovery_flow(
         reconnect=False, run_once=True, start_pairing=True
     )
     assert len(mock_setup_entry.mock_calls) == 1
+
+
+async def test_pairing_uses_the_discovered_panel_address(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Discovery's IP reaches the pairing server, so it can refuse other peers (review B2)."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP),
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "pki_autodiscovery"}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == DISCOVERY_IP
+
+
+async def test_manual_pairing_leaves_the_panel_address_empty(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Without discovery there is no address to enforce, and nothing changes (review B2)."""
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == ""
+
+
+@pytest.mark.parametrize("previous_level", [logging.NOTSET, logging.WARNING])
+async def test_config_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    previous_level: int,
+) -> None:
+    """A finished flow puts the library logger back where it found it (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(previous_level)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert library_logger.level == previous_level
+
+
+async def test_abort_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An AbortFlow exit restores the level too (review N2).
+
+    _abort_if_unique_id_configured raises, so anything after it never runs.
+    """
+    mock_config_entry.add_to_hass(hass)
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert library_logger.level == logging.WARNING
+
+
+async def test_abandoned_flow_restores_log_levels(
+    hass: HomeAssistant, mock_qolsys_controller: MagicMock
+) -> None:
+    """A dialog the user simply closes restores the level (review N2)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert library_logger.level == logging.DEBUG
+
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    await hass.async_block_till_done()
+
+    assert library_logger.level == logging.WARNING
+
+
+async def test_failed_pairing_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An aborted flow restores the level too (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+    mock_qolsys_controller.run_forever.side_effect = QolsysMqttError("boom")
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert library_logger.level == logging.WARNING
 
 
 async def test_pki_autodiscovery_empty_mac_aborts(

@@ -6,12 +6,6 @@ from unittest.mock import MagicMock, patch
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import (
-    PartitionAlarmType,
-    PartitionQuickExitState,
-    ZoneSensorType,
-    ZoneStatus,
-)
 
 from custom_components.qolsys_panel.binary_sensor import (
     PANEL_SENSOR,
@@ -30,12 +24,17 @@ from custom_components.qolsys_panel.binary_sensor import (
     ZonesSensor,
     async_setup_entry,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    PartitionAlarmType,
+    PartitionQuickExitState,
+    ZoneSensorType,
+    ZoneStatus,
+)
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntityDescription,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 
 UID = PANEL_MAC
 CALL_LATER = "custom_components.qolsys_panel.binary_sensor.async_call_later"
@@ -65,21 +64,6 @@ def controller() -> MagicMock:
     c.state.automation_devices = [device]
 
     return c
-
-
-async def test_async_setup_entry_missing_unique_id_raises(
-    hass: HomeAssistant, controller: MagicMock
-) -> None:
-    """Setup raises ConfigEntryError when the config entry has no unique_id."""
-    config_entry = MagicMock()
-    config_entry.runtime_data = controller
-    config_entry.unique_id = None
-    add_entities = MagicMock()
-
-    with pytest.raises(ConfigEntryError):
-        await async_setup_entry(hass, config_entry, add_entities)
-
-    add_entities.assert_not_called()
 
 
 async def test_async_setup_entry_creates_entities(

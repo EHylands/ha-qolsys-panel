@@ -6,14 +6,18 @@ import asyncio
 import logging
 import ssl
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.errors import QolsysMqttError, QolsysSslError
-
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
-from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed,
+    ConfigEntryError,
+    ConfigEntryNotReady,
+)
+from homeassistant.helpers import (
+    config_validation as cv,
+    device_registry as dr,
+    issue_registry as ir,
+)
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
 
@@ -32,6 +36,9 @@ from .const import (
 from .services import async_setup_services
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
+from .vendor.qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -75,6 +82,70 @@ def _setup_error(
     )
 
 
+ISSUE_NO_USER_CODES = "no_user_codes"
+ISSUE_MALFORMED_USER_CODES = "malformed_user_codes"
+
+
+def _async_report_user_codes(
+    hass: HomeAssistant, entry: QolsysPanelConfigEntry, QolsysPanel: qolsys_controller
+) -> None:
+    """Say why disarming will fail, before the family finds out at the door.
+
+    With the C1 default on and no users.conf, the frontend shows a keypad and
+    refuses every code with "Invalid user code", and nothing anywhere says the
+    file is missing - a fresh install never sees the migration warning either,
+    because it never migrates (review N3). Malformed rows are now skipped rather
+    than failing setup (review N4), so they need saying too.
+    """
+    panel = QolsysPanel.panel
+    users_file = QolsysPanel.settings.users_file_path
+    no_codes = QolsysPanel.settings.check_user_code_on_disarm and not panel.users
+
+    if no_codes:
+        _LOGGER.warning(
+            "A user code is required to disarm, but %s holds no codes;"
+            " disarming from Home Assistant will fail until you add them",
+            users_file,
+        )
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            f"{ISSUE_NO_USER_CODES}_{entry.entry_id}",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_NO_USER_CODES,
+            translation_placeholders={"path": str(users_file)},
+        )
+    else:
+        ir.async_delete_issue(
+            hass, DOMAIN, f"{ISSUE_NO_USER_CODES}_{entry.entry_id}"
+        )
+
+    if malformed := panel.users_file_malformed_rows:
+        _LOGGER.warning(
+            "%d entries in %s were ignored because they are malformed;"
+            " those codes will not disarm",
+            malformed,
+            users_file,
+        )
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            f"{ISSUE_MALFORMED_USER_CODES}_{entry.entry_id}",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_MALFORMED_USER_CODES,
+            translation_placeholders={
+                "count": str(malformed),
+                "path": str(users_file),
+            },
+        )
+    else:
+        ir.async_delete_issue(
+            hass, DOMAIN, f"{ISSUE_MALFORMED_USER_CODES}_{entry.entry_id}"
+        )
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Qolsys Panel services."""
     async_setup_services(hass)
@@ -92,7 +163,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     QolsysPanel.settings.log_mqtt_messages = False
     QolsysPanel.settings.auto_discover_pki = False
     QolsysPanel.settings.pairing_resume = False
+    # Audit M8: the library's MQTT bridge is a second, unauthenticated way into
+    # the disarm command. This integration never uses it, so pin both switches
+    # off and refuse to start if they do not hold.
     QolsysPanel.settings.mqtt_bridge_enabled = False
+    QolsysPanel.settings.mqtt_bridge_broker_enabled = False
+    if (
+        QolsysPanel.settings.mqtt_bridge_enabled
+        or QolsysPanel.settings.mqtt_bridge_broker_enabled
+    ):
+        raise ConfigEntryError(
+            "Refusing to start: the Qolsys MQTT bridge must stay disabled"
+        )
 
     arm_code_required = entry.options.get(OPTION_ARM_CODE, DEFAULT_ARM_CODE_REQUIRED)
     disarm_code_required = entry.options.get(
@@ -137,6 +219,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     entry.runtime_data = QolsysPanel
 
+    # users.conf is read during the controller's config task, so this is the
+    # first point where the loaded codes can be reported on.
+    _async_report_user_codes(hass, entry, QolsysPanel)
+
     # Log once when the connection to the panel is lost and once when it is
     # restored.
     was_connected = True
@@ -165,8 +251,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
-    unique_id = entry.unique_id
-    assert unique_id is not None
+    if (unique_id := entry.unique_id) is None:
+        raise ConfigEntryNotReady(
+            "Config entry has no unique_id; re-add the integration"
+        )
 
     device_registry.async_get_or_create(
         config_entry_id=entry.entry_id,
@@ -215,6 +303,25 @@ async def async_migrate_entry(
         )
         hass.config_entries.async_update_entry(
             config_entry, options=new_options, minor_version=0, version=1
+        )
+
+    if config_entry.version == 1 and config_entry.minor_version < 1:
+        # 1.0 -> 1.1: disarming used to default to requiring no code, which made
+        # the house one dashboard tap away from disarmed (audit C1). Force the
+        # safe value on entries that predate the new default; it can be turned
+        # back off in the integration options.
+        new_options = {**config_entry.options}
+        # An entry that never set the option was running without a disarm code
+        # (review N7: the default here is about disarming, not arming).
+        if not new_options.get(OPTION_DISARM_CODE, False):
+            _LOGGER.warning(
+                "Qolsys Panel now requires a user code to disarm. Add your codes to"
+                " users.conf; you can turn the check off again in the integration"
+                " options"
+            )
+        new_options[OPTION_DISARM_CODE] = True
+        hass.config_entries.async_update_entry(
+            config_entry, options=new_options, version=1, minor_version=1
         )
 
     _LOGGER.debug(

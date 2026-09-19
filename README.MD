@@ -1,3 +1,17 @@
+## About this fork
+
+This is an audited fork of [EHylands/ha-qolsys-panel](https://github.com/EHylands/ha-qolsys-panel), taken at upstream version 1.6.1; this fork is version 1.7.0. It exists because, in the Home Assistant install it serves, every integration that holds a login or can act on the home gets a line-by-line audit before it runs, and the fixes live here rather than upstream.
+
+**Why it was forked.** This integration arms and disarms an alarm system. As shipped, disarming from Home Assistant required no code by default and the panel itself never checks one, the keypad's private key was written world-readable into the config folder, pairing accepted any device on the network, and user codes were stored in clear.
+
+**What is different.** Disarming now requires a user code that Home Assistant checks (constant-time, against a salted PBKDF2 hash) before any command is sent, and existing installs are migrated to that setting. The `qolsys-controller` library is vendored and hardened: key material is written owner-only (0600 files in 0700 directories, with a repair pass for older installs), user codes are hashed at rest, the pairing window is fenced (one peer, the panel's known address enforced, the returned certificate checked against our own key, the listener alive only during the window), the dormant MQTT bridge is pinned off, the TLS security level raised, the reconnect state reaches entities deterministically so they go unavailable rather than freezing, and the safety-zone arming guard is restored. Tests grew from 296 to 365, run against Home Assistant 2026.9.1. An independent review then found two more issues, both fixed, including the panel-address check being inert on the discovery path. Residual risks are listed in `custom_components/qolsys_panel/vendor/VENDORED.md`; the main one: the disarm code is enforced by Home Assistant, not by the panel. Fixes are not sent upstream; upstream is unchanged by this fork.
+
+**How it is kept current.** A weekly job merges upstream's new commits onto a branch, runs this fork's tests, reviews the diff, and only then pushes; a merge conflict or a failing test stops it. The fork is installed through HACS as a custom repository, so Home Assistant offers each new version as an update.
+
+**Where the detail is.** CHANGELOG.md and custom_components/qolsys_panel/vendor/VENDORED.md record every change by audit finding.
+
+---
+
 # HA Qolsys Panel
 
 [![Build](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/release.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/release.yml)
@@ -80,6 +94,82 @@ With this method, **Home Assistant and the Qolsys Panel do not need to be on the
 
 5. Select the appropriate PKI folder from the dropdown menu (it will list folders from `/homeassistant/qolsys_panel/pki/`)
 
+## 🔢 User Codes, Arming and Disarming
+
+**Disarming requires a user code, and Home Assistant is what checks it.**
+
+- **Disarm code: required by default.** The alarm entity asks for a code before it
+  disarms, and the integration refuses the command if the code is missing or is not
+  in your `users.conf`. Existing installations are migrated to this setting on
+  upgrade; you can turn it off under **Settings > Devices & Services > Qolsys Panel
+  > Configure**, which is not recommended.
+- **Arm code: optional, off by default.** Arming home/away/night without a code is
+  the normal behavior of an alarm panel. The same **Configure** page has an
+  *Enable or Disable User Code* option for arming; when it is on, arming validates
+  the code exactly the way disarming does.
+
+### Where the codes live: `config/qolsys_panel/users.conf`
+
+The panel does not expose its user database, so the integration keeps its own
+list. Create `users.conf` in the integration's config directory with one entry
+per user:
+
+```json
+[
+  { "id": 1, "user_code": "1234" },
+  { "id": 2, "user_code": "5678" }
+]
+```
+
+`id` is the panel user id reported to the panel with the command; `user_code` is
+the code you will type in Home Assistant.
+
+**Codes are not kept in cleartext.** On the next start the integration replaces
+each `user_code` with a salted PBKDF2-SHA256 hash and rewrites the file, owner
+readable only (`0600`):
+
+```json
+[
+  { "id": 1, "user_code_hash": "pbkdf2_sha256$210000$..." }
+]
+```
+
+Codes are then verified by a constant-time comparison against that hash. To
+change or add a code, write the `user_code` form again and restart.
+
+**If `users.conf` does not exist, every disarm from Home Assistant is refused.**
+The keypad still appears and every code comes back as "Invalid user code",
+because there is nothing to check it against. Home Assistant raises a repair
+issue and a log warning saying exactly that. The physical panel is unaffected,
+and you can turn the check off again on the integration's **Configure** page.
+
+**A malformed entry is skipped, not fatal.** The row is logged, counted and
+reported as a repair issue, and the rest of the file still loads: a typo in one
+code must not take the zone sensors and the alarm state offline with it. The
+file is left exactly as written in that case (so the entry you need to fix is
+still there), which also means cleartext codes in it are not replaced by hashes
+until the malformed rows are fixed. A `users.conf` that is not valid JSON at all
+*does* fail the integration setup, because no codes could be read.
+
+Note that a 4-digit code has only 10,000 possibilities, so the hash slows an
+attacker down rather than making a stolen file safe. Keep `users.conf` out of
+version control and out of shared backups, and prefer codes you do not reuse on
+the front-door lock.
+
+### ⚠️ The panel does not check the code, Home Assistant does
+
+The panel disarms on the authority of the paired IQ Remote certificate. The MQTT
+disarm message carries a user *ID*, never the code itself, so there is no second
+line of defence behind Home Assistant:
+
+- Anyone who can call `alarm_control_panel.alarm_disarm` **with a valid code from
+  your `users.conf`** disarms the alarm. That includes every Home Assistant user
+  account regardless of admin status, every automation and script, anything holding
+  a long-lived access token, and any other custom integration in the same process.
+- Treat Home Assistant administrator access as equivalent to knowing the alarm code.
+- Do not expose this Home Assistant instance to the internet without multi-factor
+  authentication.
+
 ## 🛠️ PKI Auto-Discovery and Pairing Troubleshooting
 
 If pairing is not working, please verify the following:
@@ -111,7 +201,7 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 
 ### Partitions
 
-- **Alarm Control Panel** (`alarm_control_panel`): one per partition; reports the arming status and alarm state, and supports arming (home, away, night) and disarming.
+- **Alarm Control Panel** (`alarm_control_panel`): one per partition; reports the arming status and alarm state, and supports arming (home, away, night) and disarming. **Arming fails while a safety zone is open** (smoke, CO or water): those zones cannot be bypassed, so the action returns "Zone bypass required" naming the zones, rather than arming a system that cannot protect them. Earlier versions armed silently in that case.
 - **Binary sensors** (`binary_sensor`): Exit Sounds, Entry Delays and Quick Exit status, plus dedicated Fire, Police, CO and Auxiliary alarm-active sensors.
 - **Switches** (`switch`): toggle Exit Sounds and Entry Delay, and set the Arm Stay Instant (Arm Home with no exit delay) and Arm Stay Silent Disarming modifiers for the partition.
 - **Sensor** (`sensor`): the last error reported by the partition.
