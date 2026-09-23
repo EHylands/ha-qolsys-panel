@@ -45,6 +45,7 @@ PLATFORMS: list[Platform] = [
     Platform.MEDIA_PLAYER,
     Platform.CLIMATE,
     Platform.COVER,
+    Platform.EVENT,
     Platform.SCENE,
     Platform.WEATHER,
     Platform.VALVE,
