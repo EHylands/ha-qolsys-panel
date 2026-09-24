@@ -1,5 +1,6 @@
 """Tests for the Qolsys Panel Central Scene events."""
 
+from typing import Any
 from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
@@ -88,6 +89,7 @@ def test_event_entity_attributes(controller: MagicMock) -> None:
     event = AutomationDeviceCentralSceneEvent(controller, "7", 0, 1, UID)
     assert event.device_class == EventDeviceClass.BUTTON
     assert event.event_types == ["single_tap", "double_tap"]
+    assert event.unique_id is not None
     assert event.unique_id.endswith("_central_scene0_scene1")
 
 
@@ -119,7 +121,7 @@ def test_handle_scene_event_fires_matching_scene(controller: MagicMock) -> None:
     ],
 )
 def test_handle_scene_event_ignores_non_matching(
-    controller: MagicMock, data: dict
+    controller: MagicMock, data: dict[str, Any]
 ) -> None:
     """Notifications for a different scene/endpoint or without an event are ignored."""
     event = AutomationDeviceCentralSceneEvent(controller, "7", 0, 1, UID)
