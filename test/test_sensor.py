@@ -15,6 +15,7 @@ from qolsys_controller.enum_qolsys import (
 )
 from qolsys_controller.observable import Event
 
+from custom_components.qolsys_panel.const import DOMAIN
 from custom_components.qolsys_panel.sensor import (
     AutomationDevice_BatteryValue,
     AutomationDevice_Meter,
@@ -28,7 +29,6 @@ from custom_components.qolsys_panel.sensor import (
     ZoneSensor_PowerG_Temperature,
     async_setup_entry,
 )
-from custom_components.qolsys_panel.const import DOMAIN
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError

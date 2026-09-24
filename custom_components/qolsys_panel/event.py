@@ -82,8 +82,7 @@ class AutomationDeviceCentralSceneEvent(QolsysAutomationDeviceEntity, EventEntit
         self._service: CentralSceneService = service
         self._attr_event_types = self._service.scenes[scene_number].supported
         self._attr_name = (
-            f"Scene {scene_number}"
-            f"{'' if endpoint == 0 else f' Endpoint {endpoint}'}"
+            f"Scene {scene_number}{'' if endpoint == 0 else f' Endpoint {endpoint}'}"
         )
 
     @callback
