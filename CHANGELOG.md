@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.7.0 (2026-09-26)
+
+### Features
+
+- Add support for Z-Wave Central Scene control and multi-endpoint lights and outlets
+  ([`c1f0a50`](https://github.com/EHylands/ha-qolsys-panel/commit/c1f0a509b61371caf5f22c90b590bbaa7418c6b8))
+
+
 ## v1.6.5 (2026-09-10)
 
 ### Bug Fixes
