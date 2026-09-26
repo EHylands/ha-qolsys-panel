@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.0 (2026-09-26)
+
+### Features
+
+- Introduce adc thermostat related function name for future adc thermostat service
+  ([`3779189`](https://github.com/EHylands/ha-qolsys-panel/commit/3779189641bdcae63d7ac46c91b85b99771da424))
+
+
 ## v1.7.1 (2026-09-26)
 
 ### Bug Fixes
