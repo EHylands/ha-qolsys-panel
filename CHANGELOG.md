@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.7.1 (2026-09-26)
+
+### Bug Fixes
+
+- Thermostat state issue and list values in HVAC mode bitmask parsing
+  ([`0db9dca`](https://github.com/EHylands/ha-qolsys-panel/commit/0db9dca5dee192efc3c5b77abe4437980a7c35f2))
+
+
 ## v1.7.0 (2026-09-26)
 
 ### Features
