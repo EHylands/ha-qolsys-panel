@@ -140,17 +140,19 @@ Depending on the device type, the integration creates the matching platform enti
 - **Siren** (`siren`).
 - **Sensors** (`sensor`): battery level, generic sensor readings and energy-meter values.
 - **Binary sensor** (`binary_sensor`): device reachability/status.
+- **Event** (`event`): Z-Wave **Central Scene** buttons (scene controllers, wall remotes, etc.). The integration creates one `button`-class event entity per supported scene (button) on each Central Scene endpoint — named `Scene <n>` (with `Endpoint <e>` appended for multi-endpoint devices). These entities are stateless: each key press reported by the panel fires the matching event type (`single_tap`, `double_tap`, `hold`, `release`, …, as advertised by the device), letting you trigger Home Assistant automations directly from button presses.
 
 ### Actions
 
-All actions target a partition's `alarm_control_panel` entity:
+Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` targets the Qolsys Panel itself.
 
-| Action | Description | Options |
-|--------|-------------|---------|
-| `qolsys_panel.trigger_police` | Trigger a Police alarm on the panel | `silent` (boolean) |
-| `qolsys_panel.trigger_auxilliary` | Trigger an Auxiliary alarm on the panel | `silent` (boolean) |
-| `qolsys_panel.trigger_fire` | Trigger a Fire alarm on the panel | — |
-| `qolsys_panel.quick_exit` | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
+| Action | Target | Description | Options |
+|--------|--------|-------------|---------|
+| `qolsys_panel.trigger_police` | Partition | Trigger a Police alarm on the panel | `silent` (boolean) |
+| `qolsys_panel.trigger_auxilliary` | Partition | Trigger an Auxiliary alarm on the panel | `silent` (boolean) |
+| `qolsys_panel.trigger_fire` | Partition | Trigger a Fire alarm on the panel | — |
+| `qolsys_panel.quick_exit` | Partition | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
+| `qolsys_panel.change_master_volume` | Panel | Change the panel's master volume | `volume` (0–15) |
 
 ## 🔄 Data Updates
 
@@ -202,6 +204,7 @@ The integration will be cleanly removed from your system.
 | External Siren   | ✅     | ❌     | ❌    | ❌    |
 | Garage Door      | ✅     | ❌     | ❌    | ✅    |
 | Light            | ✅     | ✅     | ✅    | ✅    |
+| Scene Controller (Central Scene) | ✅     | ❌     | ❌    | ❌    |
 | Smart Outlet     | 🛠️     | ❌     | ❌    | ❌    |
 | Thermometer      | ✅     | ❌     | ❌    | ❌    |
 | Thermostat       | ✅     | ❌     | ❌    | ❌    |
