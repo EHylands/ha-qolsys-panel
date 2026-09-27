@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.1 (2026-09-27)
+
+### Bug Fixes
+
+- Bumpt qolsys-controller for ADC thermostat enum
+  ([`19ff4dd`](https://github.com/EHylands/ha-qolsys-panel/commit/19ff4dda8b4c840d1bc19cd751e1012dc056537c))
+
+
 ## v1.8.0 (2026-09-26)
 
 ### Features
