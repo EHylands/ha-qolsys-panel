@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.2 (2026-09-27)
+
+### Bug Fixes
+
+- Adc thermostat enum
+  ([`6f8bdd8`](https://github.com/EHylands/ha-qolsys-panel/commit/6f8bdd8ae5b69ad63ef9bf316881dcaf6ae12baa))
+
+
 ## v1.8.1 (2026-09-27)
 
 ### Bug Fixes
