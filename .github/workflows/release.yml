@@ -22,7 +22,7 @@ jobs:
           fetch-depth: 0
 
       - name: Validate commit messages
-        uses: wagoid/commitlint-github-action@v5
+        uses: wagoid/commitlint-github-action@v6
 
   hassfest:
     name: Hassfest Validation
