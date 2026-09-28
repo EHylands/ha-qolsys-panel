@@ -9,4 +9,9 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+
+  - package-ecosystem: "github-actions" # Keeps workflow action versions up to date
+    directory: "/" # Dependabot scans .github/workflows
+    schedule:
+      interval: "weekly"
       
