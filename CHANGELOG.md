@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.3 (2026-09-28)
+
+### Bug Fixes
+
+- Adc thermostat service vdState
+  ([`f2e6bee`](https://github.com/EHylands/ha-qolsys-panel/commit/f2e6bee3cb2ed3ddaa651abc980dae219ade7112))
+
+
 ## v1.8.2 (2026-09-27)
 
 ### Bug Fixes
