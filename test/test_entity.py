@@ -182,18 +182,22 @@ def test_device_info_via_device_id(
     """On HA with via_device_id support, the parent registry id is used."""
     monkeypatch.setattr(entity_module, "_SUPPORTS_VIA_DEVICE_ID", True)
     registry = MagicMock()
-    registry.async_get_device.return_value = MagicMock(id="dev-123")
+    registry.async_get_device_by_identifier.return_value = MagicMock(id="dev-123")
     monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
 
     entity = QolsysZoneEntity(controller, "1", UID)
     entity.hass = MagicMock()
+    entity.platform = MagicMock()
+    entity.platform.config_entry.entry_id = "entry-1"
 
     info = entity.device_info
     assert info is not None
     data = dict(info)
     assert data["via_device_id"] == "dev-123"
     assert "via_device" not in data
-    registry.async_get_device.assert_called_once_with(identifiers={(DOMAIN, UID)})
+    registry.async_get_device_by_identifier.assert_called_once_with(
+        (DOMAIN, UID), "entry-1"
+    )
 
 
 def test_device_info_via_device_id_parent_missing(
@@ -202,11 +206,13 @@ def test_device_info_via_device_id_parent_missing(
     """If the parent device is not registered yet, fall back to via_device."""
     monkeypatch.setattr(entity_module, "_SUPPORTS_VIA_DEVICE_ID", True)
     registry = MagicMock()
-    registry.async_get_device.return_value = None
+    registry.async_get_device_by_identifier.return_value = None
     monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
 
     entity = QolsysZoneEntity(controller, "1", UID)
     entity.hass = MagicMock()
+    entity.platform = MagicMock()
+    entity.platform.config_entry.entry_id = "entry-1"
 
     info = entity.device_info
     assert info is not None

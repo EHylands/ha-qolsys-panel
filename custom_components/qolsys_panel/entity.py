@@ -56,14 +56,29 @@ class QolsysPanelEntity(Entity):
             return info
 
         data = cast("dict[str, Any]", dict(info))
-        if _SUPPORTS_VIA_DEVICE_ID and self.hass is not None:
-            device = dr.async_get(self.hass).async_get_device(identifiers={via})
-            if device is not None:
-                data["via_device_id"] = device.id
-                return cast("DeviceInfo", data)
-
-        data["via_device"] = via
+        via_device_id = self._resolve_via_device_id(via)
+        if via_device_id is not None:
+            data["via_device_id"] = via_device_id
+        else:
+            data["via_device"] = via
         return cast("DeviceInfo", data)
+
+    def _resolve_via_device_id(self, via: tuple[str, str]) -> str | None:
+        """Resolve the parent (panel) device's registry id.
+
+        Returns ``None`` on HA versions that don't support ``via_device_id``, or
+        before the parent device exists, so the caller can fall back to the
+        deprecated ``via_device`` tuple.
+        """
+        if not _SUPPORTS_VIA_DEVICE_ID or self.hass is None:
+            return None
+        config_entry = self.platform.config_entry if self.platform else None
+        if config_entry is None:
+            return None
+        device = dr.async_get(self.hass).async_get_device_by_identifier(
+            via, config_entry.entry_id
+        )
+        return device.id if device is not None else None
 
     @property
     def available(self) -> bool:
