@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import cast
+from typing import Any, cast
 
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.device import QolsysAutomationDevice
@@ -12,10 +12,17 @@ from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.partition import QolsysPartition
 from qolsys_controller.zone import QolsysZone
 
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN
+
+# `via_device` (the identifiers tuple) is deprecated in favour of `via_device_id`
+# (the parent device's registry id) and is removed in HA 2027.8.0. Older HA
+# releases don't accept `via_device_id` yet, so detect support at import time and
+# fall back to the tuple form there.
+_SUPPORTS_VIA_DEVICE_ID = "via_device_id" in DeviceInfo.__annotations__
 
 
 class QolsysPanelEntity(Entity):
@@ -31,6 +38,32 @@ class QolsysPanelEntity(Entity):
             identifiers={(DOMAIN, unique_id)},
             manufacturer="Johnson Controls",
         )
+        # Identifiers of the parent (panel) device this device links to, if any.
+        # Resolved to `via_device_id` in `device_info`.
+        self._via_device_identifier: tuple[str, str] | None = None
+
+    @property
+    def device_info(self) -> DeviceInfo | dr.ChildDeviceInfo | None:
+        """Return device info, linking child devices to the parent panel.
+
+        Prefers `via_device_id` (resolving the parent device's registry id) on
+        HA versions that support it, and falls back to the deprecated
+        `via_device` tuple on older versions.
+        """
+        info = self._attr_device_info
+        via = self._via_device_identifier
+        if info is None or via is None:
+            return info
+
+        data = cast("dict[str, Any]", dict(info))
+        if _SUPPORTS_VIA_DEVICE_ID and self.hass is not None:
+            device = dr.async_get(self.hass).async_get_device(identifiers={via})
+            if device is not None:
+                data["via_device_id"] = device.id
+                return cast("DeviceInfo", data)
+
+        data["via_device"] = via
+        return cast("DeviceInfo", data)
 
     @property
     def available(self) -> bool:
@@ -76,8 +109,8 @@ class QolsysPartitionEntity(QolsysPanelEntity):
             name=f"Partition{self._partition_id} - {self._partition.name}",
             model="Qolsys Partition",
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
         )
+        self._via_device_identifier = (DOMAIN, unique_id)
 
     async def async_added_to_hass(self) -> None:
         """Observe changes."""
@@ -114,8 +147,8 @@ class QolsysZoneEntity(QolsysPanelEntity):
             name=f"Zone{self._zone_id} - {self._zone.sensorname}",
             model="Qolsys Zone",
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
         )
+        self._via_device_identifier = (DOMAIN, unique_id)
 
     async def async_added_to_hass(self) -> None:
         """Observe changes."""
@@ -156,8 +189,8 @@ class QolsysAutomationDeviceEntity(QolsysPanelEntity):
             name=f"Device{virtual_node_id} - {self._autdev.device_type} - {self._autdev.device_name}",
             model="Automation Device [%s]" % self._autdev.protocol,
             manufacturer="Johnson Controls",
-            via_device=(DOMAIN, unique_id),
         )
+        self._via_device_identifier = (DOMAIN, unique_id)
 
     @property
     def available(self) -> bool:

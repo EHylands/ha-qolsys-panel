@@ -7,6 +7,8 @@ from conftest import PANEL_MAC
 import pytest
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 
+from custom_components.qolsys_panel import entity as entity_module
+from custom_components.qolsys_panel.const import DOMAIN
 from custom_components.qolsys_panel.entity import (
     QolsysAutomationDeviceEntity,
     QolsysPanelEntity,
@@ -158,3 +160,67 @@ def test_automation_device_missing_raises(controller: MagicMock) -> None:
     controller.state.automation_device.return_value = None
     with pytest.raises(ValueError, match="virtual_node_id"):
         QolsysAutomationDeviceEntity(controller, "5", UID)
+
+
+def test_device_info_via_device_fallback(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On HA without via_device_id support, parent link uses the via_device tuple."""
+    monkeypatch.setattr(entity_module, "_SUPPORTS_VIA_DEVICE_ID", False)
+    entity = QolsysZoneEntity(controller, "1", UID)
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert data["via_device"] == (DOMAIN, UID)
+    assert "via_device_id" not in data
+
+
+def test_device_info_via_device_id(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """On HA with via_device_id support, the parent registry id is used."""
+    monkeypatch.setattr(entity_module, "_SUPPORTS_VIA_DEVICE_ID", True)
+    registry = MagicMock()
+    registry.async_get_device.return_value = MagicMock(id="dev-123")
+    monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
+
+    entity = QolsysZoneEntity(controller, "1", UID)
+    entity.hass = MagicMock()
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert data["via_device_id"] == "dev-123"
+    assert "via_device" not in data
+    registry.async_get_device.assert_called_once_with(identifiers={(DOMAIN, UID)})
+
+
+def test_device_info_via_device_id_parent_missing(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """If the parent device is not registered yet, fall back to via_device."""
+    monkeypatch.setattr(entity_module, "_SUPPORTS_VIA_DEVICE_ID", True)
+    registry = MagicMock()
+    registry.async_get_device.return_value = None
+    monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
+
+    entity = QolsysZoneEntity(controller, "1", UID)
+    entity.hass = MagicMock()
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert data["via_device"] == (DOMAIN, UID)
+    assert "via_device_id" not in data
+
+
+def test_device_info_no_parent_link(controller: MagicMock) -> None:
+    """Entities that are not children of the panel expose neither via key."""
+    entity = QolsysPanelEntity(controller, UID)
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert "via_device" not in data
+    assert "via_device_id" not in data

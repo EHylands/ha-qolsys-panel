@@ -68,7 +68,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install ruff
-          pip install pytest-homeassistant-custom-component==0.13.346 qolsys-controller mypy
+          pip install pytest-homeassistant-custom-component==0.13.367 qolsys-controller mypy
 
       - name: Ruff check
         run: ruff check .
@@ -94,7 +94,7 @@ jobs:
           python-version: "3.14"
 
       - name: Install dependencies
-        run: pip install pytest-homeassistant-custom-component==0.13.346 qolsys-controller mypy
+        run: pip install pytest-homeassistant-custom-component==0.13.367 qolsys-controller mypy
 
       - name: Run pytest
         run: pytest
