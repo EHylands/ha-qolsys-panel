@@ -55,10 +55,13 @@ from .utils import get_local_ip
 
 _LOGGER = logging.getLogger(__name__)
 
-# Loggers raised to DEBUG for the duration of a config-flow session (see
-# QolsysPanelConfigFlow.__init__). This only takes effect while a flow is
-# running; on a normal restart the config flow does not run and these loggers
-# follow the level configured in Home Assistant.
+# Loggers raised to DEBUG while a user-initiated config-flow session runs, so
+# pairing and connection problems are captured. __init__ records their previous
+# levels, the user-initiated entry steps (user / reconfigure / reauth) raise
+# them to DEBUG, and async_remove restores them when the flow ends or aborts. A
+# DHCP discovery of an already-configured panel aborts before reaching any of
+# those steps, so it never raises the level; and even a real pairing flow
+# returns logging to the configured level once it finishes.
 _CONFIG_FLOW_DEBUG_LOGGERS = ("qolsys_controller", __name__)
 
 
@@ -83,15 +86,12 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self) -> None:
         """Init config flow."""
-        # Raise DEBUG logging when a config-flow session starts so pairing and
-        # connection problems are captured in the logs. Uses orig_setLevel when
-        # present to bypass HA's logger-override guard. The level is not
-        # restored, but that is fine: config-flow code only runs while a flow is
-        # active, and a subsequent restart never runs the flow, so the running
-        # integration follows the log level configured in Home Assistant.
-        for name in _CONFIG_FLOW_DEBUG_LOGGERS:
-            logger = logging.getLogger(name)
-            getattr(logger, "orig_setLevel", logger.setLevel)(logging.DEBUG)
+        # Record the loggers' current levels so async_remove can restore them
+        # after a user-initiated step has raised them to DEBUG. Captured here (not
+        # in those steps) so the baseline is read before any step can change it.
+        self._saved_log_levels: dict[str, int] = {
+            name: logging.getLogger(name).level for name in _CONFIG_FLOW_DEBUG_LOGGERS
+        }
 
         self._data: dict[str, Any] = {}
         self._pki_list: list[str] = []
@@ -108,6 +108,32 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: QolsysPanelConfigEntry,
     ) -> QolsysPanelOptionsFlowHandler:
         return QolsysPanelOptionsFlowHandler()
+
+    def _enable_debug_logging(self) -> None:
+        """Raise the integration loggers to DEBUG for a user-initiated flow.
+
+        Called from the user-initiated entry steps (user / reconfigure / reauth),
+        not __init__, so that a DHCP discovery flow which aborts because the panel
+        is already configured never changes log levels. async_remove restores the
+        levels recorded in __init__ when the flow ends. Uses orig_setLevel when
+        present to bypass HA's logger-override guard.
+        """
+        for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+            logger = logging.getLogger(name)
+            getattr(logger, "orig_setLevel", logger.setLevel)(logging.DEBUG)
+
+    @callback
+    def async_remove(self) -> None:
+        """Restore the log levels recorded in __init__ when the flow is removed.
+
+        HA calls this when the flow completes, aborts, or is otherwise removed,
+        so the DEBUG bump applied by the user-initiated steps lasts only for the
+        flow's lifetime. For a flow that never raised the level (e.g. a discovery
+        flow that aborted), restoring to the recorded value is a harmless no-op.
+        """
+        for name, level in self._saved_log_levels.items():
+            logger = logging.getLogger(name)
+            getattr(logger, "orig_setLevel", logger.setLevel)(level)
 
     async def _async_get_pki_dir(self) -> list[str]:
         """Return a list of PKI directories (MAC addresses) in the config/pki directory."""
@@ -188,6 +214,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Show the initial menu."""
+        self._enable_debug_logging()
         return self.async_show_menu(
             step_id="user",
             menu_options=["pki_autodiscovery", "existing_pki"],
@@ -331,6 +358,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle  reconfigure flow."""
+        self._enable_debug_logging()
         entry = self._get_reconfigure_entry()
         self._config_directory = Path(self.hass.config.config_dir) / CONFIG_DIR
         self._pki_list = await self._async_get_pki_dir()
@@ -386,6 +414,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
         """Handle reauthentication after the panel rejects the client certificate."""
+        self._enable_debug_logging()
         # Pre-fill the host from the existing entry so the existing-PKI form is
         # populated; the pairing path ignores it.
         host = entry_data.get(CONF_HOST)
