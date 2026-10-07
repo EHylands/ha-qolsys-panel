@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.8.4 (2026-10-07)
+
+### Bug Fixes
+
+- Bump qolsys-controller
+  ([`27c7946`](https://github.com/EHylands/ha-qolsys-panel/commit/27c79467326dcee8d334151056c099a855313e91))
+
+
 ## v1.8.3 (2026-09-28)
 
 ### Bug Fixes
