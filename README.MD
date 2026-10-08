@@ -129,13 +129,13 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 - **Binary sensor** (`binary_sensor`): open/closed (or motion, etc.) status for each zone, plus per-zone Unreachable, Tamper, Battery and AC-status sensors.
 - **Sensors** (`sensor`): Latest and Average signal strength (dBm) and Battery Level/Voltage, plus Temperature and Light on supported PowerG devices.
 
-### Automation devices (Z-Wave, PowerG, Zigbee)
+### Automation devices (Z-Wave, PowerG, Zigbee, Alarm.com)
 
 Depending on the device type, the integration creates the matching platform entity:
 
 - **Lock** (`lock`): door locks.
 - **Light** (`light`) and **Switch** (`switch`): dimmers and outlets.
-- **Climate** (`climate`): thermostats.
+- **Climate** (`climate`): Z-Wave and Alarm.com thermostats. Alarm.com thermostats report the current temperature and humidity, and support Off, Heat, Cool and Heat/Cool modes, heat and cool setpoints, and fan modes (On, Auto).
 - **Cover** (`cover`) and **Valve** (`valve`): controllable openings.
 - **Siren** (`siren`).
 - **Sensors** (`sensor`): battery level, generic sensor readings and energy-meter values.
