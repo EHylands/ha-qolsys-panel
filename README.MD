@@ -207,7 +207,7 @@ The integration will be cleanly removed from your system.
 | Scene Controller (Central Scene) | ✅     | ❌     | ❌    | ❌    |
 | Smart Outlet     | 🛠️     | ❌     | ❌    | ❌    |
 | Thermometer      | ✅     | ❌     | ❌    | ❌    |
-| Thermostat       | ✅     | ❌     | ❌    | ❌    |
+| Thermostat       | ✅     | ❌     | ❌    | ✅    |
 | Water Valve      | 🛠️     | ❌     | ❌    | ❌    |
 
 🛠️ = partially supported or untested
