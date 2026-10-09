@@ -7,6 +7,8 @@ from unittest.mock import MagicMock
 from conftest import PANEL_MAC
 import pytest
 
+from custom_components.qolsys_panel import entity as entity_module
+from custom_components.qolsys_panel.const import DOMAIN
 from custom_components.qolsys_panel.entity import (
     QolsysAutomationDeviceEntity,
     QolsysPanelEntity,
@@ -224,3 +226,83 @@ def test_handle_update_without_hass_writes_directly(controller: MagicMock) -> No
     entity._handle_update(None)
 
     entity.async_write_ha_state.assert_called_once_with()
+
+
+# The via_device_id link (1.7.2/1.7.3). The cases are upstream df56d60's, adapted
+# to this fork's resolver: a missing parent leaves the child unlinked rather than
+# falling back to the deprecated `via_device` tuple, which is what HA 2026.9
+# raised on when an entity was re-added from the settings UI.
+
+
+def test_device_info_links_child_to_panel_by_registry_id(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A child device carries the panel's registry id as via_device_id."""
+    registry = MagicMock()
+    registry.async_get_device_by_identifier.return_value = MagicMock(id="dev-123")
+    monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
+
+    entity = QolsysZoneEntity(controller, "1", UID)
+    entity.hass = MagicMock()
+    entity.platform = MagicMock()
+    entity.platform.config_entry.entry_id = "entry-1"
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert data["via_device_id"] == "dev-123"
+    assert "via_device" not in data
+    assert data["identifiers"] == {(DOMAIN, f"{UID}_zone1")}
+    registry.async_get_device_by_identifier.assert_called_once_with(
+        (DOMAIN, UID), "entry-1"
+    )
+
+
+def test_device_info_parent_missing_leaves_child_unlinked(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """With no panel device in the registry the child gets neither via key."""
+    registry = MagicMock()
+    registry.async_get_device_by_identifier.return_value = None
+    monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
+
+    entity = QolsysZoneEntity(controller, "1", UID)
+    entity.hass = MagicMock()
+    entity.platform = MagicMock()
+    entity.platform.config_entry.entry_id = "entry-1"
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert "via_device" not in data
+    assert "via_device_id" not in data
+
+
+def test_device_info_before_hass_is_set_has_no_link(controller: MagicMock) -> None:
+    """Before the entity is added to hass there is no registry to resolve against."""
+    entity = QolsysPartitionEntity(controller, "1", UID)
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert "via_device" not in data
+    assert "via_device_id" not in data
+
+
+def test_device_info_panel_entity_has_no_parent_link(
+    controller: MagicMock, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The panel's own entities are the parent; no lookup, no via key."""
+    registry = MagicMock()
+    monkeypatch.setattr(entity_module.dr, "async_get", lambda hass: registry)
+
+    entity = QolsysPanelEntity(controller, UID)
+    entity.hass = MagicMock()
+    entity.platform = MagicMock()
+
+    info = entity.device_info
+    assert info is not None
+    data = dict(info)
+    assert "via_device" not in data
+    assert "via_device_id" not in data
+    registry.async_get_device_by_identifier.assert_not_called()
