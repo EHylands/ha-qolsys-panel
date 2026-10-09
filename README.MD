@@ -233,14 +233,15 @@ Depending on the device type, the integration creates the matching platform enti
 
 ### Actions
 
-All actions target a partition's `alarm_control_panel` entity:
+Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` targets the Qolsys Panel itself.
 
-| Action | Description | Options |
-|--------|-------------|---------|
-| `qolsys_panel.trigger_police` | Trigger a Police alarm on the panel | `silent` (boolean) |
-| `qolsys_panel.trigger_auxilliary` | Trigger an Auxiliary alarm on the panel | `silent` (boolean) |
-| `qolsys_panel.trigger_fire` | Trigger a Fire alarm on the panel | — |
-| `qolsys_panel.quick_exit` | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
+| Action | Target | Description | Options |
+|--------|--------|-------------|---------|
+| `qolsys_panel.trigger_police` | Partition | Trigger a Police alarm on the panel | `silent` (boolean) |
+| `qolsys_panel.trigger_auxilliary` | Partition | Trigger an Auxiliary alarm on the panel | `silent` (boolean) |
+| `qolsys_panel.trigger_fire` | Partition | Trigger a Fire alarm on the panel | — |
+| `qolsys_panel.quick_exit` | Partition | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
+| `qolsys_panel.change_master_volume` | Panel | Change the panel's master volume | `volume` (0–15) |
 
 ## 🔄 Data Updates
 
