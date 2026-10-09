@@ -27,7 +27,7 @@
   "requirements": [
     "aiofiles>=25.1.0",
     "aiomqtt>=2.5.1",
-    "cryptography>=44.0.1,<=50.0.0",
+    "cryptography>=44.0.1,<=50.0.2",
     "paho-mqtt>=2.1.0",
     "passlib>=1.7.4",
     "zeroconf>=0.148.0"

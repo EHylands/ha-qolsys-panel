@@ -1,3 +1,30 @@
+## 1.8.4
+
+- Upstream 1.7.0 to 1.8.4 (38 commits, 2026-09-19 to 10-07) reviewed commit by
+  commit. **Taken:** a dynamic automation-sensor add is skipped when the entity
+  registry already holds that unique_id (a reconnect followed by a database
+  sync re-fires the event, and HA rejected the duplicate; upstream d905fc7,
+  with an explicit guard where upstream used `assert`); upstream's diagnostics
+  line wrap; the README's actions table gains a Target column and the
+  `change_master_volume` service this fork has shipped since 1.8.0.
+  **Already here:** upstream's `via_device_id` link (ours since 1.7.2/1.7.3);
+  its fallback to the deprecated `via_device` tuple is declined, that tuple is
+  what HA 2026.9 raised on when an entity was re-added, and four tests for our
+  resolver are added instead. **Declined:** the Z-Wave Central Scene event
+  platform (`event.py`, `Platform.EVENT`) and the Alarm.com thermostat support,
+  both for hardware this panel does not have and both needing library code
+  this fork does not vendor; 21 manifest pin bumps of the PyPI library (this
+  fork vendors it; the library delta is reviewed separately, below); 7
+  semantic-release version commits; 5 CI commits (this fork does not run
+  upstream's release pipeline, and one deletes the `requirements_test.txt` the
+  test runner needs).
+- Vendored `qolsys_controller`: three fixes from 1.8.7 to 1.9.13 taken into code
+  already vendored (a blank automation-device END_POINT no longer raises in
+  the device constructor; the thermostat HVAC-mode bitmask accepts a list; a
+  Z-Wave light log call with one argument too many). The cryptography cap
+  moves to upstream's `<=50.0.2`. The Central Scene, Alarm.com thermostat and
+  IQ2+ thermostat code is not taken; `vendor/VENDORED.md` lists every file.
+
 ## 1.8.3
 
 - Vendored `qolsys_controller` brought from 1.8.0 to 1.8.6 (upstream's six manifest bumps of 2026-09-14 to 09-18 were pin changes to this library; the library delta itself is what was reviewed). All of it is Z-Wave automation-device handling, which this house's panel does not use (no automation devices are paired): multi-channel endpoint discovery from `multi_channel_details` (a light service per SwitchMultilevel endpoint, an outlet per SwitchBinary endpoint with no other service), an `is_main_endpoint_service` flag on every service and the base status/battery services placed on the device's own endpoint instead of 0, SwitchMultilevel (0x26) reports update a light's level and on/off, SwitchBinary (0x25) reports update a light's on/off, `switch_binary_set` accepts outlets, and the outlet's turn_on/turn_off no longer skip the command when the cached state already matches. Audit: no new network endpoints, dependencies or logging of panel data; the JSON parse of `multi_channel_details` is guarded; the new `int(self.end_point)` calls follow the pattern the 1.8.0 base already used at construction. Import lines rewritten to the package-relative form the vendored copy uses, nothing else changed.

@@ -367,9 +367,15 @@ class ThermostatService(AutomationService):
         zwave_hvac_mode = ThermostatMode(int_hvac_mode)
         self.hvac_mode = self.ZWAVE_TO_QOLSYS_HVAC_MODE.get(zwave_hvac_mode, None)
 
-    def _set_hvac_modes_from_bitmask(self, hvac_modes_bitmask: str) -> None:
+    def _set_hvac_modes_from_bitmask(self, hvac_modes_bitmask: str | list[int]) -> None:
         supported_hvac_modes: list[QolsysHvacMode] = []
-        int_list = [int(x) for x in hvac_modes_bitmask.strip("[]").split(",") if x.strip()]
+
+        int_list = []
+        if isinstance(hvac_modes_bitmask, list):
+            int_list = [int(x) for x in hvac_modes_bitmask]
+        elif isinstance(hvac_modes_bitmask, str):
+            int_list = [int(x) for x in hvac_modes_bitmask.strip("[]").split(",") if x.strip()]
+
         bitmask = int.from_bytes(bytes(int_list), byteorder="little")
         for bit, mode in BITMASK_SUPPORTED_THERMOSTAT_MODE.items():
             if bitmask & (1 << bit):

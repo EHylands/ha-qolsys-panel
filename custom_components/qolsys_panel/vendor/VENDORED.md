@@ -1,8 +1,10 @@
 # Vendored `qolsys_controller`
 
 Upstream: [EHylands/QolsysController](https://github.com/EHylands/QolsysController),
-PyPI package `qolsys-controller`, **version 1.8.0** (1.7.1 vendored 2026-09-07; the 1.7.2 and 1.8.0 changes applied
-2026-09-12 from the PyPI wheels, see "Upstream versions" below), taken from the
+PyPI package `qolsys-controller`, **version 1.8.6 plus three fixes from 1.9.x**
+(1.7.1 vendored 2026-09-07; the 1.7.2 and 1.8.0 changes applied 2026-09-12 from
+the PyPI wheels; 1.8.6 on 2026-09-19; three 1.8.7 to 1.9.13 fixes on 2026-10-09,
+see "Upstream versions" below), taken from the
 `qolsys_controller-1.7.1-py3-none-any.whl` wheel published on PyPI.
 License: MIT, kept verbatim at `qolsys_controller/LICENSE`.
 
@@ -293,3 +295,37 @@ The first pairing against a real IQ Panel failed the post-pairing TLS connection
   warnings at each load. This fork keeps those two tables in
   `UNUSED_TABLE_URIS` (skipped at debug level, 1.7.8), which reads nothing from
   them either. Revisit if upstream fills in their columns.
+- **1.8.7 to 1.9.13 (reviewed 2026-10-09, three fixes taken):** the git tags
+  `v1.8.6..v1.9.13` of EHylands/QolsysController, 43 files, 2,656 lines added
+  (the 1.9.13 wheel on PyPI is byte-identical to the tag). **Taken**, all in
+  code already vendored here: `automation/device.py` computes the device's own
+  endpoint once as `int(end_point) if end_point.isdigit() else 0` and guards
+  the ten `is_main_endpoint_service` comparisons with `self.end_point and`, so
+  a device row with a blank END_POINT no longer raises `ValueError` in the
+  constructor; `automation/service_thermostat.py::_set_hvac_modes_from_bitmask`
+  accepts the bitmask as a list as well as a string (upstream issue #129,
+  pairing failed with a thermostat that reports a list);
+  `automation_zwave/service_light.py` drops a third argument from a two-slot
+  `LOGGER.error` call, which made the logging module print its own error
+  instead of the message. The manifest's cryptography cap moves from `<=50.0.0`
+  to upstream's `<=50.0.2` (HA 2026.9.4 pins 48.0.1; the cap only matters when
+  HA moves past 50.0.0). **Not taken:** the Z-Wave Central Scene feature
+  (`automation/service_central_scene.py`,
+  `automation_zwave/service_central_scene.py`, the MultiChannel and
+  CentralScene commands in `commands/zwave.py`, the `enum_zwave` additions,
+  `automation_zwave/device.py` report parsing, the
+  `AUTOMATION_CENTRAL_SCENE_EVENT` notification) and the Alarm.com thermostat
+  service (`automation_adc/service_thermostat.py`, `enum_adc.py`, the
+  `commands/adc.py` changes, the ADC services' `is_main_endpoint_service`
+  flags), together about 1,300 lines of new panel-command and report-parsing
+  code for hardware this panel does not have (no automation devices are
+  paired); the IQ Panel 2+ Z-Wave thermostat round-trips (`thermostat_*_get`
+  commands and the preemptive state writes in
+  `automation_zwave/service_thermostat.py`), same reason; the
+  `node_battery_level_value` accessor (cosmetic); and the rewrite of every
+  `except (A, B):` to the Python 3.14-only `except A, B:` form, which changes
+  no behavior (upstream's `requires-python` is now `>=3.14`; the vendored copy
+  keeps the parenthesized form every Python reads). Revisit the skipped
+  features if a Z-Wave scene controller or an Alarm.com thermostat is ever
+  paired to the panel. Upstream had also tagged 1.10.0 by review time; the
+  integration upstream pins 1.9.13, so 1.10.0 was not reviewed.

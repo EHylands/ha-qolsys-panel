@@ -63,5 +63,4 @@ class LightServiceZwave(LightService):
                 "[%s] LightServiceZwave - update_automation_service - error parsing extras: %s",
                 self.automation_device.prefix,
                 self.automation_device.extras,
-                self.automation_device.status,
             )
