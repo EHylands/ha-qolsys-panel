@@ -12,9 +12,11 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from . import QolsysPanelConfigEntry
+from .const import DOMAIN
 from .entity import (
     QolsysAutomationDeviceEntity,
     QolsysPartitionEntity,
@@ -166,6 +168,20 @@ async def async_setup_entry(
         new_sensor = AutomationDevice_Sensor(
             QolsysPanel, virtual_node_id, endpoint, unit, unique_id
         )
+
+        # A reconnect followed by a database sync re-fires this event for
+        # sensors that already exist; adding them again makes HA reject the
+        # duplicate unique_id ("Platform qolsys_panel does not generate unique
+        # IDs"). Skip those (upstream d905fc7).
+        sensor_unique_id = new_sensor.unique_id
+        if sensor_unique_id is not None and er.async_get(hass).async_get_entity_id(
+            "sensor", DOMAIN, sensor_unique_id
+        ):
+            _LOGGER.debug(
+                "Automation sensor %s already added, skipping", sensor_unique_id
+            )
+            return
+
         async_add_entities([new_sensor])
 
     _LOGGER.debug("Subscribing to: %s", QolsysNotification.AUTOMATION_SENSOR_ADD.name)
