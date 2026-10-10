@@ -19,6 +19,7 @@ from conftest import (
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
+from custom_components.qolsys_panel.config_flow import _CONFIG_FLOW_DEBUG_LOGGERS
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
@@ -165,6 +166,127 @@ async def test_dhcp_discovery_updates_host_and_aborts(
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
     assert mock_config_entry.data[CONF_HOST] == "192.168.1.99"
+
+
+@pytest.fixture
+def quiet_debug_loggers():
+    """Hold the loggers the flow raises at WARNING, and put them back afterwards.
+
+    The flow sets a process-global level on these loggers; without restoring it,
+    one test would leak its level into the next.
+    """
+    saved = {
+        name: logging.getLogger(name).level for name in _CONFIG_FLOW_DEBUG_LOGGERS
+    }
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
+    yield
+    for name, level in saved.items():
+        logging.getLogger(name).setLevel(level)
+
+
+async def test_dhcp_discovery_of_a_configured_panel_never_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    mock_setup_entry: AsyncMock,
+    quiet_debug_loggers: None,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Discovery of an already-configured panel must not touch the log levels.
+
+    DHCP re-discovers the panel about a minute after every boot and the flow
+    aborts with already_configured. Nobody asked for debug output, so the
+    levels must stay where they are for the whole flow, not just be put back
+    at the end (upstream #134, #137): the only line the flow itself logs on
+    that path is a DEBUG one listing every configured panel's host and MAC,
+    and it must not be emitted.
+    """
+    mock_config_entry.add_to_hass(hass)
+
+    with caplog.at_level(logging.DEBUG):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_DHCP},
+            data=_dhcp_info(PANEL_MAC_NO_SEP, ip="192.168.1.99"),
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.WARNING
+    debug_lines = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name in _CONFIG_FLOW_DEBUG_LOGGERS and r.levelno == logging.DEBUG
+    ]
+    assert debug_lines == []
+
+
+async def test_dhcp_discovery_of_a_new_panel_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    quiet_debug_loggers: None,
+) -> None:
+    """A discovery that reaches the setup menu is a pairing session, so DEBUG is on."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP),
+    )
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_user_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    quiet_debug_loggers: None,
+) -> None:
+    """A user-initiated flow raises the loggers to DEBUG (upstream #115)."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_reconfigure_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    pki_dir: Path,
+    quiet_debug_loggers: None,
+) -> None:
+    """A reconfigure flow raises the loggers to DEBUG."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reconfigure_flow(hass)
+
+    assert result["type"] is FlowResultType.FORM
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_reauth_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    quiet_debug_loggers: None,
+) -> None:
+    """A reauth flow raises the loggers to DEBUG."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
 
 
 async def test_dhcp_discovery_matches_newline_suffixed_unique_id(
