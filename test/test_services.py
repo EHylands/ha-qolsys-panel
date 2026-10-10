@@ -6,18 +6,20 @@ from unittest.mock import AsyncMock, MagicMock
 from conftest import PANEL_MAC
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.errors import CommandExecutionError
+from qolsys_controller.errors import CommandExecutionError, QolsysOperationError
 
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
     DOMAIN,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
 )
 from custom_components.qolsys_panel.services import (
     async_change_master_volume,
+    async_picture_peek_in,
     async_quick_exit,
     async_trigger_auxilliary,
     async_trigger_fire,
@@ -50,6 +52,7 @@ def _make_panel() -> MagicMock:
     panel.commands.panel.trigger_fire = AsyncMock()
     panel.commands.panel.quick_exit = AsyncMock()
     panel.commands.panel.change_master_volume_level = AsyncMock()
+    panel.commands.camera.capture_snapshot = AsyncMock()
     return panel
 
 
@@ -200,6 +203,53 @@ async def test_change_volume_not_loaded(hass: HomeAssistant, handler) -> None:
     with pytest.raises(ServiceValidationError):
         await handler(
             _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id, "volume": 1})
+        )
+
+
+async def test_picture_peek_in(hass: HomeAssistant) -> None:
+    """Peek-in captures a snapshot when enabled (default) for the config entry."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+
+    await async_picture_peek_in(
+        _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id})
+    )
+
+    entry.runtime_data.commands.camera.capture_snapshot.assert_awaited_once_with()
+
+
+async def test_picture_peek_in_option_disabled(hass: HomeAssistant) -> None:
+    """Peek-in refuses to run (and issues no command) when disabled in options."""
+    entry = _make_entry(hass, {OPTION_PEEK_IN_PICTURE: False})
+
+    with pytest.raises(HomeAssistantError):
+        await async_picture_peek_in(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id})
+        )
+
+    entry.runtime_data.commands.camera.capture_snapshot.assert_not_awaited()
+
+
+async def test_picture_peek_in_command_error(hass: HomeAssistant) -> None:
+    """A controller operation error surfaces as a HomeAssistantError."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+    entry.runtime_data.commands.camera.capture_snapshot.side_effect = (
+        QolsysOperationError("boom")
+    )
+
+    with pytest.raises(HomeAssistantError):
+        await async_picture_peek_in(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id})
+        )
+
+
+async def test_picture_peek_in_not_loaded(hass: HomeAssistant) -> None:
+    """A config entry that is not loaded raises a ServiceValidationError."""
+    entry = _make_entry(hass, ALL_OPTIONS_ON)
+    entry.mock_state(hass, ConfigEntryState.SETUP_ERROR)
+
+    with pytest.raises(ServiceValidationError):
+        await async_picture_peek_in(
+            _make_call(hass, {ATTR_CONFIG_ENTRY_ID: entry.entry_id})
         )
 
 

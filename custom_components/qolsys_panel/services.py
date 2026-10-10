@@ -18,11 +18,13 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, entity_registry, service
 
 from .const import (
+    DEFAULT_PEEK_IN_PICTURE,
     DEFAULT_QUICK_EXIT_DURATION,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
     DOMAIN,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
@@ -42,6 +44,13 @@ async def async_picture_peek_in(call: ServiceCall) -> None:
     config_entry: QolsysPanelConfigEntry = service.async_get_config_entry(
         call.hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY_ID]
     )
+
+    # Prevent service from running if option is disabled in integration options
+    if not config_entry.options.get(OPTION_PEEK_IN_PICTURE, DEFAULT_PEEK_IN_PICTURE):
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="peek_in_picture_disabled",
+        )
 
     QolsysPanel = config_entry.runtime_data
 

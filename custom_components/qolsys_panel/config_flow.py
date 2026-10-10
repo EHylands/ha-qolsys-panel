@@ -38,6 +38,7 @@ from .const import (
     DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_MOTION_SENSOR_DELAY,
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
+    DEFAULT_PEEK_IN_PICTURE,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
@@ -46,6 +47,7 @@ from .const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
@@ -651,6 +653,12 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                 vol.Required(
                     OPTION_TRIGGER_FIRE,
                     default=options.get(OPTION_TRIGGER_FIRE, DEFAULT_TRIGGER_FIRE),
+                ): bool,
+                vol.Required(
+                    OPTION_PEEK_IN_PICTURE,
+                    default=options.get(
+                        OPTION_PEEK_IN_PICTURE, DEFAULT_PEEK_IN_PICTURE
+                    ),
                 ): bool,
                 vol.Required(
                     OPTION_MOTION_SENSOR_DELAY_ENABLED,

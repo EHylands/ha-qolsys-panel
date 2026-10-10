@@ -123,6 +123,7 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 - **Media Player** (`media_player`): text-to-speech; use the standard speak/`tts` actions to make the panel talk.
 - **Scenes** (`scene`): activate scenes defined on the panel.
 - **Weather** (`weather`): the panel's weather forecast.
+- **Peek In Picture** (`image`): the most recent Peek In snapshot; refreshed by the `update_picture_peek_in` action.
 
 ### Zones (security sensors)
 
@@ -144,7 +145,7 @@ Depending on the device type, the integration creates the matching platform enti
 
 ### Actions
 
-Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` targets the Qolsys Panel itself.
+Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` and `update_picture_peek_in` target the Qolsys Panel itself.
 
 | Action | Target | Description | Options |
 |--------|--------|-------------|---------|
@@ -153,6 +154,7 @@ Most actions target a partition's `alarm_control_panel` entity; `change_master_v
 | `qolsys_panel.trigger_fire` | Partition | Trigger a Fire alarm on the panel | — |
 | `qolsys_panel.quick_exit` | Partition | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
 | `qolsys_panel.change_master_volume` | Panel | Change the panel's master volume | `volume` (0–15) |
+| `qolsys_panel.update_picture_peek_in` | Panel | Capture a Peek In snapshot and update the panel's Peek In Picture (`image`) entity | — |
 
 ## 🔄 Data Updates
 
