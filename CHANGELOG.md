@@ -1,3 +1,49 @@
+## 1.9.0
+
+- Upstream 1.9.0 (8 commits, 2026-10-09 to 10-10) reviewed commit by commit.
+  **Taken:** the config flow raises the qolsys loggers to DEBUG only for a
+  session a person starts (user, reconfigure, reauth; upstream 92d070a, #137).
+  This fork already put the levels back when the flow ended (audit M1, review
+  N2), so the "stays on after boot" half of upstream's #134 never applied
+  here; what did apply is that the raise came first, in `__init__`, so the
+  DHCP re-discovery of the configured panel about a minute after every boot
+  logged every configured panel's host and MAC at DEBUG before the abort put
+  the level back. Five tests, one tightened to assert that no DEBUG line is
+  emitted on that path. **Taken, adapted:** the Peek-In picture (1ebb18e,
+  ccec800, a7b79fa): the panel camera's most recent photo as an `image`
+  entity on the panel device, and a `qolsys_panel.update_picture_peek_in`
+  action that takes a new one, both behind a new "Enable Peek In Picture"
+  option, on by default as upstream ships it. Nothing captures on its own.
+  Departures: the option removes the entity when off instead of leaving it
+  unavailable with the last photo; the entity uses this fork's thread-safe
+  state write (M4) and follows the panel connection for availability; the
+  action turns every library failure (snapshot error, timeout, refused
+  command) into a readable error; 16 tests. The deletion of the unreferenced
+  `assets/qolsys01.jpg` is taken with it. **Declined:** the manifest's
+  library pin 1.9.13 to 1.11.0 (this fork vendors the library; the delta is
+  reviewed below), the two version-bump commits (22b9442, d334573) and the
+  1.9.0 release commit (0f5fa60; the version is set here instead), and
+  353a9d0's test line that ccec800 removes again.
+- Vendored `qolsys_controller`: the camera snapshot feature from 1.11.0, as
+  upstream wrote it (import rewrite only); 1.10.0 restored the parenthesized
+  `except (A, B):` form this copy had kept, so nothing to take from it. Audit:
+  every byte goes over the existing paired, CA-pinned MQTT connection, no new
+  host or dependency; the capture is marked local-only (`user_id=-2`) so the
+  panel does not forward the photo to Alarm.com; the panel's copy is deleted
+  after download with read-back checks; filenames are validated before any
+  delete; the image is never logged. Upstream's 22 library tests carried.
+  `vendor/VENDORED.md` has the detail, including the generic
+  `database_remote_*` panel commands the feature brings in and uses alone.
+
+**Before updating:** a new entity, the panel device's **Peek In Picture**
+(`image`), appears after the restart HACS asks for. It is a camera inside the
+house, visible to every Home Assistant user; turn it off on the integration's
+Configure page if that is not wanted. Each call of the action is a photo, a
+flash write and a delete on the panel, so keep any automation to one every 30
+to 60 seconds at most. The protocol was verified upstream on an IQ Panel 2+
+with firmware 2.8.1; on other panels the action may fail with a readable error
+and nothing else changes.
+
 ## 1.8.4
 
 - Upstream 1.7.0 to 1.8.4 (38 commits, 2026-09-19 to 10-07) reviewed commit by
