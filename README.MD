@@ -213,6 +213,7 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 - **Media Player** (`media_player`): text-to-speech; use the standard speak/`tts` actions to make the panel talk.
 - **Scenes** (`scene`): activate scenes defined on the panel.
 - **Weather** (`weather`): the panel's weather forecast.
+- **Peek In Picture** (`image`): the most recent photo from the panel's own camera, taken only when the `update_picture_peek_in` action is called (nothing captures on its own). The panel's copy is deleted after download and the photo is not forwarded to Alarm.com. It is a camera inside the house, visible to every Home Assistant user; the **Enable Peek In Picture** option (on by default) removes the entity and refuses the action when off.
 
 ### Zones (security sensors)
 
@@ -233,7 +234,7 @@ Depending on the device type, the integration creates the matching platform enti
 
 ### Actions
 
-Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` targets the Qolsys Panel itself.
+Most actions target a partition's `alarm_control_panel` entity; `change_master_volume` and `update_picture_peek_in` target the Qolsys Panel itself.
 
 | Action | Target | Description | Options |
 |--------|--------|-------------|---------|
@@ -242,6 +243,7 @@ Most actions target a partition's `alarm_control_panel` entity; `change_master_v
 | `qolsys_panel.trigger_fire` | Partition | Trigger a Fire alarm on the panel | — |
 | `qolsys_panel.quick_exit` | Partition | Open a door while Armed-Stay without triggering an alarm | `duration` (seconds) |
 | `qolsys_panel.change_master_volume` | Panel | Change the panel's master volume | `volume` (0–15) |
+| `qolsys_panel.update_picture_peek_in` | Panel | Take a photo with the panel's camera and update the Peek In Picture (`image`) entity; each call is a photo, a flash write and a delete on the panel, so keep automations to one every 30 to 60 seconds at most | — |
 
 ## 🔄 Data Updates
 

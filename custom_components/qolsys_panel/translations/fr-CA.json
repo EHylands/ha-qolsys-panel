@@ -73,6 +73,7 @@
           "option_trigger_police": "Activer le déclenchement de l'alarme policière",
           "option_trigger_auxilliary": "Activer le déclenchement de l'alarme auxiliaire",
           "option_trigger_fire": "Activer le déclenchement de l'alarme incendie",
+          "option_peek_in_picture": "Activer l'image d'aperçu (Peek In)",
           "option_motion_sensor_delay_enabled": "Activer le délai des détecteurs de mouvement",
           "option_motion_sensor_delay": "Délai des détecteurs de mouvement (secondes)"
         }
@@ -103,6 +104,9 @@
     },
     "trigger_fire_disabled": {
       "message": "Le déclenchement de l'alarme incendie est désactivé dans les options de l'intégration."
+    },
+    "peek_in_picture_disabled": {
+      "message": "L'image d'aperçu (Peek In) est désactivée dans les options de l'intégration; aucune photo n'est prise."
     },
     "command_failed": {
       "message": "Échec de l'exécution de l'action demandée sur le panneau Qolsys : {error}"
@@ -226,6 +230,16 @@
     }
   },
   "services": {
+    "update_picture_peek_in": {
+      "description": "Prend une nouvelle photo avec la caméra du panneau et met à jour l'entité image d'aperçu (Peek In). La copie du panneau est ensuite supprimée et la photo n'est pas envoyée à Alarm.com.",
+      "fields": {
+        "config_entry_id": {
+          "description": "Le panneau Qolsys.",
+          "name": "Panneau"
+        }
+      },
+      "name": "Panneau Qolsys - Mettre à jour l'image d'aperçu"
+    },
     "change_master_volume": {
       "description": "Modifie le volume principal sur le panneau.",
       "fields": {

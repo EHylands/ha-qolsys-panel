@@ -73,6 +73,7 @@
             "option_trigger_police": "Enable Trigger Police Alarm",
             "option_trigger_auxilliary": "Enable Trigger Auxiliary Alarm",
             "option_trigger_fire": "Enable Trigger Fire Alarm",
+            "option_peek_in_picture": "Enable Peek In Picture",
             "option_motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
             "option_motion_sensor_delay": "Motion Sensors Delay (seconds)"       
           }
@@ -113,6 +114,9 @@
     },
     "trigger_fire_disabled": {
       "message": "Triggering the fire alarm is disabled in the integration options."
+    },
+    "peek_in_picture_disabled": {
+      "message": "The Peek In Picture is disabled in the integration options, so no photo is taken."
     },
     "command_failed": {
       "message": "Failed to run the requested action on the Qolsys Panel: {error}"
@@ -236,6 +240,16 @@
     }
   },
   "services": {
+    "update_picture_peek_in": {
+      "description": "Take a new photo with the panel's camera and update the Peek In Picture image entity. The panel's own copy is deleted afterwards and the photo is not sent to Alarm.com.",
+      "fields": {
+        "config_entry_id": {
+          "description": "The Qolsys Panel.",
+          "name": "Panel"
+        }
+      },
+      "name": "Qolsys Panel - Update Peek In Picture"
+    },
     "change_master_volume": {
       "description": "Change the master volume on the panel.",
       "fields": {

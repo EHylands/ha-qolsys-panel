@@ -17,11 +17,13 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, entity_registry, service
 
 from .const import (
+    DEFAULT_PEEK_IN_PICTURE,
     DEFAULT_QUICK_EXIT_DURATION,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
     DOMAIN,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
@@ -30,9 +32,13 @@ from .const import (
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
     SERVICE_TRIGGER_POLICE,
+    SERVICE_UPDATE_PICTURE_PEEK_IN,
 )
 from .types import QolsysPanelConfigEntry
-from .vendor.qolsys_controller.errors import CommandExecutionError
+from .vendor.qolsys_controller.errors import (
+    CommandExecutionError,
+    QolsysOperationError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -273,9 +279,54 @@ async def async_change_master_volume(call: ServiceCall) -> None:
             translation_placeholders={"error": str(e)},
         ) from e
 
+
+async def async_update_picture_peek_in(call: ServiceCall) -> None:
+    """Take a new Peek-In photo with the panel's camera and update the image entity.
+
+    Targets the config entry, like the master volume. The library asks the panel
+    to take one still, downloads it over the paired MQTT connection, and deletes
+    the panel's copy; it also marks the request local-only so the panel does not
+    forward the photo to Alarm.com. Nothing captures on its own: only this
+    service does. From upstream 1.9.0 (2026-10-10).
+    """
+    config_entry: QolsysPanelConfigEntry = service.async_get_config_entry(
+        call.hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
+
+    # The same option that creates the image entity gates the capture.
+    if not config_entry.options.get(OPTION_PEEK_IN_PICTURE, DEFAULT_PEEK_IN_PICTURE):
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="peek_in_picture_disabled",
+        )
+
+    QolsysPanel = config_entry.runtime_data
+    try:
+        await QolsysPanel.commands.camera.capture_snapshot()
+    except QolsysOperationError as e:
+        # Covers a refused command, a timeout and QolsysSnapshotError alike.
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up the services for the Qolsys Panel integration."""
+
+    # Update Peek-In Picture (targets the Qolsys Panel config entry)
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_UPDATE_PICTURE_PEEK_IN,
+        async_update_picture_peek_in,
+        schema=vol.Schema(
+            {
+                vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string,
+            }
+        ),
+    )
 
     # Change Master Volume Service (targets the Qolsys Panel config entry)
     hass.services.async_register(
