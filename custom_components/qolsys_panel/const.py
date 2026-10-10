@@ -19,6 +19,7 @@ SERVICE_TRIGGER_AUXILLIARY = "trigger_auxilliary"
 SERVICE_TRIGGER_FIRE = "trigger_fire"
 SERVICE_QUICK_EXIT = "quick_exit"
 SERVICE_CHANGE_MASTER_VOLUME = "change_master_volume"
+SERVICE_PICTURE_PEEK_IN = "update_picture_peek_in"
 
 DEFAULT_QUICK_EXIT_DURATION = 120
 

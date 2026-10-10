@@ -1,3 +1,10 @@
+update_picture_peek_in:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: qolsys_panel
 change_master_volume:
   fields:
     config_entry_id:
