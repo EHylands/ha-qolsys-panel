@@ -220,6 +220,10 @@
     }
   },
   "services": {
+    "update_picture_peek_in": {
+      "description": "Update Qolsys Panel Peek In Picture.",
+      "name": "Qolsys Panel - Update Peek In Picture"
+    },
     "change_master_volume": {
       "description": "Modifie le volume principal sur le panneau.",
       "fields": {

@@ -29,7 +29,7 @@ async def async_setup_entry(
         raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
 
     entities: list[ImageEntity] = []
-    peek_in_picture = QolsysPicture_PeekIn(QolsysPanel, unique_id)
+    peek_in_picture = QolsysPicture_PeekIn(hass, QolsysPanel, unique_id)
     entities.append(peek_in_picture)
     async_add_entities(entities)
 
@@ -37,11 +37,15 @@ async def async_setup_entry(
 class QolsysPicture_PeekIn(QolsysPanelEntity, ImageEntity):
     def __init__(
         self,
+        hass: HomeAssistant,
         QolsysPanel: qolsys_controller,
         unique_id: str,
     ) -> None:
         super().__init__(QolsysPanel, unique_id)
-        self._attr_unique_id = f"{self.unique_id}_picture_peek_in"
+        # QolsysPanelEntity.__init__ doesn't chain to ImageEntity, so initialize
+        # it explicitly to set up access_tokens and the HTTP client.
+        ImageEntity.__init__(self, hass)
+        self._attr_unique_id = f"{unique_id}_picture_peek_in"
         self._picture: QolsysPicture = QolsysPanel.state.picture_peek_in
         self._attr_name = "Peek In Picture"
 
