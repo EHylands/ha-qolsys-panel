@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.9.0 (2026-10-10)
+
+### Features
+
+- Add eek-In picture entity to panel device, refreshable via Peek-In service
+  ([`1ebb18e`](https://github.com/EHylands/ha-qolsys-panel/commit/1ebb18e8cb3b816498d49f486393f4f2acb9ff52))
+
+
 ## v1.8.4 (2026-10-07)
 
 ### Bug Fixes
