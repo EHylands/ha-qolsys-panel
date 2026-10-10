@@ -11,8 +11,6 @@ import re
 from ssl import SSLError
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 import voluptuous as vol
 
 from homeassistant.components import zeroconf
@@ -38,6 +36,7 @@ from .const import (
     DEFAULT_DISARM_CODE_REQUIRED,
     DEFAULT_MOTION_SENSOR_DELAY,
     DEFAULT_MOTION_SENSOR_DELAY_ENABLED,
+    DEFAULT_PEEK_IN_PICTURE,
     DEFAULT_TRIGGER_AUXILLIARY,
     DEFAULT_TRIGGER_FIRE,
     DEFAULT_TRIGGER_POLICE,
@@ -46,20 +45,42 @@ from .const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
 )
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
-# Loggers raised to DEBUG for the duration of a config-flow session (see
-# QolsysPanelConfigFlow.__init__). This only takes effect while a flow is
-# running; on a normal restart the config flow does not run and these loggers
-# follow the level configured in Home Assistant.
-_CONFIG_FLOW_DEBUG_LOGGERS = ("qolsys_controller", __name__)
+# Loggers raised to DEBUG while a user-initiated config-flow session runs, so
+# pairing problems are captured. __init__ records their levels, the entry steps
+# a person starts (user, reconfigure, reauth) raise them through
+# _enable_debug_logging, and _restore_log_levels / async_remove put them back
+# when the flow ends, however it ends. A DHCP discovery of a panel that is
+# already configured aborts before reaching any of those steps and never
+# touches the levels (see _enable_debug_logging).
+_CONFIG_FLOW_DEBUG_LOGGERS = (
+    "custom_components.qolsys_panel.vendor.qolsys_controller",
+    __name__,
+)
+
+
+def _set_log_level(logger: logging.Logger, level: int) -> None:
+    """Set a level, bypassing HA's logger-override guard the same way both ways.
+
+    Raising the level through orig_setLevel and restoring it through setLevel
+    would leave the logger stuck at DEBUG whenever the guard is active.
+    """
+    getattr(logger, "orig_setLevel", logger.setLevel)(level)
 
 
 # Format of PKI directories is a 12-character hex string (MAC address without colons).
@@ -79,19 +100,22 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Qolsys Panel."""
 
     VERSION = 1
-    MINOR_VERSION = 0
+    MINOR_VERSION = 1
 
     def __init__(self) -> None:
         """Init config flow."""
-        # Raise DEBUG logging when a config-flow session starts so pairing and
-        # connection problems are captured in the logs. Uses orig_setLevel when
-        # present to bypass HA's logger-override guard. The level is not
-        # restored, but that is fine: config-flow code only runs while a flow is
-        # active, and a subsequent restart never runs the flow, so the running
-        # integration follows the log level configured in Home Assistant.
-        for name in _CONFIG_FLOW_DEBUG_LOGGERS:
-            logger = logging.getLogger(name)
-            getattr(logger, "orig_setLevel", logger.setLevel)(logging.DEBUG)
+        # Remember the loggers' levels so _restore_log_levels can put them back
+        # (audit M1: nothing used to lower them again, so one flow left the
+        # library dumping every zone name, MAC and panel setting into the log
+        # until Home Assistant restarted, with `logger:` unable to turn it
+        # down because the override guard had been bypassed). Recorded here,
+        # before any step runs, so the baseline is what the flow found. The
+        # raise itself lives in _enable_debug_logging, not here: every flow
+        # source runs __init__, including the DHCP re-discovery of the
+        # configured panel about a minute after each boot.
+        self._saved_log_levels: dict[str, int] = {
+            name: logging.getLogger(name).level for name in _CONFIG_FLOW_DEBUG_LOGGERS
+        }
 
         self._data: dict[str, Any] = {}
         self._pki_list: list[str] = []
@@ -108,6 +132,20 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         config_entry: QolsysPanelConfigEntry,
     ) -> QolsysPanelOptionsFlowHandler:
         return QolsysPanelOptionsFlowHandler()
+
+    @callback
+    def _enable_debug_logging(self) -> None:
+        """Raise the loggers to DEBUG for a session a person started.
+
+        Called from the user, reconfigure and reauth entry steps (a DHCP
+        discovery of a new panel lands in the user step too). Not from
+        __init__: a discovery of a panel that is already configured aborts in
+        async_step_dhcp, and raising the level first made that abort log the
+        configured panels' hosts and MACs at DEBUG on every boot, and left the
+        library at DEBUG until async_remove ran (upstream #134, #137).
+        """
+        for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+            _set_log_level(logging.getLogger(name), logging.DEBUG)
 
     async def _async_get_pki_dir(self) -> list[str]:
         """Return a list of PKI directories (MAC addresses) in the config/pki directory."""
@@ -188,6 +226,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Show the initial menu."""
+        self._enable_debug_logging()
         return self.async_show_menu(
             step_id="user",
             menu_options=["pki_autodiscovery", "existing_pki"],
@@ -218,7 +257,13 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             self._pairing_task = self.hass.async_create_task(
                 self._try_connect(
                     step="pki_autodiscovery",
-                    host="",
+                    # Review B2: hand the pairing server the address discovery
+                    # already found, so it can refuse a peer that is not the
+                    # panel. Empty on a manual add, where the check stays off
+                    # and behaviour is unchanged. _try_connect skips its
+                    # check_panel_ip() validation while start_pairing is true,
+                    # so a set host adds no new failure mode.
+                    host=self._data.get(CONF_HOST, ""),
                     random_mac="",
                     resume_pairing=True,
                     start_pairing=True,
@@ -254,6 +299,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         except (Exception, BaseExceptionGroup):
             _LOGGER.exception("Unexpected error in pairing step; aborting flow")
             await self._async_stop_controller()
+            self._restore_log_levels()
             return self.async_abort(
                 reason="pairing_failed",
                 description_placeholders={
@@ -331,6 +377,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Handle  reconfigure flow."""
+        self._enable_debug_logging()
         entry = self._get_reconfigure_entry()
         self._config_directory = Path(self.hass.config.config_dir) / CONFIG_DIR
         self._pki_list = await self._async_get_pki_dir()
@@ -386,6 +433,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
         self, entry_data: Mapping[str, Any]
     ) -> ConfigFlowResult:
         """Handle reauthentication after the panel rejects the client certificate."""
+        self._enable_debug_logging()
         # Pre-fill the host from the existing entry so the existing-PKI form is
         # populated; the pairing path ignores it.
         host = entry_data.get(CONF_HOST)
@@ -429,6 +477,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
                 incomplete_reason,
             )
             await self._async_stop_controller()
+            self._restore_log_levels()
             return self.async_abort(
                 reason="pairing_failed",
                 description_placeholders={"reason": incomplete_reason},
@@ -449,15 +498,37 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
             if entry.unique_id is not None and entry.unique_id.strip() == mac.strip():
                 unique_id = entry.unique_id
             await self.async_set_unique_id(unique_id)
+            # Before the guard, not after: _abort_if_unique_id_* raises AbortFlow
+            # (review N2).
+            self._restore_log_levels()
             self._abort_if_unique_id_mismatch()
             return self.async_update_reload_and_abort(entry, data_updates=self._data)
 
         await self.async_set_unique_id(mac)
+        self._restore_log_levels()
         self._abort_if_unique_id_configured()
         return self.async_create_entry(
             title=f"Qolsys Panel ({mac})",
             data=self._data,
         )
+
+    @callback
+    def _restore_log_levels(self) -> None:
+        """Put the loggers back where the flow found them (audit M1)."""
+        for name, level in self._saved_log_levels.items():
+            _set_log_level(logging.getLogger(name), level)
+
+    @callback
+    def async_remove(self) -> None:
+        """Restore the log levels however the flow ended (review N2).
+
+        Home Assistant calls this whenever a flow leaves the manager: created,
+        aborted, or abandoned because the user closed the dialog. The explicit
+        calls on the normal paths restore earlier, while the flow can still log
+        at DEBUG through its own final steps; this is the catch-all so no exit
+        leaves the library at DEBUG until a restart.
+        """
+        self._restore_log_levels()
 
     async def _async_stop_controller(self) -> None:
         """Stop the controller; never let teardown errors mask the flow result."""
@@ -474,6 +545,7 @@ class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Stop the controller and interrupt the flow with the specific failure reason."""
         await self._async_stop_controller()
+        self._restore_log_levels()
         reason_text = self._error_placeholders.get("reason") or result["base"]
         return self.async_abort(
             reason="pairing_failed",
@@ -622,6 +694,12 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                 vol.Required(
                     OPTION_TRIGGER_FIRE,
                     default=options.get(OPTION_TRIGGER_FIRE, DEFAULT_TRIGGER_FIRE),
+                ): bool,
+                vol.Required(
+                    OPTION_PEEK_IN_PICTURE,
+                    default=options.get(
+                        OPTION_PEEK_IN_PICTURE, DEFAULT_PEEK_IN_PICTURE
+                    ),
                 ): bool,
                 vol.Required(
                     OPTION_MOTION_SENSOR_DELAY_ENABLED,

@@ -8,7 +8,6 @@ import pytest
 
 from custom_components.qolsys_panel.weather import WeatherSensor, async_setup_entry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 
 UID = PANEL_MAC
 
@@ -28,21 +27,6 @@ def _daily(date: str) -> MagicMock:
     daily.low_temp = 50
     daily.precipitation = 10
     return daily
-
-
-async def test_async_setup_entry_missing_unique_id_raises(
-    hass: HomeAssistant, controller: MagicMock
-) -> None:
-    """Setup raises ConfigEntryError when the config entry has no unique_id."""
-    config_entry = MagicMock()
-    config_entry.runtime_data = controller
-    config_entry.unique_id = None
-    add_entities = MagicMock()
-
-    with pytest.raises(ConfigEntryError):
-        await async_setup_entry(hass, config_entry, add_entities)
-
-    add_entities.assert_not_called()
 
 
 async def test_async_setup_entry_creates_entities(

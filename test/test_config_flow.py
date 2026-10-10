@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import Iterable
+import logging
 from pathlib import Path
 from ssl import SSLError
 from typing import cast
@@ -17,8 +18,8 @@ from conftest import (
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
+from custom_components.qolsys_panel.config_flow import _CONFIG_FLOW_DEBUG_LOGGERS
 from custom_components.qolsys_panel.const import (
     CONF_IMEI,
     CONF_RANDOM_MAC,
@@ -27,9 +28,15 @@ from custom_components.qolsys_panel.const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
 )
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
@@ -162,6 +169,127 @@ async def test_dhcp_discovery_updates_host_and_aborts(
     assert mock_config_entry.data[CONF_HOST] == "192.168.1.99"
 
 
+@pytest.fixture
+def quiet_debug_loggers():
+    """Hold the loggers the flow raises at WARNING, and put them back afterwards.
+
+    The flow sets a process-global level on these loggers; without restoring it,
+    one test would leak its level into the next.
+    """
+    saved = {
+        name: logging.getLogger(name).level for name in _CONFIG_FLOW_DEBUG_LOGGERS
+    }
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        logging.getLogger(name).setLevel(logging.WARNING)
+    yield
+    for name, level in saved.items():
+        logging.getLogger(name).setLevel(level)
+
+
+async def test_dhcp_discovery_of_a_configured_panel_never_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    mock_setup_entry: AsyncMock,
+    quiet_debug_loggers: None,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Discovery of an already-configured panel must not touch the log levels.
+
+    DHCP re-discovers the panel about a minute after every boot and the flow
+    aborts with already_configured. Nobody asked for debug output, so the
+    levels must stay where they are for the whole flow, not just be put back
+    at the end (upstream #134, #137): the only line the flow itself logs on
+    that path is a DEBUG one listing every configured panel's host and MAC,
+    and it must not be emitted.
+    """
+    mock_config_entry.add_to_hass(hass)
+
+    with caplog.at_level(logging.DEBUG):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN,
+            context={"source": SOURCE_DHCP},
+            data=_dhcp_info(PANEL_MAC_NO_SEP, ip="192.168.1.99"),
+        )
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.WARNING
+    debug_lines = [
+        r.getMessage()
+        for r in caplog.records
+        if r.name in _CONFIG_FLOW_DEBUG_LOGGERS and r.levelno == logging.DEBUG
+    ]
+    assert debug_lines == []
+
+
+async def test_dhcp_discovery_of_a_new_panel_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    quiet_debug_loggers: None,
+) -> None:
+    """A discovery that reaches the setup menu is a pairing session, so DEBUG is on."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP),
+    )
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_user_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    quiet_debug_loggers: None,
+) -> None:
+    """A user-initiated flow raises the loggers to DEBUG (upstream #115)."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_reconfigure_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    pki_dir: Path,
+    quiet_debug_loggers: None,
+) -> None:
+    """A reconfigure flow raises the loggers to DEBUG."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reconfigure_flow(hass)
+
+    assert result["type"] is FlowResultType.FORM
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
+async def test_reauth_flow_raises_log_level(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    quiet_debug_loggers: None,
+) -> None:
+    """A reauth flow raises the loggers to DEBUG."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+
+    assert result["type"] is FlowResultType.MENU
+    for name in _CONFIG_FLOW_DEBUG_LOGGERS:
+        assert logging.getLogger(name).level == logging.DEBUG
+
+
 async def test_dhcp_discovery_matches_newline_suffixed_unique_id(
     hass: HomeAssistant,
     mock_qolsys_controller: MagicMock,
@@ -266,6 +394,119 @@ async def test_pki_autodiscovery_flow(
         reconnect=False, run_once=True, start_pairing=True
     )
     assert len(mock_setup_entry.mock_calls) == 1
+
+
+async def test_pairing_uses_the_discovered_panel_address(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Discovery's IP reaches the pairing server, so it can refuse other peers (review B2)."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_DHCP},
+        data=_dhcp_info(PANEL_MAC_NO_SEP),
+    )
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "pki_autodiscovery"}
+    )
+    result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    result = await _drive_pairing(hass, result)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == DISCOVERY_IP
+
+
+async def test_manual_pairing_leaves_the_panel_address_empty(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """Without discovery there is no address to enforce, and nothing changes (review B2)."""
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_qolsys_controller.settings.panel_ip == ""
+
+
+@pytest.mark.parametrize("previous_level", [logging.NOTSET, logging.WARNING])
+async def test_config_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+    previous_level: int,
+) -> None:
+    """A finished flow puts the library logger back where it found it (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(previous_level)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert library_logger.level == previous_level
+
+
+async def test_abort_flow_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_config_entry: MockConfigEntry,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An AbortFlow exit restores the level too (review N2).
+
+    _abort_if_unique_id_configured raises, so anything after it never runs.
+    """
+    mock_config_entry.add_to_hass(hass)
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "already_configured"
+    assert library_logger.level == logging.WARNING
+
+
+async def test_abandoned_flow_restores_log_levels(
+    hass: HomeAssistant, mock_qolsys_controller: MagicMock
+) -> None:
+    """A dialog the user simply closes restores the level (review N2)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_USER}
+    )
+    assert library_logger.level == logging.DEBUG
+
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    await hass.async_block_till_done()
+
+    assert library_logger.level == logging.WARNING
+
+
+async def test_failed_pairing_restores_log_levels(
+    hass: HomeAssistant,
+    mock_qolsys_controller: MagicMock,
+    mock_setup_entry: AsyncMock,
+) -> None:
+    """An aborted flow restores the level too (audit M1)."""
+    library_logger = logging.getLogger(
+        "custom_components.qolsys_panel.vendor.qolsys_controller"
+    )
+    library_logger.setLevel(logging.WARNING)
+    mock_qolsys_controller.run_forever.side_effect = QolsysMqttError("boom")
+
+    result = await _run_pairing_flow(hass)
+
+    assert result["type"] is FlowResultType.ABORT
+    assert library_logger.level == logging.WARNING
 
 
 async def test_pki_autodiscovery_empty_mac_aborts(
@@ -685,6 +926,7 @@ async def test_options_flow(
         OPTION_TRIGGER_POLICE: True,
         OPTION_TRIGGER_AUXILLIARY: False,
         OPTION_TRIGGER_FIRE: True,
+        OPTION_PEEK_IN_PICTURE: False,
         OPTION_MOTION_SENSOR_DELAY_ENABLED: True,
         OPTION_MOTION_SENSOR_DELAY: 120,
     }

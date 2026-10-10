@@ -3,12 +3,10 @@
 import asyncio
 from collections.abc import Generator
 import logging
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, PropertyMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
-from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
-from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel import async_migrate_entry
 from custom_components.qolsys_panel.const import (
@@ -16,8 +14,18 @@ from custom_components.qolsys_panel.const import (
     OPTION_ARM_CODE,
     OPTION_DISARM_CODE,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    ControllerState,
+    QolsysNotification,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysConfigError,
+    QolsysMqttError,
+    QolsysSslError,
+)
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 
 LOST_MESSAGE = "Connection to Qolsys Panel lost, reconnecting"
 RESTORED_MESSAGE = "Connection to Qolsys Panel restored"
@@ -66,6 +74,107 @@ def _get_status_callback(controller: MagicMock):
     ]
     assert len(callbacks) == 1
     return callbacks[0]
+
+
+async def test_setup_keeps_the_mqtt_bridge_disabled(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """Setup pins both MQTT bridge switches off (audit M8)."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_controller.settings.mqtt_bridge_enabled is False
+    assert mock_controller.settings.mqtt_bridge_broker_enabled is False
+
+
+async def test_setup_fails_if_the_bridge_cannot_be_disabled(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """A settings object that ignores the switch stops setup (audit M8)."""
+    type(mock_controller.settings).mqtt_bridge_enabled = PropertyMock(
+        return_value=True
+    )
+    mock_config_entry.add_to_hass(hass)
+
+    try:
+        assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+    finally:
+        del type(mock_controller.settings).mqtt_bridge_enabled
+
+
+async def test_missing_user_codes_are_reported(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Disarm needs a code but users.conf holds none: say so (review N3)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.settings.users_file_path = "/config/qolsys_panel/users.conf"
+    mock_controller.panel.users = []
+    mock_controller.panel.users_file_malformed_rows = 0
+    mock_config_entry.add_to_hass(hass)
+    caplog.set_level(logging.WARNING)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert "holds no codes" in caplog.text
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(
+        DOMAIN, f"no_user_codes_{mock_config_entry.entry_id}"
+    )
+
+
+async def test_user_codes_present_raises_no_issue(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """With codes loaded there is nothing to report (review N3)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.panel.users = [MagicMock()]
+    mock_controller.panel.users_file_malformed_rows = 0
+    mock_config_entry.add_to_hass(hass)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    issues = ir.async_get(hass)
+    assert (
+        issues.async_get_issue(DOMAIN, f"no_user_codes_{mock_config_entry.entry_id}")
+        is None
+    )
+
+
+async def test_malformed_user_codes_are_reported(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Ignored users.conf rows are surfaced instead of failing setup (review N4)."""
+    mock_controller.settings.check_user_code_on_disarm = True
+    mock_controller.panel.users = [MagicMock()]
+    mock_controller.panel.users_file_malformed_rows = 2
+    mock_config_entry.add_to_hass(hass)
+    caplog.set_level(logging.WARNING)
+
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert "were ignored because they are malformed" in caplog.text
+    issues = ir.async_get(hass)
+    assert issues.async_get_issue(
+        DOMAIN, f"malformed_user_codes_{mock_config_entry.entry_id}"
+    )
 
 
 async def test_log_when_unavailable(
@@ -200,9 +309,28 @@ async def test_migrate_future_version_fails(hass: HomeAssistant) -> None:
 
 async def test_migrate_current_version_noop(hass: HomeAssistant) -> None:
     """A current-version entry migrates successfully with no changes."""
-    entry = MockConfigEntry(domain=DOMAIN, version=1, minor_version=0)
+    entry = MockConfigEntry(
+        domain=DOMAIN, version=1, minor_version=1, options={OPTION_DISARM_CODE: False}
+    )
     entry.add_to_hass(hass)
     assert await async_migrate_entry(hass, entry) is True
+    assert entry.options[OPTION_DISARM_CODE] is False
+
+
+async def test_migrate_forces_disarm_code_required(hass: HomeAssistant) -> None:
+    """An entry predating the safe default gets the disarm check turned on (audit C1)."""
+    entry = MockConfigEntry(
+        domain=DOMAIN,
+        version=1,
+        minor_version=0,
+        options={OPTION_DISARM_CODE: False},
+    )
+    entry.add_to_hass(hass)
+
+    assert await async_migrate_entry(hass, entry) is True
+    assert entry.options[OPTION_DISARM_CODE] is True
+    assert entry.version == 1
+    assert entry.minor_version == 1
 
 
 async def test_migrate_from_v0_adds_disarm_option(hass: HomeAssistant) -> None:
@@ -218,3 +346,16 @@ async def test_migrate_from_v0_adds_disarm_option(hass: HomeAssistant) -> None:
     assert await async_migrate_entry(hass, entry) is True
     assert entry.options[OPTION_DISARM_CODE] is True
     assert entry.version == 1
+
+
+async def test_setup_without_unique_id_is_not_ready(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+) -> None:
+    """An entry with no unique_id is refused instead of asserted (audit L3)."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(mock_config_entry, unique_id=None)
+
+    assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY

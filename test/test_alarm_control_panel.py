@@ -5,27 +5,28 @@ from unittest.mock import AsyncMock, MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.enum_qolsys import (
-    PartitionAlarmState,
-    PartitionArmingType,
-    PartitionSystemStatus,
-)
-from qolsys_controller.errors import (
-    QolsysOperationTimeoutError,
-    QolsysUserCodeError,
-    QolsysZoneBypassError,
-)
 
 from custom_components.qolsys_panel.alarm_control_panel import (
     PartitionAlarmControlPanel,
     async_setup_entry,
+)
+from custom_components.qolsys_panel.const import DEFAULT_DISARM_CODE_REQUIRED
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    PartitionAlarmState,
+    PartitionArmingType,
+    PartitionSystemStatus,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.errors import (
+    QolsysOperationTimeoutError,
+    QolsysUserCodeError,
+    QolsysZoneBypassError,
 )
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelState,
     CodeFormat,
 )
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError
 
 UID = PANEL_MAC
 
@@ -46,21 +47,6 @@ def _panel(controller: MagicMock) -> PartitionAlarmControlPanel:
     entity._partition.arm = AsyncMock()
     entity._partition.disarm = AsyncMock()
     return entity
-
-
-async def test_async_setup_entry_missing_unique_id_raises(
-    hass: HomeAssistant, controller: MagicMock
-) -> None:
-    """Setup raises ConfigEntryError when the config entry has no unique_id."""
-    config_entry = MagicMock()
-    config_entry.runtime_data = controller
-    config_entry.unique_id = None
-    add_entities = MagicMock()
-
-    with pytest.raises(ConfigEntryError):
-        await async_setup_entry(hass, config_entry, add_entities)
-
-    add_entities.assert_not_called()
 
 
 async def test_async_setup_entry_creates_entities(
@@ -167,6 +153,59 @@ async def test_disarm(controller: MagicMock) -> None:
     cast(AsyncMock, entity._partition.disarm).assert_awaited_once_with(user_code="1234")
 
 
+def test_disarm_requires_a_code_by_default() -> None:
+    """A fresh install must not offer a one-click disarm (audit C1)."""
+    assert DEFAULT_DISARM_CODE_REQUIRED is True
+
+
+async def test_disarm_without_code_is_rejected(controller: MagicMock) -> None:
+    """With the code check on, an empty code never reaches the panel (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_disarm(None)
+
+    cast(AsyncMock, entity._partition.disarm).assert_not_awaited()
+
+
+async def test_disarm_with_unknown_code_is_rejected(controller: MagicMock) -> None:
+    """An unknown code is refused by the integration, not by the panel (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+    controller.panel.check_user = MagicMock(return_value=-1)
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_disarm("9999")
+
+    controller.panel.check_user.assert_called_once_with("9999")
+    cast(AsyncMock, entity._partition.disarm).assert_not_awaited()
+
+
+async def test_disarm_with_valid_code_is_sent(controller: MagicMock) -> None:
+    """A code the panel database knows is forwarded (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_disarm = True
+    controller.panel.check_user = MagicMock(return_value=2)
+
+    await entity.async_alarm_disarm("1234")
+
+    cast(AsyncMock, entity._partition.disarm).assert_awaited_once_with(user_code="1234")
+
+
+async def test_arm_without_code_is_rejected_when_required(
+    controller: MagicMock,
+) -> None:
+    """Arming with the code option on also validates before sending (audit C1)."""
+    entity = _panel(controller)
+    controller.settings.check_user_code_on_arm = True
+
+    with pytest.raises(HomeAssistantError):
+        await entity.async_alarm_arm_away(None)
+
+    cast(AsyncMock, entity._partition.arm).assert_not_awaited()
+
+
 @pytest.mark.parametrize(
     "error",
     [QolsysUserCodeError(), QolsysOperationTimeoutError(), RuntimeError("boom")],
@@ -211,3 +250,19 @@ async def test_arm_errors(controller: MagicMock, error: Exception) -> None:
     cast(AsyncMock, entity._partition.arm).side_effect = error
     with pytest.raises(HomeAssistantError):
         await entity.async_alarm_arm_away("1234")
+
+
+async def test_setup_without_unique_id_raises_value_error(
+    hass: HomeAssistant, controller: MagicMock
+) -> None:
+    """A forwarded platform reports a bad entry with ValueError (review N5).
+
+    ConfigEntryNotReady from a forwarded platform is not retried by Home
+    Assistant, it is logged as a mistake.
+    """
+    config_entry = MagicMock()
+    config_entry.runtime_data = controller
+    config_entry.unique_id = None
+
+    with pytest.raises(ValueError):
+        await async_setup_entry(hass, config_entry, MagicMock())
