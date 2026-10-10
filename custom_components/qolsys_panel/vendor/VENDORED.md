@@ -1,9 +1,11 @@
 # Vendored `qolsys_controller`
 
 Upstream: [EHylands/QolsysController](https://github.com/EHylands/QolsysController),
-PyPI package `qolsys-controller`, **version 1.8.6 plus three fixes from 1.9.x**
+PyPI package `qolsys-controller`, **version 1.8.6 plus three fixes from 1.9.x
+and the camera snapshot feature from 1.11.0**
 (1.7.1 vendored 2026-09-07; the 1.7.2 and 1.8.0 changes applied 2026-09-12 from
-the PyPI wheels; 1.8.6 on 2026-09-19; three 1.8.7 to 1.9.13 fixes on 2026-10-09,
+the PyPI wheels; 1.8.6 on 2026-09-19; three 1.8.7 to 1.9.13 fixes on 2026-10-09;
+the 1.11.0 camera code on 2026-10-10,
 see "Upstream versions" below), taken from the
 `qolsys_controller-1.7.1-py3-none-any.whl` wheel published on PyPI.
 License: MIT, kept verbatim at `qolsys_controller/LICENSE`.
@@ -329,3 +331,48 @@ The first pairing against a real IQ Panel failed the post-pairing TLS connection
   features if a Z-Wave scene controller or an Alarm.com thermostat is ever
   paired to the panel. Upstream had also tagged 1.10.0 by review time; the
   integration upstream pins 1.9.13, so 1.10.0 was not reviewed.
+- **1.10.0 and 1.11.0 (reviewed 2026-10-10, the camera feature taken):** the
+  git tags `v1.9.13..v1.11.0`, 29 files, 1,056 lines added, of which 317 are
+  tests. 1.10.0 is "support Python 3.12 and 3.13": it puts the parentheses
+  back on every `except (A, B):` that 1.9.x had rewritten to the 3.14-only
+  form, which is exactly what the vendored copy had kept, so **already here**;
+  its `controller.pki` property is not taken (nothing uses it). 1.11.0 is the
+  camera snapshot (upstream PR #77), **taken as upstream wrote it** with only
+  the import rewrite: new `commands/camera.py` (`CameraCommands.capture_snapshot`
+  and `cleanup_snapshot`), new `media_picture.py` (`QolsysPicture`, an
+  observable holding the JPEG bytes, notifying `QOLSYS_PICTURE_UPDATE`), new
+  `database/table_camera_request.py` registered in `database/db.py`,
+  `commands/panel.py` gains `capture_photo`, `delete_photo`, `photo_exists`,
+  `download_photo` and the generic `database_remote_insert/read/delete`,
+  `mqtt_command.py` gains `MQTTCommand_CameraService` (IPC service
+  `qcamservice`), `enum_qolsys.py` the `CameraServiceTransactionType` and
+  `PhotoDirectory` enums, `errors.py` `QolsysSnapshotError`, `state.py` the
+  `picture_peek_in` attribute, and `commands/service.py` the `camera` handle.
+  Upstream's 22 tests are carried as `test/test_vendor_camera.py`.
+
+  Audit of what the feature does on the wire: everything goes over the
+  existing paired, CA-pinned MQTT connection to the panel; no new host, port
+  or dependency. A capture is (1) a `database` insert of one row into the
+  panel's `camerarequest` content provider with `user_id=-2`, firmware 2.8.1's
+  local-only sentinel that stops the panel forwarding the photo to Alarm.com,
+  (2) an IPC `CAPTURE_PIC` call, (3) polling the row for the filename the panel
+  chose, (4) a `photoFrameImageDownloadRequest` that returns the JPEG as base64
+  (capped at 8 MB, validated as base64 and as a JPEG by its start and end
+  markers), then (5) an IPC `DELETE_PIC` of `../PeekInPhotos/<filename>` and a
+  `database` delete of the row, each verified by read-back. The filename is
+  checked against `<request_id>_<digits>.jpg` before it is used in a delete,
+  the request id is a UUID the library generated, and `cleanup_snapshot`
+  refuses a request id that is not a UUID, so the selection strings built by
+  f-string cannot carry anything else. Logging: the request id, directory and
+  filename at DEBUG, never the image; the full-payload MQTT debug line in
+  `controller.py` is gated by `settings.log_mqtt_messages`, which the
+  integration pins to False at setup. The generic `database_remote_*` commands
+  are a powerful primitive (any content-provider URI on the panel); they are
+  used by the camera code only and nothing in the integration exposes them.
+  Residuals: the protocol was verified upstream on an IQ Panel 2+ with
+  firmware 2.8.1 only; each capture is a flash write and a delete on the panel,
+  so upstream's guidance of at most one every 30 to 60 seconds applies to
+  automations; `photo_exists` downloads the whole file to answer. The
+  `camerarequest` table is registered with `_report_new_columns = True`, so a
+  column this firmware adds would log a "Please Report" warning once per load,
+  the same as every other table.

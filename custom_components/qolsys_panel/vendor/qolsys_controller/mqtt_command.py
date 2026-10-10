@@ -214,3 +214,13 @@ class MQTTCommand_Automation(MQTTCommand_IpcCall):
         ]
 
         self.append_ipc_request(ipc_request)
+
+
+class MQTTCommand_CameraService(MQTTCommand_IpcCall):
+    def __init__(self, controller: "QolsysController", transaction_id: int) -> None:
+        super().__init__(
+            controller=controller,
+            ipc_service_name="qcamservice",
+            ipc_interface_name="qcamservice",
+            ipc_transaction_id=transaction_id,
+        )

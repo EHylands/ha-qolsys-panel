@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import base64
+import binascii
 import json
 import logging
 import time
 from enum import StrEnum
+from pathlib import PurePosixPath
 from typing import TYPE_CHECKING, Any
 
 from ..enum_qolsys import (
+    CameraServiceTransactionType,
     PartitionAlarmState,
     PartitionArmingType,
     PartitionSystemStatus,
+    PhotoDirectory,
     TroubleZoneStatus,
 )
 from ..errors import (
@@ -20,17 +25,21 @@ from ..errors import (
     QolsysUserCodeError,
     QolsysZoneBypassError,
 )
-from ..mqtt_command import MQTTCommand, MQTTCommand_Panel
+from ..mqtt_command import MQTTCommand, MQTTCommand_CameraService, MQTTCommand_Panel
 
 if TYPE_CHECKING:
     from ..controller import QolsysController
 
 LOGGER = logging.getLogger(__name__)
 
+# IQ2 base64 photo payloads run a few hundred KB; cap well above that to reject junk.
+_MAX_ENCODED_SIZE = 8_000_000
+
 
 class PanelCommandStrings(StrEnum):
     AC_STATUS = "acStatus"
     CONNECT = "connect_v204"
+    DATABASE = "database"
     DEALER_LOGO = "dealerLogo"
     DISARM_FROM_EMERGENCY = "disarm_from_emergency"
     DISARM_FROM_OPENLEARN_SENSOR = "disarm_from_openlearn_sensor"
@@ -39,6 +48,7 @@ class PanelCommandStrings(StrEnum):
     EXECUTE_SCENE = "execute_scene"
     GENERATE_EMERGENCY = "generate_emergency"
     PAIR_STATUS_REQUEST = "pair_status_request"
+    PHOTO_FRAME_IMAGE_DOWNLOAD_REQUEST = "photoFrameImageDownloadRequest"
     PINGEVENT = "pingevent"
     QUICK_EXIT_STATE = "quick_exit_state"
     SPEAK = "speak_text"
@@ -215,6 +225,126 @@ class PanelCommands:
         LOGGER.debug("MQTT Panel Client - Receiving change_doorbell_volume_level command")
         return response
 
+    async def capture_photo(self, request_id: str, directory: str) -> dict[str, Any]:
+        LOGGER.debug(
+            "MQTT Panel Client - Sending capture_photo command: request_id:%s, directory:%s",
+            request_id,
+            directory,
+        )
+
+        if not request_id:
+            raise ValueError("A non-empty request_id is required")
+
+        ipc_request = [
+            {
+                "dataType": "string",
+                "dataValue": request_id,
+            },
+            {
+                "dataType": "string",
+                "dataValue": directory,
+            },
+        ]
+
+        command = MQTTCommand_CameraService(self._controller, CameraServiceTransactionType.CAPTURE_PIC)
+        command.append_ipc_request(ipc_request)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving capture_photo command")
+        return response
+
+    async def delete_photo(self, filename: str) -> dict[str, Any]:
+        LOGGER.debug(
+            "MQTT Panel Client - Sending delete_photo command: filename:%s",
+            filename,
+        )
+
+        if (
+            not filename
+            or PurePosixPath(filename).name != filename
+            or "\\" in filename
+            or not filename.lower().endswith(".jpg")
+        ):
+            raise ValueError("A single existing JPEG filename is required")
+
+        ipc_request: list[dict[str, Any]] = [
+            {
+                "dataType": "int",
+                "dataValue": 1,
+            },
+            {
+                "dataType": "string",
+                "dataValue": "../PeekInPhotos/" + filename,
+            },
+        ]
+
+        command = MQTTCommand_CameraService(self._controller, CameraServiceTransactionType.DELETE_PIC)
+        command.append_ipc_request(ipc_request)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving delete_photo command")
+        return response
+
+    async def photo_exists(self, directory: str, filename: str) -> bool:
+        """Report photo presence from the raw panel response.
+
+        Unlike download_photo, a present-but-unreadable file is reported as present
+        (never mistaken for a deleted one), so snapshot cleanup won't drop a record's
+        metadata while its image still lingers on the panel.
+        """
+        LOGGER.debug("MQTT Panel Client - Sending photo_exists check: directory:%s, filename:%s", directory, filename)
+
+        resolved = PhotoDirectory(directory)
+        if (
+            not filename
+            or PurePosixPath(filename).name != filename
+            or "\\" in filename
+            or not filename.lower().endswith(".jpg")
+        ):
+            raise ValueError("A single existing JPEG filename is required")
+
+        command = MQTTCommand(self._controller, PanelCommandStrings.PHOTO_FRAME_IMAGE_DOWNLOAD_REQUEST)
+        command.append("directory", resolved.value)
+        command.append("photoFrameImageName", filename)
+        response = await command.send_command()
+        return bool(response.get("photoFrameImageString"))
+
+    async def download_photo(self, directory: str, filename: str) -> bytes | None:
+        LOGGER.debug(
+            "MQTT Panel Client - Sending photo_frame_image_download_request command: directory:%s, filename:%s",
+            directory,
+            filename,
+        )
+
+        resolved = PhotoDirectory(directory)
+        if (
+            not filename
+            or PurePosixPath(filename).name != filename
+            or "\\" in filename
+            or not filename.lower().endswith(".jpg")
+        ):
+            raise ValueError("A single existing JPEG filename is required")
+
+        command = MQTTCommand(self._controller, PanelCommandStrings.PHOTO_FRAME_IMAGE_DOWNLOAD_REQUEST)
+        command.append("directory", resolved.value)
+        command.append("photoFrameImageName", filename)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving photo_frame_image_download_request command")
+
+        encoded = response.get("photoFrameImageString")
+
+        if not isinstance(encoded, str) or not encoded or len(encoded) > _MAX_ENCODED_SIZE:
+            return None
+        try:
+            jpeg = base64.b64decode("".join(encoded.split()), validate=True)
+        except (ValueError, binascii.Error) as error:
+            raise QolsysOperationError("Panel returned invalid photo encoding") from error
+
+        # IQ2 downloads include the camera buffer's zero padding after JPEG EOI.
+        jpeg = jpeg.rstrip(b"\x00")
+        if not jpeg.startswith(b"\xff\xd8") or not jpeg.endswith(b"\xff\xd9"):
+            return None
+
+        return jpeg
+
     async def quick_exit(self, partition_id: str, delay_page_time: int = 120) -> dict[str, Any] | None:
         LOGGER.debug(
             "MQTT Panel Client - Sending quick_exit command: partition%s, delay_page_time:%s",
@@ -301,6 +431,60 @@ class PanelCommands:
 
         response = await command.send_command()
         LOGGER.debug("MQTT Panel Client - Receiving connect command")
+        return response
+
+    # The three database_remote_* commands below are a generic read/insert/delete
+    # against any content-provider URI on the panel. Only the camera snapshot
+    # (commands/camera.py) uses them, against one fixed URI with selections built
+    # from a UUID it generated itself; nothing in the integration exposes them.
+
+    async def database_remote_insert(self, uri: str, content_values: dict[str, Any]) -> dict[str, Any]:
+        LOGGER.debug("MQTT Panel Client - Sending database_insert command")
+        command = MQTTCommand(self._controller, PanelCommandStrings.DATABASE)
+        command.append("dbOperation", "insert")
+        command.append("uri", uri)
+        command.append("contentValues", content_values)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving database_insert command")
+        return response
+
+    async def database_remote_delete(
+        self, uri: str, selection: str | None = None, selection_arguments: str | None = None
+    ) -> dict[str, Any]:
+        LOGGER.debug("MQTT Panel Client - Sending database_delete command")
+        command = MQTTCommand(self._controller, PanelCommandStrings.DATABASE)
+        command.append("dbOperation", "delete")
+        command.append("uri", uri)
+        if selection is not None:
+            command.append("selection", selection)
+        if selection_arguments is not None:
+            command.append("selectionArgs", selection_arguments)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving database_delete command")
+        return response
+
+    async def database_remote_read(
+        self,
+        uri: str,
+        projection: str | None = None,
+        selection: str | None = None,
+        selection_arguments: str | None = None,
+        sort_order: str | None = None,
+    ) -> dict[str, Any]:
+        LOGGER.debug("MQTT Panel Client - Sending database_read command")
+        command = MQTTCommand(self._controller, PanelCommandStrings.DATABASE)
+        command.append("dbOperation", "read")
+        command.append("uri", uri)
+        if projection is not None:
+            command.append("projection", projection)
+        if selection is not None:
+            command.append("selection", selection)
+        if selection_arguments is not None:
+            command.append("selectionArgs", selection_arguments)
+        if sort_order is not None:
+            command.append("sortOrder", sort_order)
+        response = await command.send_command()
+        LOGGER.debug("MQTT Panel Client - Receiving database_read command")
         return response
 
     async def dealer_logo(self) -> dict[str, Any]:

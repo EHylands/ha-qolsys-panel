@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from .adc import AdcCommands
 from .automation import AutomationCommands
+from .camera import CameraCommands
 from .panel import PanelCommands
 from .zwave import ZWaveCommands
 
@@ -19,3 +20,4 @@ class QolsysCommandService:
         self.panel = PanelCommands(controller)
         self.zwave = ZWaveCommands(controller)
         self.automation = AutomationCommands(controller)
+        self.camera = CameraCommands(controller)

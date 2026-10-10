@@ -57,6 +57,14 @@ class QolsysZoneBypassError(QolsysOperationError):
         super().__init__(f"Failed to bypass zones: {', '.join(zones)}")
 
 
+class QolsysSnapshotError(QolsysOperationError):
+    """Raised when a camera snapshot fails after its panel request was created."""
+
+    def __init__(self, message: str, request_id: str) -> None:
+        self.request_id = request_id
+        super().__init__(f"{message}; snapshot request ID: {request_id}")
+
+
 class CommandExecutionError(QolsysOperationError):
     """Raised when a command execution fails."""
 

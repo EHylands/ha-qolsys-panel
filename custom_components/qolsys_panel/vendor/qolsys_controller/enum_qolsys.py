@@ -67,6 +67,7 @@ class QolsysNotification(StrEnum):
     PANEL_CHIME = "PANEL_CHIME"
     PANEL_STATUS_UPDATE = "PANEL_STATUS_UPDATE"
     PANEL_SETTINGS_UPDATE = "PANEL_SETTINGS_UPDATE"
+    QOLSYS_PICTURE_UPDATE = "QOLSYS_PICTURE_UPDATE"
     AUTOMATION_SENSOR_ADD = "AUTOMATION_SENSOR_ADD"
     AUTOMATION_METER_ADD = "AUTOMATION_METER_ADD"
     AUTOMATION_ADD = "AUTOMATION_ADD"
@@ -301,6 +302,17 @@ SafetyZoneSensorGroup: list[ZoneSensorGroup] = [
     ZoneSensorGroup.WATER_NON_REPORTING,
     ZoneSensorGroup.HIGH_TEMPERATURE_NON_REPORTING,
 ]
+
+
+class CameraServiceTransactionType(IntEnum):
+    CAPTURE_PIC = 3
+    DELETE_PIC = 7
+
+
+class PhotoDirectory(StrEnum):
+    DISARM = "DisarmPhotos"
+    ALARM = "Alarmphotos"
+    PEEK_IN = "PeekInPhotos"
 
 
 class ZWaveNodeStatus(StrEnum):

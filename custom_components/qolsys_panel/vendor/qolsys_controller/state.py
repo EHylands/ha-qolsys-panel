@@ -7,6 +7,7 @@ from .automation.device import QolsysAutomationDevice
 from .automation_adc.device import QolsysAutomationDeviceADC
 from .automation_zwave.device import QolsysAutomationDeviceZwave
 from .enum_qolsys import QolsysNotification
+from .media_picture import QolsysPicture
 from .observable import Event, QolsysObservable
 
 from .weather import QolsysWeather
@@ -30,6 +31,7 @@ class QolsysState(QolsysObservable):
         self._zones: list[QolsysZone] = []
         self._automation_devices: list[QolsysAutomationDevice] = []
         self._scenes: list[QolsysScene] = []
+        self._picture_peek_in: QolsysPicture = QolsysPicture()
 
     @property
     def partitions(self) -> list[QolsysPartition]:
@@ -50,6 +52,10 @@ class QolsysState(QolsysObservable):
     @property
     def weather(self) -> QolsysWeather:
         return self._weather
+
+    @property
+    def picture_peek_in(self) -> QolsysPicture:
+        return self._picture_peek_in
 
     def partition(self, partition_id: str) -> QolsysPartition | None:
         for partition in self.partitions:

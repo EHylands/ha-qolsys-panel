@@ -5,6 +5,7 @@ from typing import Any
 from .table import QolsysTable
 from .table_alarmedsensor import QolsysTableAlarmedSensor
 from .table_automation import QolsysTableAutomation
+from .table_camera_request import QolsysCameraRequest
 from .table_country_locale import QolsysTableCountryLocale
 from .table_dashboard_msgs import QolsysTableDashboardMsgs
 from .table_dimmerlight import QolsysTableDimmerLight
@@ -91,6 +92,7 @@ class QolsysDB:
         self.table_output_rules = QolsysTableOutputRules(self.db, self.cursor)
         self.table_shades = QolsysTableShades(self.db, self.cursor)
         self.table_nest_device = QolsysTableNestDevice(self.db, self.cursor)
+        self.table_camera_request = QolsysCameraRequest(self.db, self.cursor)
 
         self._table_array: list[QolsysTable] = []
         self._table_array.append(self.table_sensor)
@@ -129,6 +131,7 @@ class QolsysDB:
         self._table_array.append(self.table_output_rules)
         self._table_array.append(self.table_shades)
         self._table_array.append(self.table_nest_device)
+        self._table_array.append(self.table_camera_request)
 
     @property
     def db(self) -> sqlite3.Connection:
