@@ -5,11 +5,7 @@ from unittest.mock import MagicMock
 from conftest import PANEL_MAC
 import pytest
 
-from custom_components.qolsys_panel.image import (
-    QolsysPicture_PeekIn,
-    async_setup_entry,
-)
-from homeassistant.components.image import ImageEntity
+from custom_components.qolsys_panel.image import QolsysPicture_PeekIn, async_setup_entry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 
@@ -77,7 +73,8 @@ async def test_image_entity_initialized_state_attributes(
     assert entity.access_tokens
 
     # state_attributes is exactly what HA reads during async_write_ha_state.
-    attrs = ImageEntity.state_attributes.fget(entity)
+    attrs = entity.state_attributes
+    assert attrs is not None
     assert attrs["access_token"] == entity.access_tokens[-1]
 
 
