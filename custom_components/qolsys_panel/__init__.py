@@ -50,6 +50,7 @@ PLATFORMS: list[Platform] = [
     Platform.WEATHER,
     Platform.VALVE,
     Platform.SIREN,
+    Platform.IMAGE,
 ]
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
@@ -177,6 +178,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         manufacturer="Johnson Controls",
         model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
     )
+
+    await QolsysPanel.commands.camera.capture_snapshot()
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True

@@ -1,8 +1,8 @@
 """Tests for the Qolsys Panel config flow."""
 
 import asyncio
-import logging
 from collections.abc import Iterable
+import logging
 from pathlib import Path
 from ssl import SSLError
 from typing import cast

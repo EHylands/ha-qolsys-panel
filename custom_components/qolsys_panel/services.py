@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from qolsys_controller.errors import CommandExecutionError
+from qolsys_controller.errors import CommandExecutionError, QolsysOperationError
 import voluptuous as vol
 
 from custom_components.qolsys_panel import entity
@@ -26,6 +26,7 @@ from .const import (
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+    SERVICE_PICTURE_PEEK_IN,
     SERVICE_QUICK_EXIT,
     SERVICE_TRIGGER_AUXILLIARY,
     SERVICE_TRIGGER_FIRE,
@@ -34,6 +35,24 @@ from .const import (
 from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
+
+
+async def async_picture_peek_in(call: ServiceCall) -> None:
+    """Update Peek In Picture."""
+    config_entry: QolsysPanelConfigEntry = service.async_get_config_entry(
+        call.hass, DOMAIN, call.data[ATTR_CONFIG_ENTRY_ID]
+    )
+
+    QolsysPanel = config_entry.runtime_data
+
+    try:
+        await QolsysPanel.commands.camera.capture_snapshot()
+    except QolsysOperationError as e:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"error": str(e)},
+        ) from e
 
 
 async def async_change_master_volume(call: ServiceCall) -> None:
@@ -270,6 +289,18 @@ async def async_quick_exit(
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Set up the services for the Qolsys Panel integration."""
+
+    # Update Peek In Picture
+    hass.services.async_register(
+        DOMAIN,
+        SERVICE_PICTURE_PEEK_IN,
+        async_picture_peek_in,
+        schema=vol.Schema(
+            {
+                vol.Required(ATTR_CONFIG_ENTRY_ID): cv.string,
+            }
+        ),
+    )
 
     # Change Master Volume Service (targets the Qolsys Panel config entry)
     hass.services.async_register(
