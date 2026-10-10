@@ -40,6 +40,7 @@ def mock_controller() -> Generator[MagicMock]:
     controller.run_forever = AsyncMock()
     controller.wait_until_connected = AsyncMock()
     controller.stop = AsyncMock()
+    controller.commands.camera.capture_snapshot = AsyncMock()
     controller.controller_state = ControllerState.CONNECTED
     controller.panel.HARDWARE_VERSION = "IQ Panel 4"
 
