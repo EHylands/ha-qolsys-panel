@@ -220,6 +220,12 @@
       },
       "chime": {
         "name": "Carillon"
+      },
+      "camera_motion": {
+        "name": "Mouvement"
+      },
+      "camera_press": {
+        "name": "Touche"
       }
     }
   },

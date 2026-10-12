@@ -31,6 +31,7 @@ from homeassistant.helpers.event import async_call_later
 from . import QolsysPanelConfigEntry
 from .entity import (
     QolsysAutomationDeviceEntity,
+    QolsysIpCameraEntity,
     QolsysPanelEntity,
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
@@ -162,6 +163,15 @@ async def async_setup_entry(
                     unique_id,
                 )
             )
+
+    # Add IP (doorbell) Camera Binary Sensors (motion and key press)
+    for camera in QolsysPanel.state.ip_cameras:
+        entities.append(
+            QolsysIpCameraMotionSensor(QolsysPanel, camera.camera_id, unique_id)
+        )
+        entities.append(
+            QolsysIpCameraPressSensor(QolsysPanel, camera.camera_id, unique_id)
+        )
 
     async_add_entities(entities)
 
@@ -607,6 +617,120 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
         self._attr_is_on = False
         self.async_write_ha_state()
         self._cancel_reset = None
+
+
+class QolsysIpCameraMotionSensor(QolsysIpCameraEntity, BinarySensorEntity):
+    """Binary sensor pulsed by an IP camera motion event.
+
+    IP (doorbell) camera motion events are stateless pulses: the sensor turns
+    on when the camera reports motion and auto-resets to off a short time later.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.MOTION
+    _attr_translation_key = "camera_motion"
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, camera_id: str, unique_id: str
+    ) -> None:
+        """Set up an IP camera motion binary sensor."""
+        super().__init__(QolsysPanel, camera_id, unique_id)
+        self._attr_is_on = False
+        self._cancel_reset: CALLBACK_TYPE | None = None
+        self._attr_unique_id = f"{self._camera_unique_id}_motion"
+
+    def _handle_motion_event(self, event: Any) -> None:
+        """Pulse the sensor on when the camera reports motion."""
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+        # Cancel any pending reset and schedule a fresh auto-reset to OFF.
+        if self._cancel_reset:
+            self._cancel_reset()
+        self._cancel_reset = async_call_later(
+            self.hass,
+            PRESS_RESET_SECONDS,
+            self._async_reset,
+        )
+
+    async def _async_reset(self, _: datetime) -> None:
+        """Reset the sensor to OFF after the pulse."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        self._cancel_reset = None
+
+    async def async_added_to_hass(self) -> None:
+        """Observe the camera motion event."""
+        await super().async_added_to_hass()
+        self._camera.register(
+            QolsysNotification.CAMERA_MOTION_EVENT, self._handle_motion_event
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing the motion event and cancel any pending reset."""
+        await super().async_will_remove_from_hass()
+        self._camera.unregister(
+            QolsysNotification.CAMERA_MOTION_EVENT, self._handle_motion_event
+        )
+        if self._cancel_reset:
+            self._cancel_reset()
+            self._cancel_reset = None
+
+
+class QolsysIpCameraPressSensor(QolsysIpCameraEntity, BinarySensorEntity):
+    """Binary sensor pulsed by an IP camera key-press (doorbell) event.
+
+    IP (doorbell) camera press events are stateless pulses: the sensor turns on
+    when the camera reports a key press and auto-resets to off a short time later.
+    """
+
+    _attr_device_class = BinarySensorDeviceClass.OCCUPANCY
+    _attr_translation_key = "camera_press"
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, camera_id: str, unique_id: str
+    ) -> None:
+        """Set up an IP camera key-press binary sensor."""
+        super().__init__(QolsysPanel, camera_id, unique_id)
+        self._attr_is_on = False
+        self._cancel_reset: CALLBACK_TYPE | None = None
+        self._attr_unique_id = f"{self._camera_unique_id}_press"
+
+    def _handle_press_event(self, event: Any) -> None:
+        """Pulse the sensor on when the camera reports a key press."""
+        self._attr_is_on = True
+        self.async_write_ha_state()
+
+        # Cancel any pending reset and schedule a fresh auto-reset to OFF.
+        if self._cancel_reset:
+            self._cancel_reset()
+        self._cancel_reset = async_call_later(
+            self.hass,
+            PRESS_RESET_SECONDS,
+            self._async_reset,
+        )
+
+    async def _async_reset(self, _: datetime) -> None:
+        """Reset the sensor to OFF after the pulse."""
+        self._attr_is_on = False
+        self.async_write_ha_state()
+        self._cancel_reset = None
+
+    async def async_added_to_hass(self) -> None:
+        """Observe the camera key-press event."""
+        await super().async_added_to_hass()
+        self._camera.register(
+            QolsysNotification.CAMERA_PRESS_EVENT, self._handle_press_event
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing the key-press event and cancel any pending reset."""
+        await super().async_will_remove_from_hass()
+        self._camera.unregister(
+            QolsysNotification.CAMERA_PRESS_EVENT, self._handle_press_event
+        )
+        if self._cancel_reset:
+            self._cancel_reset()
+            self._cancel_reset = None
 
 
 class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):

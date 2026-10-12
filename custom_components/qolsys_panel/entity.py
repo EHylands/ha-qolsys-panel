@@ -8,6 +8,7 @@ from typing import Any, cast
 from qolsys_controller import qolsys_controller
 from qolsys_controller.automation.device import QolsysAutomationDevice
 from qolsys_controller.automation.protocol_status import StatusProtocol
+from qolsys_controller.camera_ip import QolsysIpCamera
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.partition import QolsysPartition
 from qolsys_controller.zone import QolsysZone
@@ -263,6 +264,30 @@ class QolsysPanelSensorEntity(QolsysPanelEntity):
         self.QolsysPanel.state.unregister(
             QolsysNotification.PANEL_SETTINGS_UPDATE, self.schedule_update_ha_state
         )
+
+
+class QolsysIpCameraEntity(QolsysPanelEntity):
+    """Qolsys IP Camera Entity."""
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, camera_id: str, unique_id: str
+    ) -> None:
+        """Set up a Qolsys IP Camera Entity."""
+        super().__init__(QolsysPanel, unique_id)
+        self._camera_id = camera_id
+        self._camera_unique_id = f"{unique_id}_camera{camera_id}"
+        camera = QolsysPanel.state.ip_camera(camera_id)
+        if camera is None:
+            _LOGGER.error("Invalid camera_id:%s", camera_id)
+            raise ValueError(f"Unknown camera id: {camera_id}")
+        self._camera: QolsysIpCamera = camera
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._camera_unique_id)},
+            name=f"Camera - {self._camera.camera_name}",
+            model="Qolsys IP Camera",
+            manufacturer="Johnson Controls",
+        )
+        self._via_device_identifier = (DOMAIN, unique_id)
 
 
 class QolsysWeatherEntity(QolsysPanelEntity):
