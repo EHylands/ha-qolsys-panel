@@ -1,7 +1,7 @@
 """Tests for the Qolsys Panel binary sensors."""
 
 from datetime import UTC, datetime
-from typing import cast
+from typing import NamedTuple, cast
 from unittest.mock import MagicMock, patch
 
 from conftest import PANEL_MAC
@@ -415,73 +415,81 @@ async def test_chime_reset(hass: HomeAssistant, controller: MagicMock) -> None:
     assert sensor._cancel_reset is None
 
 
-@pytest.mark.parametrize(
-    ("cls", "handler", "notification", "device_class", "suffix"),
-    [
-        (
-            QolsysIpCameraMotionSensor,
-            "_handle_motion_event",
-            QolsysNotification.CAMERA_MOTION_EVENT,
-            BinarySensorDeviceClass.MOTION,
-            "_motion",
-        ),
-        (
-            QolsysIpCameraPressSensor,
-            "_handle_press_event",
-            QolsysNotification.CAMERA_PRESS_EVENT,
-            BinarySensorDeviceClass.OCCUPANCY,
-            "_press",
-        ),
-    ],
-)
+class _CameraCase(NamedTuple):
+    """Parametrization bundle describing one IP camera binary sensor."""
+
+    cls: type
+    handler: str
+    notification: QolsysNotification
+    device_class: BinarySensorDeviceClass
+    suffix: str
+
+
+_CAMERA_CASES = [
+    _CameraCase(
+        QolsysIpCameraMotionSensor,
+        "_handle_motion_event",
+        QolsysNotification.CAMERA_MOTION_EVENT,
+        BinarySensorDeviceClass.MOTION,
+        "_motion",
+    ),
+    _CameraCase(
+        QolsysIpCameraPressSensor,
+        "_handle_press_event",
+        QolsysNotification.CAMERA_PRESS_EVENT,
+        BinarySensorDeviceClass.OCCUPANCY,
+        "_press",
+    ),
+]
+
+
+@pytest.mark.parametrize("case", _CAMERA_CASES, ids=lambda c: c.cls.__name__)
 class TestIpCameraSensors:
     """Shared behaviour of the two IP camera binary sensors."""
 
-    def test_attributes(
-        self, controller, cls, handler, notification, device_class, suffix
-    ) -> None:
+    def test_attributes(self, controller: MagicMock, case: _CameraCase) -> None:
         """The sensor advertises its device class and a camera-scoped unique id."""
-        sensor = cls(controller, "100", UID)
-        assert sensor.device_class == device_class
+        sensor = case.cls(controller, "100", UID)
+        assert sensor.device_class == case.device_class
         assert sensor.unique_id is not None
-        assert sensor.unique_id.endswith(suffix)
+        assert sensor.unique_id.endswith(case.suffix)
         assert sensor.is_on is False
 
     def test_event_turns_on(
-        self, hass, controller, cls, handler, notification, device_class, suffix
+        self, hass: HomeAssistant, controller: MagicMock, case: _CameraCase
     ) -> None:
         """A camera event turns the sensor on and schedules an auto-reset."""
         with patch(CALL_LATER, return_value=MagicMock()) as call_later:
-            sensor = cls(controller, "100", UID)
+            sensor = case.cls(controller, "100", UID)
             sensor.hass = hass
             sensor.async_write_ha_state = MagicMock()
 
-            getattr(sensor, handler)(MagicMock())
+            getattr(sensor, case.handler)(MagicMock())
 
             assert sensor.is_on is True
             sensor.async_write_ha_state.assert_called_once()
             call_later.assert_called_once()
 
     def test_event_cancels_previous_reset(
-        self, hass, controller, cls, handler, notification, device_class, suffix
+        self, hass: HomeAssistant, controller: MagicMock, case: _CameraCase
     ) -> None:
         """A fresh event cancels the pending reset from the previous one."""
         with patch(CALL_LATER, return_value=MagicMock()):
-            sensor = cls(controller, "100", UID)
+            sensor = case.cls(controller, "100", UID)
             sensor.hass = hass
             sensor.async_write_ha_state = MagicMock()
 
-            getattr(sensor, handler)(MagicMock())
+            getattr(sensor, case.handler)(MagicMock())
             first_cancel = cast(MagicMock, sensor._cancel_reset)
-            getattr(sensor, handler)(MagicMock())
+            getattr(sensor, case.handler)(MagicMock())
 
             first_cancel.assert_called_once()
 
     async def test_reset(
-        self, hass, controller, cls, handler, notification, device_class, suffix
+        self, hass: HomeAssistant, controller: MagicMock, case: _CameraCase
     ) -> None:
         """The scheduled reset turns the sensor back off."""
-        sensor = cls(controller, "100", UID)
+        sensor = case.cls(controller, "100", UID)
         sensor.async_write_ha_state = MagicMock()
         sensor._attr_is_on = True
 
@@ -491,16 +499,18 @@ class TestIpCameraSensors:
         assert sensor._cancel_reset is None
 
     async def test_register_unregister(
-        self, hass, controller, cls, handler, notification, device_class, suffix
+        self, controller: MagicMock, case: _CameraCase
     ) -> None:
         """The sensor subscribes/unsubscribes to its camera event."""
-        sensor = cls(controller, "100", UID)
-        callback = getattr(sensor, handler)
+        sensor = case.cls(controller, "100", UID)
+        callback = getattr(sensor, case.handler)
 
         await sensor.async_added_to_hass()
-        cast(MagicMock, sensor._camera).register.assert_any_call(notification, callback)
+        cast(MagicMock, sensor._camera).register.assert_any_call(
+            case.notification, callback
+        )
 
         await sensor.async_will_remove_from_hass()
         cast(MagicMock, sensor._camera).unregister.assert_any_call(
-            notification, callback
+            case.notification, callback
         )
