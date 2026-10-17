@@ -4,17 +4,8 @@ from unittest.mock import MagicMock
 
 from conftest import PANEL_MAC
 import pytest
-from qolsys_controller.automation.service_battery import BatteryService
-from qolsys_controller.automation.service_meter import MeterService
-from qolsys_controller.automation.service_sensor import SensorService
-from qolsys_controller.enum_qolsys import (
-    PartitionError,
-    QolsysMeterScale,
-    QolsysNotification,
-    QolsysSensorScale,
-)
-from qolsys_controller.observable import Event
 
+from custom_components.qolsys_panel.const import DOMAIN
 from custom_components.qolsys_panel.sensor import (
     AutomationDevice_BatteryValue,
     AutomationDevice_Meter,
@@ -28,9 +19,25 @@ from custom_components.qolsys_panel.sensor import (
     ZoneSensor_PowerG_Temperature,
     async_setup_entry,
 )
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_battery import (
+    BatteryService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_meter import (
+    MeterService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.automation.service_sensor import (
+    SensorService,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.enum_qolsys import (
+    PartitionError,
+    QolsysMeterScale,
+    QolsysNotification,
+    QolsysSensorScale,
+)
+from custom_components.qolsys_panel.vendor.qolsys_controller.observable import Event
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
+from homeassistant.helpers import entity_registry as er
 
 UID = PANEL_MAC
 
@@ -126,21 +133,6 @@ def controller() -> MagicMock:
     return c
 
 
-async def test_async_setup_entry_missing_unique_id_raises(
-    hass: HomeAssistant, controller: MagicMock
-) -> None:
-    """Setup raises ConfigEntryError when the config entry has no unique_id."""
-    config_entry = MagicMock()
-    config_entry.runtime_data = controller
-    config_entry.unique_id = None
-    add_entities = MagicMock()
-
-    with pytest.raises(ConfigEntryError):
-        await async_setup_entry(hass, config_entry, add_entities)
-
-    add_entities.assert_not_called()
-
-
 async def test_async_setup_entry_creates_entities(
     hass: HomeAssistant, controller: MagicMock
 ) -> None:
@@ -192,6 +184,49 @@ async def test_dynamic_sensor_add(hass: HomeAssistant, controller: MagicMock) ->
     )
 
     assert add_entities.call_count == 2
+
+
+async def test_dynamic_sensor_add_skips_already_added(
+    hass: HomeAssistant, controller: MagicMock
+) -> None:
+    """A dynamic sensor-add for an already-registered sensor is skipped.
+
+    A reconnect plus database sync re-fires the event for sensors that already
+    exist; re-adding them makes HA reject the duplicate unique_id.
+    """
+    config_entry = MagicMock()
+    config_entry.runtime_data = controller
+    config_entry.unique_id = UID
+    add_entities = MagicMock()
+
+    await async_setup_entry(hass, config_entry, add_entities)
+
+    # Pre-register the sensor that the event will try to add again.
+    er.async_get(hass).async_get_or_create(
+        "sensor",
+        DOMAIN,
+        f"{UID}_autdev_5_sensor_0_TEMPERATURE_FAHRENHEIT",
+    )
+
+    callback = next(
+        call.args[1]
+        for call in controller.state.register.call_args_list
+        if call.args[0] is QolsysNotification.AUTOMATION_SENSOR_ADD
+    )
+    callback(
+        Event(
+            QolsysNotification.AUTOMATION_SENSOR_ADD,
+            controller,
+            {
+                "virtual_node_id": "5",
+                "endpoint": 0,
+                "unit": QolsysSensorScale.TEMPERATURE_FAHRENHEIT,
+            },
+        )
+    )
+
+    # Only the initial setup call; the duplicate add was skipped.
+    assert add_entities.call_count == 1
 
 
 async def test_dynamic_sensor_add_ignores_missing_virtual_node_id(

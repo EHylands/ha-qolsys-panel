@@ -7,16 +7,6 @@ import logging
 import time
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-from qolsys_controller.automation.service_status import StatusService
-from qolsys_controller.enum_qolsys import (
-    PartitionAlarmType,
-    PartitionQuickExitState,
-    QolsysNotification,
-    ZoneSensorType,
-    ZoneStatus,
-)
-
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
@@ -24,7 +14,6 @@ from homeassistant.components.binary_sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
@@ -35,6 +24,15 @@ from .entity import (
     QolsysPanelSensorEntity,
     QolsysPartitionEntity,
     QolsysZoneEntity,
+)
+from .vendor.qolsys_controller import qolsys_controller
+from .vendor.qolsys_controller.automation.service_status import StatusService
+from .vendor.qolsys_controller.enum_qolsys import (
+    PartitionAlarmType,
+    PartitionQuickExitState,
+    QolsysNotification,
+    ZoneSensorType,
+    ZoneStatus,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,9 +110,11 @@ async def async_setup_entry(
     """Set up binary sensors."""
     entities: list[BinarySensorEntity] = []
     QolsysPanel = config_entry.runtime_data
-
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        # A forwarded platform must not raise ConfigEntryNotReady: HA logs a
+        # complaint rather than retrying, and __init__.async_setup_entry already
+        # refuses a None unique_id before any platform is set up (review N5).
+        raise ValueError("Config entry has no unique_id; re-add the integration")
 
     # Add Doorbell Binary Sensor
     entities.append(QolsysDoorbellSensor(hass, QolsysPanel, unique_id))
@@ -415,12 +415,16 @@ class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return True while this zone has AC power (device_class PLUG: on == plugged in)."""
+        """Return True while this zone has AC power (device_class PLUG: on == plugged in).
+
+        The neighbouring battery sensor genuinely does invert ("Normal" means
+        the battery is fine, so is_on is != "Normal"); this one does not.
+        """
         return self._zone.ac_status == "Normal"
 
 
 class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
-    "A binary sensor entity for a zone in a Qolsys Panel."
+    """A binary sensor entity for a zone in a Qolsys Panel."""
 
     _attr_name = None
 
@@ -527,6 +531,11 @@ class QolsysDoorbellSensor(QolsysPanelEntity, BinarySensorEntity):
 
     def _handle_doorbell_event(self, event_dict: dict[str, Any]) -> None:
         """Called when Qolsys doorbell is pressed."""
+        if not self._on_loop_thread():
+            # The library notifies on its own thread; the timer and the
+            # state write below both belong to the event loop.
+            self.hass.loop.call_soon_threadsafe(self._handle_doorbell_event, event_dict)
+            return
         now = time.monotonic()
 
         # Debounce: ignore rapid presses
@@ -580,6 +589,11 @@ class QolsysChimeSensor(QolsysPanelEntity, BinarySensorEntity):
 
     def _handle_chime_event(self, event_dict: dict[str, Any]) -> None:
         """Called when Qolsys chime is called."""
+        if not self._on_loop_thread():
+            # The library notifies on its own thread; the timer and the
+            # state write below both belong to the event loop.
+            self.hass.loop.call_soon_threadsafe(self._handle_chime_event, event_dict)
+            return
         now = time.monotonic()
 
         # Debounce: ignore rapid presses
@@ -632,7 +646,10 @@ class AutomationDevice_Status(QolsysAutomationDeviceEntity, BinarySensorEntity):
         )
 
         service = self._autdev.service_get(StatusService, endpoint)  # type: ignore[type-abstract]
-        assert service is not None
+        if service is None:
+            raise ValueError(
+                f"Automation device {self._virtual_node_id} has no StatusService at endpoint {endpoint}"
+            )
         self._service: StatusService = service
 
     @property

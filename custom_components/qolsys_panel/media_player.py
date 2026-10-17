@@ -1,16 +1,14 @@
 import logging
 from typing import Any
 
-from qolsys_controller import qolsys_controller
-
 from homeassistant.components.media_player import MediaPlayerEntity, MediaPlayerState
 from homeassistant.components.media_player.const import MediaPlayerEntityFeature
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
+from .vendor.qolsys_controller import qolsys_controller
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,7 +24,10 @@ async def async_setup_entry(
     entities: list[MediaPlayerEntity] = []
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        # A forwarded platform must not raise ConfigEntryNotReady: HA logs a
+        # complaint rather than retrying, and __init__.async_setup_entry already
+        # refuses a None unique_id before any platform is set up (review N5).
+        raise ValueError("Config entry has no unique_id; re-add the integration")
 
     # Add Doorbell Binary Sensor
     entities.append(Qolsys_MediaPlayer(hass, QolsysPanel, unique_id))

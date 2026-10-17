@@ -1,0 +1,950 @@
+{
+  "schema": 1,
+  "fork": "ha-qolsys-panel",
+  "upstream": "https://github.com/EHylands/ha-qolsys-panel.git",
+  "branch": "main",
+  "baseline": {
+    "sha": "b0f460a53db47e2c60b248851ca4e746dd3ce6f6",
+    "date": "2026-08-27",
+    "subject": "1.6.1",
+    "note": "Upstream v1.6.1, the commit this fork was created from. Everything up to here was covered by the full audit of 2026-09-07 (fork release 1.7.0; CHANGELOG v1.7.0: disarm required no code, PKI world-readable, pairing open to any LAN client, and the rest). The vendored qolsys_controller library is reviewed separately; vendor/VENDORED.md records each library version taken."
+  },
+  "notes": [
+    "Vendored library reviews (not upstream/main commits, so no rows): 1.7.1 to 1.8.0 (fork 1.8.0), 1.8.0 to 1.8.6 (1.8.3), 1.8.7 to 1.9.13 (1.8.4), 1.10.0 and 1.11.0 camera code (1.9.0); see vendor/VENDORED.md."
+  ],
+  "commits": [
+    {
+      "sha": "79ea073c317561c8b1517c37a655ff63c3f8fc0b",
+      "date": "2026-09-09",
+      "subject": "chore(deps): bump qolsys-controller from 1.7.0 to 1.7.1 (#120)",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "qolsys-controller 1.7.1 to 1.8.0 applied to the vendored copy, minus 1.7.2's two stub tables (vendor/VENDORED.md)",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "dd6b9f0b57e6426c37822df2dd293bcfbc94600b",
+      "date": "2026-09-09",
+      "subject": "fix: backport changes from @ipleva commit 9786917",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "upstream's backport of this fork's own commit 9786917 (platforms raise on a missing unique_id)",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "5cb4ed7798045096e47a9ea64e11b3ec6abd13fd",
+      "date": "2026-09-09",
+      "subject": "fix: backport @ipleva commit cc5edbf",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "upstream's backport of this fork's own commit cc5edbf (binary-sensor fix)",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "b16729d794164eeca9d1a0d1d5ab255815f3a69f",
+      "date": "2026-09-09",
+      "subject": "fix: backport @ipleva commit  265fe75",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "upstream's backport of this fork's own commit 265fe75 (Entity import path)",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "e15cf82a39fd8b25a3514203ae54f76aef5dbca5",
+      "date": "2026-09-09",
+      "subject": "fix: set DEFAULT_DISARM_CODE_REQUIRED = True",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "DEFAULT_DISARM_CODE_REQUIRED = True; this fork has had it since 1.7.0",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "a7b4361a0ffbca80722382f2569dbb3a78796808",
+      "date": "2026-09-09",
+      "subject": "chore(deps): bump gitpython from 3.1.43 to 3.1.61 (#119)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "gitpython pin bump for upstream's release tooling, which this fork does not use",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "b3711406e612b0d7104e35a53551815c9bf7fd83",
+      "date": "2026-09-10",
+      "subject": "1.6.2",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "78b9c3e82f6a22a1d0e8649d4935a58a699f9762",
+      "date": "2026-09-10",
+      "subject": "1.6.3",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "f4b551bc01ac6a41cfd8a7781e63f37587852b1e",
+      "date": "2026-09-10",
+      "subject": "1.6.4",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "4a504ba39a955e2abcc0280e9c2ed46ab573d501",
+      "date": "2026-09-10",
+      "subject": "1.6.5",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "0317bf22619b2f37910ec39761d519c67643522d",
+      "date": "2026-09-10",
+      "subject": "chore(deps): bump python-semantic-release from 10.6.1 to 10.6.2 (#118)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "python-semantic-release pin bump for upstream's release tooling, which this fork does not use",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "43b57afefff8d99bbb4ce1693a94d067d041d0e9",
+      "date": "2026-09-11",
+      "subject": "chore(deps): bump gitpython from 3.1.61 to 3.1.62 (#124)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "gitpython pin bump for upstream's release tooling, which this fork does not use",
+      "implemented_in": [],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "eef5067a02ede6231c8f0bfc5b23cb80acbdd263",
+      "date": "2026-09-12",
+      "subject": "chore: bump qolsys-controller 1.8.0",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "qolsys-controller 1.7.1 to 1.8.0 applied to the vendored copy, minus 1.7.2's two stub tables (vendor/VENDORED.md)",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "5edf7c22e18e667ec23c9325b7dee11c535576f5",
+      "date": "2026-09-12",
+      "subject": "chore: bump test qolsys-controller 1.8.0",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "qolsys-controller 1.7.1 to 1.8.0 applied to the vendored copy, minus 1.7.2's two stub tables (vendor/VENDORED.md)",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "a8fc44fec8545c27398eac6541d43a5fccc5e6eb",
+      "date": "2026-09-12",
+      "subject": "chore: add panel volume services",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "51427c32f6a2b49f98e014ac36f840da6dd3b563",
+      "date": "2026-09-12",
+      "subject": "chore: update volume services",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "a85e3182f75f6fb14b6a527e34bfbbc72980a320",
+      "date": "2026-09-12",
+      "subject": "chore: volume services",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "e4ceb7876b774608c339ae28587ddc39f15f96f6",
+      "date": "2026-09-12",
+      "subject": "chore: volume service",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "06a3a27273ef2f2de7264ac29bd015712abe8f4e",
+      "date": "2026-09-12",
+      "subject": "chore: volume services",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "dc7b05585ff25e460b2d0755cb30e8f170c7938e",
+      "date": "2026-09-12",
+      "subject": "chore: remove change doorbell volume service",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "panel volume services: the master-volume service (qolsys_panel.change_master_volume) taken in its final form; the doorbell-volume service was added and removed upstream the same day and is not carried",
+      "implemented_in": [
+        "1ab407ed0eeb30e59512515cae35444d4c92b663"
+      ],
+      "triaged": "2026-09-12",
+      "source": "backfill"
+    },
+    {
+      "sha": "a39df982d2403858f549d0b0751ea0c986c60009",
+      "date": "2026-09-14",
+      "subject": "chore: update diagnostic file",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "diagnostics addition taken as is",
+      "implemented_in": [
+        "bc9976568afa3e4b03680f00f806cdcbc2a1ef25"
+      ],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "93648f511cb91c4423bdbece0124ea1c66424212",
+      "date": "2026-09-14",
+      "subject": "chore: Update manifest.json",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "283621d0b2393438c06ec31039f6cf7bbb7e657b",
+      "date": "2026-09-16",
+      "subject": "chore: update manifest.json",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "78391c3fbcd3349ddc6042224eade32c87a019e6",
+      "date": "2026-09-16",
+      "subject": "chore: bump qolsys controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "64247c6655aa4487eeaeea53d8d931cb8b2bea79",
+      "date": "2026-09-16",
+      "subject": "chore: bump qolsys controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "63c0919861b31deecdf57470eed11dfed3c86090",
+      "date": "2026-09-17",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "3e6738f0edd5d2b53c7843d6c98e760b5aac06f9",
+      "date": "2026-09-18",
+      "subject": "Update manifest.json",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library and reviewed the 1.8.0 to 1.8.6 library delta line by line for 1.8.3",
+      "implemented_in": [],
+      "triaged": "2026-09-18",
+      "source": "backfill"
+    },
+    {
+      "sha": "f3cedf98e287763777f676cbe8b6c4b75435dfb7",
+      "date": "2026-09-19",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "82bca214d7b55a7c13fa86f8d2247e0f90d7d353",
+      "date": "2026-09-20",
+      "subject": "chore: bumpt qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "38abd87d34ae79ce2a19cf57c471726efcfcde37",
+      "date": "2026-09-21",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "7d752e9d3c7df7e2e12f6c1a8a3bea46992b64e7",
+      "date": "2026-09-21",
+      "subject": "chore: bumpt qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "aae182efd7d80687643f1847b1c6a0fcceb11c9e",
+      "date": "2026-09-22",
+      "subject": "chore: central scene support",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Z-Wave Central Scene event platform (event.py, Platform.EVENT): hardware this panel does not have and library code this fork does not vendor; revisit if a Z-Wave device is added",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "18756bc1b492a3fb6f54747d72ee14b10c25243c",
+      "date": "2026-09-22",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "d905fc7222280f0a78f5c5cd008e7fba5c203046",
+      "date": "2026-09-24",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "sensor: a dynamic automation-sensor add is skipped when the registry already holds the unique_id (explicit guard where upstream used assert); the manifest pin hunk declined",
+      "implemented_in": [
+        "09762c0434d8e329cf7858774f56451b64642c88"
+      ],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "ac2f9b6bde536f35589518f0d5be9f21e2317bea",
+      "date": "2026-09-24",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "split: the diagnostics line wrap taken; the event.py half (Z-Wave Central Scene platform) declined, no automation devices on this panel",
+      "implemented_in": [
+        "7f7fc9ca6d857889a98d0d9157b59f50bb452609"
+      ],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "c1f0a509b61371caf5f22c90b590bbaa7418c6b8",
+      "date": "2026-09-25",
+      "subject": "feat: add support for Z-Wave Central Scene control and multi-endpoint lights and outlets",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "split: the README actions table taken (with the change_master_volume service); the Z-Wave Central Scene and multi-endpoint feature and its pin bump declined, no Z-Wave devices on this panel",
+      "implemented_in": [
+        "7f7fc9ca6d857889a98d0d9157b59f50bb452609"
+      ],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "0db9dca5dee192efc3c5b77abe4437980a7c35f2",
+      "date": "2026-09-25",
+      "subject": "fix: thermostat state issue and list values in HVAC mode bitmask parsing",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the subject names an Alarm.com thermostat change that lives in the library, whose 1.8.7 to 1.9.13 delta was reviewed separately (5fae1df): no ADC thermostat on this panel",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "3779189641bdcae63d7ac46c91b85b99771da424",
+      "date": "2026-09-25",
+      "subject": "feat: introduce adc thermostat related function name for future adc thermostat service",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the subject names an Alarm.com thermostat change that lives in the library, whose 1.8.7 to 1.9.13 delta was reviewed separately (5fae1df): no ADC thermostat on this panel",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "70587331466c18ac48eba5f2d78c106756b267e6",
+      "date": "2026-09-26",
+      "subject": "1.7.0",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "befe0a44adc7a4ec9f0533e01d05adfae1000eae",
+      "date": "2026-09-26",
+      "subject": "1.7.1",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "f57b3ca5f258df9086abb99c33c7729486598020",
+      "date": "2026-09-26",
+      "subject": "1.8.0",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "1cc1ebfa8607c14bc7dbdaf29a4c4bcaf35149b5",
+      "date": "2026-09-27",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "19ff4dda8b4c840d1bc19cd751e1012dc056537c",
+      "date": "2026-09-27",
+      "subject": "fix: bumpt qolsys-controller for ADC thermostat enum",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the subject names an Alarm.com thermostat change that lives in the library, whose 1.8.7 to 1.9.13 delta was reviewed separately (5fae1df): no ADC thermostat on this panel",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "6f8bdd8ae5b69ad63ef9bf316881dcaf6ae12baa",
+      "date": "2026-09-27",
+      "subject": "fix: adc thermostat enum",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the subject names an Alarm.com thermostat change that lives in the library, whose 1.8.7 to 1.9.13 delta was reviewed separately (5fae1df): no ADC thermostat on this panel",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "f2e6bee3cb2ed3ddaa651abc980dae219ade7112",
+      "date": "2026-09-27",
+      "subject": "fix: adc thermostat service vdState",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the subject names an Alarm.com thermostat change that lives in the library, whose 1.8.7 to 1.9.13 delta was reviewed separately (5fae1df): no ADC thermostat on this panel",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "73b0724fb6ef6f40c04983a14417bd568bb8cc7f",
+      "date": "2026-09-27",
+      "subject": "1.8.1",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "85b5095e178095124481cc3b43ca6f84c2ef3906",
+      "date": "2026-09-27",
+      "subject": "1.8.2",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "45736a0e35666589e1c6157e558fb876048742d2",
+      "date": "2026-09-27",
+      "subject": "chore(deps): bump actions/checkout from 5 to 7 (#130)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's CI/release pipeline, which this fork does not run",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "764c60f84dc48b7329fae20722deb12c82915929",
+      "date": "2026-09-27",
+      "subject": "chore(deps): bump actions/setup-python from 5 to 7 (#131)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's CI/release pipeline, which this fork does not run",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "1521a2a5391a81a7732cf7dc686079781bc9662d",
+      "date": "2026-09-27",
+      "subject": "chore(deps): bump wagoid/commitlint-github-action from 5 to 6 (#132)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's CI/release pipeline, which this fork does not run",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "327c5a7c230e0cbceb8c57f100756b9ba83a23cc",
+      "date": "2026-09-27",
+      "subject": "chore: release.yaml update",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's CI/release pipeline, which this fork does not run; it also deletes the requirements_test.txt the test runner needs",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "f8371be5e5678f5ae3733c99b3ea0fedbdf753eb",
+      "date": "2026-09-28",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "567990b1e54ddf9db2ec784929aabc48476deff3",
+      "date": "2026-09-28",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "b18d536f13d4cfdef6a7f6c921e3b3fae74303e5",
+      "date": "2026-09-28",
+      "subject": "1.8.3",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "51e13959a2230b04ea9575e80b002fdff5a2e42a",
+      "date": "2026-09-29",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "fbd9e06253fba96aa8f0b07f40785b7f985920fc",
+      "date": "2026-09-29",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "673370269cc60847f2112cd4e99dfd58fa019bda",
+      "date": "2026-09-30",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "976973e357b3a9aa2ea86d6573b6e697f9e89cbf",
+      "date": "2026-10-01",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "df56d60b1a66077837826ddce608b48293e286ac",
+      "date": "2026-10-05",
+      "subject": "chore: via_device_id update",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "via_device_id link, ours since 1.7.2/1.7.3; its fallback to the deprecated via_device tuple and the release.yml hunk declined; four tests for our resolver added instead",
+      "implemented_in": [
+        "8eabc8601584d8dc8732412c03bd3ce2cecc5bc1"
+      ],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "f546cc424e6026bb20b018de36de673c8b358fcb",
+      "date": "2026-10-05",
+      "subject": "chore: via_device_id update",
+      "bucket": "already_here",
+      "status": "already_here",
+      "reason": "via_device_id link, ours since 1.7.2/1.7.3; its fallback to the deprecated via_device tuple declined; tests added instead",
+      "implemented_in": [
+        "8eabc8601584d8dc8732412c03bd3ce2cecc5bc1"
+      ],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "e41a2efba630551647ca4f59714400a482508985",
+      "date": "2026-10-05",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "b92db83d3961ad962e4744e2449857c3242f5a58",
+      "date": "2026-10-05",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "27c79467326dcee8d334151056c099a855313e91",
+      "date": "2026-10-06",
+      "subject": "fix: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "manifest pin bump of the PyPI qolsys-controller; this fork vendors the library; the 1.8.7 to 1.9.13 library delta was reviewed separately (three fixes taken in 5fae1df; Central Scene, Alarm.com thermostat and IQ2+ thermostat code declined)",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "9910f4ad4270776608788608ab53eff94ff295fb",
+      "date": "2026-10-07",
+      "subject": "Chore: add Alarm.com thermostat support documentation (#136)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "documentation for the Alarm.com thermostat support, which is not shipped here; revisit if an ADC thermostat is added",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "a04736b0bb291651915c36d65ead9bc1c7daafb2",
+      "date": "2026-10-07",
+      "subject": "1.8.4",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's semantic-release version commit; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-09",
+      "source": "backfill"
+    },
+    {
+      "sha": "92d070a34c9bfe9c97deef4007eccfeede191af5",
+      "date": "2026-10-09",
+      "subject": "chore: 134 debug logging stays on after boot dhcp discovery starts the config flow and forces debug follow up to 115 (#137)",
+      "bucket": "implement",
+      "status": "implemented",
+      "reason": "config flow raises the qolsys loggers to DEBUG only for a session a person starts (#137), adapted: this fork already restored the levels on abort, but the raise in __init__ logged configured panels' host and MAC at DEBUG on every boot's DHCP rediscovery",
+      "implemented_in": [
+        "7d9f052a53e70dc4646352cd917514e5fa8cf393"
+      ],
+      "triaged": "2026-10-10",
+      "source": "backfill"
+    },
+    {
+      "sha": "a7b79fafd7467a08f1b23da0c47f2d71def197b5",
+      "date": "2026-10-09",
+      "subject": "chore: update image test",
+      "bucket": "ask",
+      "status": "implemented",
+      "reason": "Peek-In picture: an image entity on the panel device plus the update_picture_peek_in action behind an 'Enable Peek In Picture' option (on by default); a new entity, so Lukas's call; taken adapted (the option removes the entity when off, thread-safe state write, readable errors) with the camera code vendored from library 1.11.0",
+      "implemented_in": [
+        "39e4127e098908e0e7fbb38269600f76883a9a29",
+        "2848328773b45e50ee034c7b4c9f166d01bcf27e"
+      ],
+      "triaged": "2026-10-10",
+      "source": "backfill",
+      "decided": {
+        "date": "2026-10-10",
+        "note": "Lukas asked for upstream 1.9.0 to be taken the hand-applied way"
+      }
+    },
+    {
+      "sha": "353a9d0dbe51ad93efdadc625e26551a126729d5",
+      "date": "2026-10-09",
+      "subject": "chore: update test",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "a test line that ccec800 removes again",
+      "implemented_in": [],
+      "triaged": "2026-10-10",
+      "source": "backfill"
+    },
+    {
+      "sha": "d3345738796da2b91650b7fb7cc0d4aa7cc8833f",
+      "date": "2026-10-09",
+      "subject": "chore: update version",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's version bump; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-10",
+      "source": "backfill"
+    },
+    {
+      "sha": "1ebb18e8cb3b816498d49f486393f4f2acb9ff52",
+      "date": "2026-10-10",
+      "subject": "feat: add eek-In picture entity to panel device, refreshable via Peek-In service",
+      "bucket": "ask",
+      "status": "implemented",
+      "reason": "Peek-In picture: an image entity on the panel device plus the update_picture_peek_in action behind an 'Enable Peek In Picture' option (on by default); a new entity, so Lukas's call; taken adapted (the option removes the entity when off, thread-safe state write, readable errors) with the camera code vendored from library 1.11.0",
+      "implemented_in": [
+        "39e4127e098908e0e7fbb38269600f76883a9a29",
+        "2848328773b45e50ee034c7b4c9f166d01bcf27e"
+      ],
+      "triaged": "2026-10-10",
+      "source": "backfill",
+      "decided": {
+        "date": "2026-10-10",
+        "note": "Lukas asked for upstream 1.9.0 to be taken the hand-applied way"
+      }
+    },
+    {
+      "sha": "ccec8006042d169519b7f7f867a369a6d590529d",
+      "date": "2026-10-10",
+      "subject": "chore: update peek in service",
+      "bucket": "ask",
+      "status": "implemented",
+      "reason": "Peek-In picture: an image entity on the panel device plus the update_picture_peek_in action behind an 'Enable Peek In Picture' option (on by default); a new entity, so Lukas's call; taken adapted (the option removes the entity when off, thread-safe state write, readable errors) with the camera code vendored from library 1.11.0",
+      "implemented_in": [
+        "39e4127e098908e0e7fbb38269600f76883a9a29",
+        "2848328773b45e50ee034c7b4c9f166d01bcf27e"
+      ],
+      "triaged": "2026-10-10",
+      "source": "backfill",
+      "decided": {
+        "date": "2026-10-10",
+        "note": "Lukas asked for upstream 1.9.0 to be taken the hand-applied way"
+      }
+    },
+    {
+      "sha": "22b944249db726be0dbf55dc94c318037f8a5d35",
+      "date": "2026-10-10",
+      "subject": "chore: update version",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's version bump; this fork versions itself",
+      "implemented_in": [],
+      "triaged": "2026-10-10",
+      "source": "backfill"
+    },
+    {
+      "sha": "0f5fa603b875b71e166f7ac9a0ee1cba7d59d55c",
+      "date": "2026-10-10",
+      "subject": "1.9.0",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "upstream's 1.9.0 release commit; the version is set here instead",
+      "implemented_in": [],
+      "triaged": "2026-10-10",
+      "source": "backfill"
+    },
+    {
+      "sha": "7bc6168819cbac5e747850c7189dcdaca333c9d9",
+      "date": "2026-10-11",
+      "subject": "chore: camera list",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.0 to 1.11.1 plus a beta version bump; this fork vendors the library, so the pin does not apply. What 1.11.1 changed in the library goes into a separate vendored-library review (1.11.0 to 1.12.1) later.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "6d7d9b30f5179634e1c5c212c9b2490ec4e94102",
+      "date": "2026-10-12",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.1 to 1.11.2 plus a beta version bump; the library is vendored here. Its content is covered by the later vendored-library review (1.11.0 to 1.12.1).",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "58595a76f7eb70e97f8e66bd866bcefa0333e760",
+      "date": "2026-10-12",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.2 to 1.11.3 plus a beta version bump; the library is vendored here. Its content is covered by the later vendored-library review (1.11.0 to 1.12.1).",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "feaba0a2805f841511dc9c606ee639e58a565bf6",
+      "date": "2026-10-12",
+      "subject": "chore: ip camera support",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Motion and doorbell key-press binary sensors for IP (doorbell) cameras paired to the panel, plus a library pin to 1.12.1; the house has no IP cameras paired to the panel and our vendored 1.11.0 has no camera_ip module or CAMERA_MOTION/PRESS events (our 1.9.0 camera support is only the panel's own Peek-In photo). Hardware we don't have: revisit if you add one, together with vendoring the 1.12.x IP-camera library code.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "34ed2a7efd38a3d1c42f732286703c00532505fb",
+      "date": "2026-10-15",
+      "subject": "chore: update test",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Refactors the tests for the IP-camera binary sensors (NamedTuple parametrization, type hints); those sensors are declined (feaba0a), so the tests have nothing to test here. Revisit with feaba0a if an IP camera is ever added.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "58eb77b0885452cf6ae0170bb27aaaf45b58b1d7",
+      "date": "2026-10-16",
+      "subject": "ci: manual stable/beta release workflow + CI on all branches (#143)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Upstream's CI and release pipeline: new ci.yml, a manual semantic-release release.yml, deletion of sync-main-to-dev.yml, and emoji changelog templates wired into pyproject.toml. Build/CI settings for their release process, which this fork does not run.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "319b6200e3dce74fa3465f523a43eebdd875cd3f",
+      "date": "2026-10-17",
+      "subject": "chore: align manifest.json version to stable baseline 1.9.0 (#144)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Resets upstream's manifest version from 1.9.1-beta.3 to 1.9.0 to match their last stable tag; an upstream version edit with no code change, and our manifest already says 1.9.0 with versions set by this fork.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    }
+  ]
+}

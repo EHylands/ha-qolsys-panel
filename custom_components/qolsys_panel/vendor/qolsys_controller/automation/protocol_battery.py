@@ -1,0 +1,13 @@
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class BatteryProtocol(Protocol):
+    def supports_battery_low(self) -> bool: ...
+    def supports_battery_level(self) -> bool: ...
+
+    @property
+    def battery_level(self) -> int | None: ...
+
+    @property
+    def is_battery_low(self) -> bool: ...
