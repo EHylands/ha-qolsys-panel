@@ -39,6 +39,12 @@ match  = "dev"
 prerelease = true
 prerelease_token = "beta"
 
+# Use the vendored templates/ (copied from PSR's conventional/md set) so the
+# changelog AND GitHub release notes get emoji section headings. This REPLACES
+# PSR's bundled templates — re-sync templates/ when upgrading python-semantic-release.
+[tool.semantic_release.changelog]
+template_dir = "templates"
+
 
 [tool.ruff]
 required-version = ">=0.11.0"
