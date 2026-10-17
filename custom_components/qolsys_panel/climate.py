@@ -182,12 +182,17 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) is not None:
             await self.async_set_hvac_mode(hvac_mode)
 
-        if value := kwargs.get(ATTR_TARGET_TEMP_HIGH) is not None:
+        if (value := kwargs.get(ATTR_TARGET_TEMP_HIGH)) is not None:
             await self._service.set_temperature(value, QolsysHvacMode.COOL)
 
-        if value := kwargs.get(ATTR_TARGET_TEMP_LOW) is not None:
+        if (value := kwargs.get(ATTR_TARGET_TEMP_LOW)) is not None:
             await self._service.set_temperature(value, QolsysHvacMode.HEAT)
 
-        if value := kwargs.get(ATTR_TEMPERATURE) is not None:
-            if hvac_mode is not None:
-                await self._service.set_temperature(value, hvac_mode)
+        if (value := kwargs.get(ATTR_TEMPERATURE)) is not None:
+            mode = (
+                QolsysHvacMode(hvac_mode)
+                if hvac_mode is not None
+                else self._service.hvac_mode
+            )
+            if mode is not None:
+                await self._service.set_temperature(value, mode)
