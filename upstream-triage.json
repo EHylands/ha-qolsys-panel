@@ -868,6 +868,83 @@
       "implemented_in": [],
       "triaged": "2026-10-10",
       "source": "backfill"
+    },
+    {
+      "sha": "7bc6168819cbac5e747850c7189dcdaca333c9d9",
+      "date": "2026-10-11",
+      "subject": "chore: camera list",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.0 to 1.11.1 plus a beta version bump; this fork vendors the library, so the pin does not apply. What 1.11.1 changed in the library goes into a separate vendored-library review (1.11.0 to 1.12.1) later.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "6d7d9b30f5179634e1c5c212c9b2490ec4e94102",
+      "date": "2026-10-12",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.1 to 1.11.2 plus a beta version bump; the library is vendored here. Its content is covered by the later vendored-library review (1.11.0 to 1.12.1).",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "58595a76f7eb70e97f8e66bd866bcefa0333e760",
+      "date": "2026-10-12",
+      "subject": "chore: bump qolsys-controller",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Manifest pin bump of qolsys-controller 1.11.2 to 1.11.3 plus a beta version bump; the library is vendored here. Its content is covered by the later vendored-library review (1.11.0 to 1.12.1).",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "feaba0a2805f841511dc9c606ee639e58a565bf6",
+      "date": "2026-10-12",
+      "subject": "chore: ip camera support",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Motion and doorbell key-press binary sensors for IP (doorbell) cameras paired to the panel, plus a library pin to 1.12.1; the house has no IP cameras paired to the panel and our vendored 1.11.0 has no camera_ip module or CAMERA_MOTION/PRESS events (our 1.9.0 camera support is only the panel's own Peek-In photo). Hardware we don't have: revisit if you add one, together with vendoring the 1.12.x IP-camera library code.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "34ed2a7efd38a3d1c42f732286703c00532505fb",
+      "date": "2026-10-15",
+      "subject": "chore: update test",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Refactors the tests for the IP-camera binary sensors (NamedTuple parametrization, type hints); those sensors are declined (feaba0a), so the tests have nothing to test here. Revisit with feaba0a if an IP camera is ever added.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "58eb77b0885452cf6ae0170bb27aaaf45b58b1d7",
+      "date": "2026-10-16",
+      "subject": "ci: manual stable/beta release workflow + CI on all branches (#143)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Upstream's CI and release pipeline: new ci.yml, a manual semantic-release release.yml, deletion of sync-main-to-dev.yml, and emoji changelog templates wired into pyproject.toml. Build/CI settings for their release process, which this fork does not run.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
+    },
+    {
+      "sha": "319b6200e3dce74fa3465f523a43eebdd875cd3f",
+      "date": "2026-10-17",
+      "subject": "chore: align manifest.json version to stable baseline 1.9.0 (#144)",
+      "bucket": "decline",
+      "status": "declined",
+      "reason": "Resets upstream's manifest version from 1.9.1-beta.3 to 1.9.0 to match their last stable tag; an upstream version edit with no code change, and our manifest already says 1.9.0 with versions set by this fork.",
+      "implemented_in": [],
+      "triaged": "2026-10-17",
+      "source": "triage"
     }
   ]
 }
