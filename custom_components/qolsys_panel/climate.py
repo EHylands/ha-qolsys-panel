@@ -16,6 +16,7 @@ from qolsys_controller.enum_qolsys import (
 from custom_components.qolsys_panel.entity import QolsysAutomationDeviceEntity
 from homeassistant.components.climate import ClimateEntity, ClimateEntityFeature
 from homeassistant.components.climate.const import (
+    ATTR_HVAC_MODE,
     ATTR_TARGET_TEMP_HIGH,
     ATTR_TARGET_TEMP_LOW,
     HVACAction,
@@ -178,13 +179,15 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         await self._service.set_fan_mode(QolsysFanMode(fan_mode))
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        if value := kwargs.get(ATTR_TARGET_TEMP_HIGH):
+        if (hvac_mode := kwargs.get(ATTR_HVAC_MODE)) is not None:
+            await self.async_set_hvac_mode(hvac_mode)
+
+        if value := kwargs.get(ATTR_TARGET_TEMP_HIGH) is not None:
             await self._service.set_temperature(value, QolsysHvacMode.COOL)
 
-        if value := kwargs.get(ATTR_TARGET_TEMP_LOW):
+        if value := kwargs.get(ATTR_TARGET_TEMP_LOW) is not None:
             await self._service.set_temperature(value, QolsysHvacMode.HEAT)
 
-        if value := kwargs.get(ATTR_TEMPERATURE):
-            hvac_mode = self._service.hvac_mode
+        if value := kwargs.get(ATTR_TEMPERATURE) is not None:
             if hvac_mode is not None:
                 await self._service.set_temperature(value, hvac_mode)
