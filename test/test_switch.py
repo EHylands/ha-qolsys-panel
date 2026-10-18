@@ -10,6 +10,7 @@ from custom_components.qolsys_panel.switch import (
     PartitionSwitch_ArmStayInstant,
     PartitionSwitch_EntryDelay,
     PartitionSwitch_ExitSounds,
+    PartitionSwitch_ForceArm,
     PartitionSwitch_SilentDisarming,
     async_setup_entry,
 )
@@ -18,12 +19,20 @@ from homeassistant.exceptions import ConfigEntryError
 
 UID = PANEL_MAC
 
-# (switch class, the partition command attribute it drives)
-PARTITION_SWITCHES = [
+# (switch class, the partition command attribute it drives) for the restoring
+# partition switches that persist their state across restarts.
+PARTITION_RESTORE_SWITCHES = [
     (PartitionSwitch_ExitSounds, "command_exit_sounds"),
     (PartitionSwitch_EntryDelay, "command_arm_entry_delay"),
     (PartitionSwitch_ArmStayInstant, "command_arm_stay_instant"),
     (PartitionSwitch_SilentDisarming, "command_arm_stay_silent_disarming"),
+]
+
+# All partition command switches. Force arm is a one-shot flag that does not
+# restore its state, so it is only exercised by the is_on/turn_on_off tests.
+PARTITION_SWITCHES = [
+    *PARTITION_RESTORE_SWITCHES,
+    (PartitionSwitch_ForceArm, "command_force_arm"),
 ]
 
 
@@ -64,7 +73,7 @@ async def test_async_setup_entry_missing_unique_id_raises(
 async def test_async_setup_entry_creates_entities(
     hass: HomeAssistant, controller: MagicMock
 ) -> None:
-    """Setup builds the four partition switches plus one outlet."""
+    """Setup builds the five partition switches plus one outlet."""
     config_entry = MagicMock()
     config_entry.runtime_data = controller
     config_entry.unique_id = UID
@@ -74,12 +83,13 @@ async def test_async_setup_entry_creates_entities(
 
     add_entities.assert_called_once()
     entities = add_entities.call_args.args[0]
-    assert len(entities) == 5
+    assert len(entities) == 6
     assert {type(e).__name__ for e in entities} == {
         "PartitionSwitch_ExitSounds",
         "PartitionSwitch_EntryDelay",
         "PartitionSwitch_ArmStayInstant",
         "PartitionSwitch_SilentDisarming",
+        "PartitionSwitch_ForceArm",
         "AutomationDevice_Outlet",
     }
 
@@ -106,7 +116,7 @@ def test_partition_switch_turn_on_off(controller: MagicMock, switch_cls, attr) -
     assert getattr(switch._partition, attr) is False
 
 
-@pytest.mark.parametrize(("switch_cls", "attr"), PARTITION_SWITCHES)
+@pytest.mark.parametrize(("switch_cls", "attr"), PARTITION_RESTORE_SWITCHES)
 async def test_partition_switch_restore_on(
     controller: MagicMock, switch_cls, attr
 ) -> None:
@@ -119,7 +129,7 @@ async def test_partition_switch_restore_on(
     assert getattr(switch._partition, attr) is True
 
 
-@pytest.mark.parametrize(("switch_cls", "attr"), PARTITION_SWITCHES)
+@pytest.mark.parametrize(("switch_cls", "attr"), PARTITION_RESTORE_SWITCHES)
 async def test_partition_switch_restore_off(
     controller: MagicMock, switch_cls, attr
 ) -> None:
