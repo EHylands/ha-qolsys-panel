@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.9.1-beta.5 (2026-10-18)
+
+### 🐛 Bug Fixes
+
+- Require qolsys-controller 1.12.3b2 for force arm; CI reads version from manifest
+  ([#153](https://github.com/EHylands/ha-qolsys-panel/pull/153),
+  [`c7389c7`](https://github.com/EHylands/ha-qolsys-panel/commit/c7389c77b90dd433ffd02cc1b8961587fb62dc67))
+
+
 ## v1.9.1-beta.4 (2026-10-17)
 
 ### 🐛 Bug Fixes
