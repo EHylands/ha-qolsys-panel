@@ -82,37 +82,3 @@ jobs:
             echo "No new release; nothing to do."
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
-
-  # Stage 3 — back-merge. After a STABLE release on main, sync dev to main so
-  # dev's baseline stays current and the next beta computes the right version.
-  # Replaces the old always-on sync-main-to-dev.yml. Fast-forwards when
-  # possible; otherwise merges; fails loudly on conflict (never force-pushes).
-  sync-dev:
-    name: Back-merge main → dev
-    runs-on: ubuntu-latest
-    needs: release
-    if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge main into dev
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main dev
-          git checkout -B dev origin/dev
-          if git merge --ff-only origin/main; then
-            echo "Fast-forwarded dev to main."
-          elif git merge --no-ff --no-edit origin/main; then
-            echo "Merged main into dev with a merge commit."
-          else
-            git merge --abort || true
-            echo "::error::Back-merge of main into dev hit a conflict. Resolve manually: git checkout dev && git merge main && git push."
-            exit 1
-          fi
-          git push origin HEAD:dev
