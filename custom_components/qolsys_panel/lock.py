@@ -25,7 +25,7 @@ async def async_setup_entry(
 ) -> None:
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError("Config entry has no unique_id, re-add the integration")
 
     entities: list[LockEntity] = []
 
