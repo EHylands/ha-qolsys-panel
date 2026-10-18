@@ -1,0 +1,33 @@
+name: Auto-close labeled PR
+
+# A label-driven "flag": apply the `auto-close` label to a PR targeting main and
+# this closes it with an explanatory comment. Primary use is rejecting PRs that
+# must never merge into the stable line — e.g. a `dev → main` PR (`dev` is a
+# throwaway beta sandbox, never promoted; ship features by PR'ing a feature
+# branch → main, then dispatch Build from main).
+#
+# Intentionally NOT a required status check: a required check here would also
+# gate the release bot's direct version-bump push to main and block releases.
+on:
+  pull_request_target:
+    types: [opened, reopened, labeled]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  auto-close:
+    name: Close flagged PRs
+    runs-on: ubuntu-latest
+    # The `auto-close` label is the flag; absent it, nothing happens.
+    if: contains(github.event.pull_request.labels.*.name, 'auto-close')
+    steps:
+      - name: Comment and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          gh pr comment "$PR" --body \
+            "🚫 This PR is labeled \`auto-close\` and will not be merged. If this is a \`dev → main\` PR: \`dev\` is a throwaway beta sandbox — ship features by PR'ing the **feature branch → main**. Closing automatically."
+          gh pr close "$PR"
