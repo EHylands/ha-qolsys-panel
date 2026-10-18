@@ -2,6 +2,23 @@
 
 <!-- version list -->
 
+## v1.10.0-beta.1 (2026-10-18)
+
+### 🐛 Bug Fixes
+
+- Require qolsys-controller 1.12.3b2 for force arm; CI reads version from manifest
+  ([#154](https://github.com/EHylands/ha-qolsys-panel/pull/154),
+  [`b643ea0`](https://github.com/EHylands/ha-qolsys-panel/commit/b643ea03c286a5032aea333a91a6d7225e198ed4))
+
+- Show zone name on bypass error ([#154](https://github.com/EHylands/ha-qolsys-panel/pull/154),
+  [`b643ea0`](https://github.com/EHylands/ha-qolsys-panel/commit/b643ea03c286a5032aea333a91a6d7225e198ed4))
+
+### ✨ Features
+
+- Add form arm switch ([#154](https://github.com/EHylands/ha-qolsys-panel/pull/154),
+  [`b643ea0`](https://github.com/EHylands/ha-qolsys-panel/commit/b643ea03c286a5032aea333a91a6d7225e198ed4))
+
+
 ## v1.9.1-beta.5 (2026-10-18)
 
 ### 🐛 Bug Fixes
