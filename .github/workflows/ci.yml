@@ -55,8 +55,18 @@ jobs:
           python-version: "3.14"
       - name: Install dependencies
         run: |
-          REQ=$(python -c "import json; print(next(r for r in json.load(open('custom_components/qolsys_panel/manifest.json'))['requirements'] if r.startswith('qolsys-controller')))")
-          pip install ruff mypy pytest-homeassistant-custom-component==0.13.367 "$REQ"
+          # Install the controller version this branch's release channel would
+          # ship, so CI tests exactly what ships: latest FINAL for the stable
+          # channel (main), latest incl. PRE-RELEASES for the beta channel (dev
+          # and feature branches). `>=0a0` names a pre-release, which is pip's
+          # idiom for allowing pre-releases of just this one package (no global
+          # --pre that could leak pre-releases into other deps).
+          if [ "$GITHUB_REF_NAME" = "main" ] || [ "$GITHUB_BASE_REF" = "main" ]; then
+            QC="qolsys-controller"
+          else
+            QC="qolsys-controller>=0a0"
+          fi
+          pip install ruff mypy pytest-homeassistant-custom-component==0.13.367 "$QC"
       - name: Ruff check
         run: ruff check .
       - name: Ruff format check
@@ -76,7 +86,13 @@ jobs:
           python-version: "3.14"
       - name: Install dependencies
         run: |
-          REQ=$(python -c "import json; print(next(r for r in json.load(open('custom_components/qolsys_panel/manifest.json'))['requirements'] if r.startswith('qolsys-controller')))")
-          pip install pytest-homeassistant-custom-component==0.13.367 "$REQ" mypy
+          # Match the stable/beta channel (see the lint job for the rationale):
+          # final-only for main, latest incl. pre-releases elsewhere.
+          if [ "$GITHUB_REF_NAME" = "main" ] || [ "$GITHUB_BASE_REF" = "main" ]; then
+            QC="qolsys-controller"
+          else
+            QC="qolsys-controller>=0a0"
+          fi
+          pip install pytest-homeassistant-custom-component==0.13.367 "$QC" mypy
       - name: Pytest
         run: pytest

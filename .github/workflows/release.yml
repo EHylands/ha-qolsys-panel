@@ -6,6 +6,9 @@ name: Build
 # Stable-vs-beta is driven by the per-branch config in pyproject.toml
 # ([tool.semantic_release.branches.*]). semantic-release bumps both
 # pyproject.toml and custom_components/qolsys_panel/manifest.json.
+# The qolsys-controller pin in the manifest is also channel-driven: a stable
+# release pins the latest FINAL controller, a beta pins the latest controller
+# incl. pre-releases (see the "Pin qolsys-controller for channel" step below).
 on:
   workflow_dispatch:
 
@@ -59,6 +62,27 @@ jobs:
 
       - name: Install semantic-release
         run: python -m pip install python-semantic-release
+
+      # Pin the controller version this channel ships: latest FINAL from main
+      # (stable), latest incl. PRE-RELEASES from dev (beta). Resolved with pip's
+      # own resolver (--dry-run --report, no install) so it matches exactly what
+      # Home Assistant installs on a user's box. `>=0a0` names a pre-release,
+      # pip's idiom for allowing pre-releases of just this package.
+      #
+      # The edit is left UNCOMMITTED: semantic-release rewrites manifest.json's
+      # `version` and `git add`s the whole file, so this requirements change
+      # rides into the same release commit. If no release is cut, the BEFORE !=
+      # AFTER guard below skips the push and this edit is discarded.
+      - name: Pin qolsys-controller for channel
+        run: |
+          python -m pip install --quiet --upgrade pip
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            QC="qolsys-controller"
+          else
+            QC="qolsys-controller>=0a0"
+          fi
+          python -m pip install --quiet --dry-run --report /tmp/qc.json "$QC"
+          python -c 'import json,re,sys;rep=json.load(open(sys.argv[1]));v=next(p["metadata"]["version"] for p in rep["install"] if p["metadata"]["name"].lower()=="qolsys-controller");pth="custom_components/qolsys_panel/manifest.json";t=open(pth).read();open(pth,"w").write(re.sub(r"qolsys-controller==[0-9A-Za-z.+!_-]+","qolsys-controller=="+v,t));print("Pinned qolsys-controller=="+v)' /tmp/qc.json
 
       # GITHUB_TOKEN is enough here: main/dev are not protected, so it can push
       # the version-bump commit + tag and create the GitHub release. If branch
