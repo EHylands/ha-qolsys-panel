@@ -171,7 +171,8 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
             raise HomeAssistantError(f"{arm_mode.name}: Operation timed out") from err
         except QolsysZoneBypassError as err:
             raise HomeAssistantError(
-                f"{arm_mode.name}: Zone bypass required:{err.zones}"
+                f"{arm_mode.name}: Open zones {err.zones} require bypass; "
+                "turn on the Force Arm switch to arm anyway"
             ) from err
         except Exception as err:
             _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
