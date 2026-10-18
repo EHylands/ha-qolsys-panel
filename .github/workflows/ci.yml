@@ -54,7 +54,9 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install dependencies
-        run: pip install ruff mypy pytest-homeassistant-custom-component==0.13.367 qolsys-controller
+        run: |
+          REQ=$(python -c "import json; print(next(r for r in json.load(open('custom_components/qolsys_panel/manifest.json'))['requirements'] if r.startswith('qolsys-controller')))")
+          pip install ruff mypy pytest-homeassistant-custom-component==0.13.367 "$REQ"
       - name: Ruff check
         run: ruff check .
       - name: Ruff format check
@@ -73,6 +75,8 @@ jobs:
         with:
           python-version: "3.14"
       - name: Install dependencies
-        run: pip install pytest-homeassistant-custom-component==0.13.367 qolsys-controller mypy
+        run: |
+          REQ=$(python -c "import json; print(next(r for r in json.load(open('custom_components/qolsys_panel/manifest.json'))['requirements'] if r.startswith('qolsys-controller')))")
+          pip install pytest-homeassistant-custom-component==0.13.367 "$REQ" mypy
       - name: Pytest
         run: pytest
