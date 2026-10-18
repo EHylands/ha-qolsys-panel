@@ -1,0 +1,32 @@
+name: Block dev → main PRs
+
+# This project ships features via `feature → main`; `dev` is a throwaway beta
+# sandbox that is never promoted. Any pull request from `dev` into `main` is
+# closed automatically with an explanatory comment.
+#
+# Intentionally NOT a required status check: required checks on `main` would
+# also reject the release bot's direct version-bump push. Auto-close is the
+# right tool here.
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  block:
+    name: Reject dev → main
+    if: github.head_ref == 'dev'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body \
+            "🚫 PRs from \`dev\` into \`main\` are not allowed in this project. \`dev\` is a throwaway beta sandbox and is never promoted — ship features with a \`feature → main\` PR instead. Closing automatically."
+          gh pr close "$PR" --repo "$REPO"
