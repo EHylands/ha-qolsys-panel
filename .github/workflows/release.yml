@@ -9,8 +9,23 @@ name: Build
 # The qolsys-controller pin in the manifest is also channel-driven: a stable
 # release pins the latest FINAL controller, a beta pins the latest controller
 # incl. pre-releases (see the "Pin qolsys-controller for channel" step below).
+#
+# Normally the bump level comes from the conventional commits since the last tag
+# (feat -> minor, fix/perf -> patch). The `bump` input forces a level instead:
+# use it to cut a release that only ships a new qolsys-controller version, which
+# otherwise produces no release-triggering commit.
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Force a release level (use for a controller-only bump)"
+        type: choice
+        default: auto
+        options:
+          - auto
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -94,9 +109,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # 'auto' lets conventional commits decide the bump; any other choice
+          # forces that level so a controller-only release can be cut even with
+          # no release-triggering commit. On dev the per-branch prerelease config
+          # still turns a forced level into the next beta.
+          FORCE=""
+          if [ "${{ inputs.bump }}" != "auto" ]; then
+            FORCE="--${{ inputs.bump }}"
+          fi
           # A changed HEAD means a new version was cut.
           BEFORE="$(git rev-parse HEAD)"
-          semantic-release version
+          semantic-release version $FORCE
           AFTER="$(git rev-parse HEAD)"
           if [ "$BEFORE" != "$AFTER" ]; then
             git push --follow-tags
