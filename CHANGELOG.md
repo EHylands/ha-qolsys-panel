@@ -2,6 +2,50 @@
 
 <!-- version list -->
 
+## v1.11.0 (2026-10-20)
+
+### 🐛 Bug Fixes
+
+- 140 feature request bypass open zones
+  ([#161](https://github.com/EHylands/ha-qolsys-panel/pull/161),
+  [`907e248`](https://github.com/EHylands/ha-qolsys-panel/commit/907e24800fbdb13ac7ff15d2be0dd3554ae4627a))
+
+- IQ2+ panel z-wave lock service improvement
+  ([`69fd0ab`](https://github.com/EHylands/ha-qolsys-panel/commit/69fd0abead311a6b25f823d83166e9c748a723dd))
+
+- IQ2+ panel z-wave thermostat service improvement
+  ([#158](https://github.com/EHylands/ha-qolsys-panel/pull/158),
+  [`0b6f2f4`](https://github.com/EHylands/ha-qolsys-panel/commit/0b6f2f4fdfecb6210ad1a432811715161d05cecc))
+
+### 🧹 Chores
+
+- Align manifest.json version to stable baseline 1.9.0
+  ([#144](https://github.com/EHylands/ha-qolsys-panel/pull/144),
+  [`319b620`](https://github.com/EHylands/ha-qolsys-panel/commit/319b6200e3dce74fa3465f523a43eebdd875cd3f))
+
+- Update test
+  ([`34ed2a7`](https://github.com/EHylands/ha-qolsys-panel/commit/34ed2a7efd38a3d1c42f732286703c00532505fb))
+
+### 🤖 Continuous Integration
+
+- Add label-driven PR workflows, drop sync-dev back-merge
+  ([#151](https://github.com/EHylands/ha-qolsys-panel/pull/151),
+  [`6116563`](https://github.com/EHylands/ha-qolsys-panel/commit/6116563fa1e09239e163a52da2377a42e936d26e))
+
+- Auto-close dev -> main pull requests
+  ([#150](https://github.com/EHylands/ha-qolsys-panel/pull/150),
+  [`2000b34`](https://github.com/EHylands/ha-qolsys-panel/commit/2000b34aacf6df71771fde4afa0c541ec3e971ef))
+
+- Manual stable/beta release workflow + CI on all branches
+  ([#143](https://github.com/EHylands/ha-qolsys-panel/pull/143),
+  [`58eb77b`](https://github.com/EHylands/ha-qolsys-panel/commit/58eb77b0885452cf6ae0170bb27aaaf45b58b1d7))
+
+### ✨ Features
+
+- Add force arm switch ([#157](https://github.com/EHylands/ha-qolsys-panel/pull/157),
+  [`a6afab0`](https://github.com/EHylands/ha-qolsys-panel/commit/a6afab0c861c5ff4566e233ba57b3250497e1d39))
+
+
 ## v1.9.1-beta.5 (2026-10-18)
 
 ### 🐛 Bug Fixes
