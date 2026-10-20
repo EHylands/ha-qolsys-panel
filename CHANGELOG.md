@@ -2,6 +2,70 @@
 
 <!-- version list -->
 
+## v1.9.1-beta.5 (2026-10-18)
+
+### 🐛 Bug Fixes
+
+- Require qolsys-controller 1.12.3b2 for force arm; CI reads version from manifest
+  ([#153](https://github.com/EHylands/ha-qolsys-panel/pull/153),
+  [`c7389c7`](https://github.com/EHylands/ha-qolsys-panel/commit/c7389c77b90dd433ffd02cc1b8961587fb62dc67))
+
+
+## v1.9.1-beta.4 (2026-10-17)
+
+### 🐛 Bug Fixes
+
+- 141 z wave thermostat iq panel 2 ([#146](https://github.com/EHylands/ha-qolsys-panel/pull/146),
+  [`458ae9c`](https://github.com/EHylands/ha-qolsys-panel/commit/458ae9cac9e7a95a8e3f277683b9c22173be9719))
+
+- 141 z wave thermostat iq panel 2 hvac mode ignored in set temperature setpoints truncated stale
+  state flicker no turn on
+  ([`ceb1969`](https://github.com/EHylands/ha-qolsys-panel/commit/ceb1969845620a374170bdb2f270c60cc889fc10))
+
+- 141 z wave thermostat iq panel 2 hvac mode ignored in set temperature setpoints truncated stale
+  state flicker no turn on ([#148](https://github.com/EHylands/ha-qolsys-panel/pull/148),
+  [`12edc2c`](https://github.com/EHylands/ha-qolsys-panel/commit/12edc2c3ba16c476f3e3246c8308ffa7616a239f))
+
+- 142-z-wave-door-lock-enhancement-iq-panel
+  ([`c6ae3e2`](https://github.com/EHylands/ha-qolsys-panel/commit/c6ae3e242817fa462cfac0eaea33c7a38c2fd35f))
+
+- Respect hvac_mode and untruncated setpoints in async_set_temperature
+  ([`ceb1969`](https://github.com/EHylands/ha-qolsys-panel/commit/ceb1969845620a374170bdb2f270c60cc889fc10))
+
+- Respect hvac_mode and untruncated setpoints in async_set_temperature
+  ([#148](https://github.com/EHylands/ha-qolsys-panel/pull/148),
+  [`12edc2c`](https://github.com/EHylands/ha-qolsys-panel/commit/12edc2c3ba16c476f3e3246c8308ffa7616a239f))
+
+- Update version
+  ([`5601ff9`](https://github.com/EHylands/ha-qolsys-panel/commit/5601ff926d89ab2408afbdb1d4f8d77564f7821b))
+
+### 🧹 Chores
+
+- Update qolsys-controller
+  ([`ceb1969`](https://github.com/EHylands/ha-qolsys-panel/commit/ceb1969845620a374170bdb2f270c60cc889fc10))
+
+- Update qolsys-controller ([#148](https://github.com/EHylands/ha-qolsys-panel/pull/148),
+  [`12edc2c`](https://github.com/EHylands/ha-qolsys-panel/commit/12edc2c3ba16c476f3e3246c8308ffa7616a239f))
+
+- Update qolsys-controller ([#146](https://github.com/EHylands/ha-qolsys-panel/pull/146),
+  [`458ae9c`](https://github.com/EHylands/ha-qolsys-panel/commit/458ae9cac9e7a95a8e3f277683b9c22173be9719))
+
+- Update test
+  ([`34ed2a7`](https://github.com/EHylands/ha-qolsys-panel/commit/34ed2a7efd38a3d1c42f732286703c00532505fb))
+
+- Updtae qolsys-controller
+  ([`ceb1969`](https://github.com/EHylands/ha-qolsys-panel/commit/ceb1969845620a374170bdb2f270c60cc889fc10))
+
+- Updtae qolsys-controller ([#148](https://github.com/EHylands/ha-qolsys-panel/pull/148),
+  [`12edc2c`](https://github.com/EHylands/ha-qolsys-panel/commit/12edc2c3ba16c476f3e3246c8308ffa7616a239f))
+
+### 🤖 Continuous Integration
+
+- Manual stable/beta release workflow + CI on all branches
+  ([#143](https://github.com/EHylands/ha-qolsys-panel/pull/143),
+  [`58eb77b`](https://github.com/EHylands/ha-qolsys-panel/commit/58eb77b0885452cf6ae0170bb27aaaf45b58b1d7))
+
+
 ## v1.9.0 (2026-10-10)
 
 ### Features

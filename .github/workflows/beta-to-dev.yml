@@ -1,0 +1,55 @@
+name: Beta label → merge into dev
+
+# Label-driven beta track: apply the `beta` label to a PR and its head branch is
+# merged into `dev` (the throwaway beta sandbox), so the next Build dispatched
+# from `dev` includes it. Automates the "merge the features you want to test into
+# dev" step.
+#
+# Applying the label IS the authorization gate: only users with triage+ can label
+# a PR, so only trusted users can push code into dev this way. That is why
+# pull_request_target (which exposes push-capable secrets) is safe here — we
+# never execute the PR's code, we only merge its commits into dev and push.
+#
+# Rebuilding dev (git reset --hard origin/main) drops previously merged features;
+# re-apply the `beta` label to merge them in again.
+on:
+  pull_request_target:
+    types: [labeled]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  beta-to-dev:
+    name: Merge labeled PR into dev
+    runs-on: ubuntu-latest
+    # Act only when the label that was just added is `beta`.
+    if: github.event.label.name == 'beta'
+    steps:
+      # main/dev are unprotected here, so GITHUB_TOKEN can push to dev directly.
+      - uses: actions/checkout@v7
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge PR branch into dev
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          # refs/pull/<n>/head resolves the PR tip even when it comes from a fork.
+          git fetch origin "refs/pull/${PR}/head"
+          if git merge --no-ff --no-edit FETCH_HEAD; then
+            git push origin HEAD:dev
+            gh pr comment "$PR" --body \
+              "🧪 Merged into \`dev\`. Dispatch **Build** from \`dev\` to publish a beta. (Rebuilding dev later? Re-apply the \`beta\` label to merge again.)"
+          else
+            git merge --abort || true
+            gh pr comment "$PR" --body \
+              "⚠️ Could not merge into \`dev\` — merge conflict. Resolve manually: \`git checkout dev && git merge <branch>\`."
+            exit 1
+          fi
