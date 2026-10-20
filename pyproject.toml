@@ -1,6 +1,6 @@
 [project]
 name = "ha-qolsys-panel"
-version = "1.11.0"
+version = "1.11.1-beta.1"
 authors = [
   { name="Eric Hylands"},
 ]
