@@ -129,3 +129,27 @@ jobs:
             echo "No new release; nothing to do."
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
+
+  # Stage 3 — restart the beta channel. After a STABLE release on main, reset dev
+  # to the freshly released main so the next beta computes from the stable tag.
+  # dev is a disposable beta branch: all real work reaches main via feature PRs,
+  # so this force-push is intentional and discards any dev-only commits. Runs only
+  # when a stable release was actually cut (released == 'true').
+  sync-dev:
+    name: Reset dev to main
+    runs-on: ubuntu-latest
+    needs: release
+    if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
+
+    steps:
+      # ref: main + fetch-depth: 0 pulls the latest origin/main, which already
+      # includes the release job's version-bump commit + tag (this job `needs`
+      # it), so HEAD is the released commit.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Force dev to the released main
+        run: git push origin HEAD:dev --force
