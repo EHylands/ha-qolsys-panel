@@ -6,8 +6,26 @@ name: Build
 # Stable-vs-beta is driven by the per-branch config in pyproject.toml
 # ([tool.semantic_release.branches.*]). semantic-release bumps both
 # pyproject.toml and custom_components/qolsys_panel/manifest.json.
+# The qolsys-controller pin in the manifest is also channel-driven: a stable
+# release pins the latest FINAL controller, a beta pins the latest controller
+# incl. pre-releases (see the "Pin qolsys-controller for channel" step below).
+#
+# Normally the bump level comes from the conventional commits since the last tag
+# (feat -> minor, fix/perf -> patch). The `bump` input forces a level instead:
+# use it to cut a release that only ships a new qolsys-controller version, which
+# otherwise produces no release-triggering commit.
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: "Force a release level (use for a controller-only bump)"
+        type: choice
+        default: auto
+        options:
+          - auto
+          - patch
+          - minor
+          - major
 
 permissions:
   contents: write
@@ -60,6 +78,27 @@ jobs:
       - name: Install semantic-release
         run: python -m pip install python-semantic-release
 
+      # Pin the controller version this channel ships: latest FINAL from main
+      # (stable), latest incl. PRE-RELEASES from dev (beta). Resolved with pip's
+      # own resolver (--dry-run --report, no install) so it matches exactly what
+      # Home Assistant installs on a user's box. `>=0a0` names a pre-release,
+      # pip's idiom for allowing pre-releases of just this package.
+      #
+      # The edit is left UNCOMMITTED: semantic-release rewrites manifest.json's
+      # `version` and `git add`s the whole file, so this requirements change
+      # rides into the same release commit. If no release is cut, the BEFORE !=
+      # AFTER guard below skips the push and this edit is discarded.
+      - name: Pin qolsys-controller for channel
+        run: |
+          python -m pip install --quiet --upgrade pip
+          if [ "$GITHUB_REF_NAME" = "main" ]; then
+            QC="qolsys-controller"
+          else
+            QC="qolsys-controller>=0a0"
+          fi
+          python -m pip install --quiet --dry-run --report /tmp/qc.json "$QC"
+          python -c 'import json,re,sys;rep=json.load(open(sys.argv[1]));v=next(p["metadata"]["version"] for p in rep["install"] if p["metadata"]["name"].lower()=="qolsys-controller");pth="custom_components/qolsys_panel/manifest.json";t=open(pth).read();open(pth,"w").write(re.sub(r"qolsys-controller==[0-9A-Za-z.+!_-]+","qolsys-controller=="+v,t));print("Pinned qolsys-controller=="+v)' /tmp/qc.json
+
       # GITHUB_TOKEN is enough here: main/dev are not protected, so it can push
       # the version-bump commit + tag and create the GitHub release. If branch
       # protection with required status checks is ever added, that push will be
@@ -70,9 +109,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # 'auto' lets conventional commits decide the bump; any other choice
+          # forces that level so a controller-only release can be cut even with
+          # no release-triggering commit. On dev the per-branch prerelease config
+          # still turns a forced level into the next beta.
+          FORCE=""
+          if [ "${{ inputs.bump }}" != "auto" ]; then
+            FORCE="--${{ inputs.bump }}"
+          fi
           # A changed HEAD means a new version was cut.
           BEFORE="$(git rev-parse HEAD)"
-          semantic-release version
+          semantic-release version $FORCE
           AFTER="$(git rev-parse HEAD)"
           if [ "$BEFORE" != "$AFTER" ]; then
             git push --follow-tags
@@ -82,37 +129,3 @@ jobs:
             echo "No new release; nothing to do."
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
-
-  # Stage 3 — back-merge. After a STABLE release on main, sync dev to main so
-  # dev's baseline stays current and the next beta computes the right version.
-  # Replaces the old always-on sync-main-to-dev.yml. Fast-forwards when
-  # possible; otherwise merges; fails loudly on conflict (never force-pushes).
-  sync-dev:
-    name: Back-merge main → dev
-    runs-on: ubuntu-latest
-    needs: release
-    if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
-
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Merge main into dev
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git fetch origin main dev
-          git checkout -B dev origin/dev
-          if git merge --ff-only origin/main; then
-            echo "Fast-forwarded dev to main."
-          elif git merge --no-ff --no-edit origin/main; then
-            echo "Merged main into dev with a merge commit."
-          else
-            git merge --abort || true
-            echo "::error::Back-merge of main into dev hit a conflict. Resolve manually: git checkout dev && git merge main && git push."
-            exit 1
-          fi
-          git push origin HEAD:dev

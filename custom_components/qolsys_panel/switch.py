@@ -44,10 +44,14 @@ async def async_setup_entry(
         switch_entry_delay = PartitionSwitch_EntryDelay(
             QolsysPanel, partition.id, unique_id
         )
+        switch_force_arm = PartitionSwitch_ForceArm(
+            QolsysPanel, partition.id, unique_id
+        )
         entities.append(switch_exit_sounds)
         entities.append(switch_arm_instant_stay)
         entities.append(switch_silent_disarming)
         entities.append(switch_entry_delay)
+        entities.append(switch_force_arm)
 
     # Append Automation Device Outlets
     for device in QolsysPanel.state.automation_devices:
@@ -163,6 +167,39 @@ class PartitionSwitch_EntryDelay(QolsysPartitionEntity, SwitchEntity, RestoreEnt
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the switch off."""
         self._partition.command_arm_entry_delay = False
+
+
+class PartitionSwitch_ForceArm(QolsysPartitionEntity, SwitchEntity):
+    """A switch entity for partition force arm.
+
+    Force arm is a one-shot flag: when on, the next arm command bypasses open
+    zones even when the panel's auto-bypass setting is disabled. The library
+    resets the flag to off after a successful arm, so (unlike the other
+    partition switches) this switch is not a persisted preference and does not
+    restore its state across restarts.
+    """
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, partition_id: str, unique_id: str
+    ) -> None:
+        """Set up a switch entity for a partition force arm."""
+        super().__init__(QolsysPanel, partition_id, unique_id)
+        self._attr_unique_id = f"{self._partition_unique_id}_command_force_arm"
+        self._attr_name = "Force Arm"
+        self._attr_device_class = SwitchDeviceClass.SWITCH
+
+    @property
+    def is_on(self) -> bool:
+        """Return if the switch is on."""
+        return self._partition.command_force_arm
+
+    def turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on."""
+        self._partition.command_force_arm = True
+
+    def turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off."""
+        self._partition.command_force_arm = False
 
 
 class PartitionSwitch_ArmStayInstant(
