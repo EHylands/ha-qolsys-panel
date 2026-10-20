@@ -95,21 +95,33 @@ jobs:
         run: |
           python -m pip install --quiet --upgrade pip
           if [ "$GITHUB_REF_NAME" = "main" ]; then
-            QC="qolsys-controller"
+            QC="qolsys-controller"; CHANNEL="stable"
           else
-            QC="qolsys-controller>=0a0"
+            QC="qolsys-controller>=0a0"; CHANNEL="beta"
           fi
           python -m pip install --quiet --dry-run --report /tmp/qc.json "$QC"
           NEW="$(python -c 'import json;rep=json.load(open("/tmp/qc.json"));print(next(p["metadata"]["version"] for p in rep["install"] if p["metadata"]["name"].lower()=="qolsys-controller"))')"
           CUR="$(python -c 'import json;print(next(r.split("==",1)[1] for r in json.load(open("custom_components/qolsys_panel/manifest.json"))["requirements"] if r.startswith("qolsys-controller==")))')"
+          # Surface the result on the run's Summary page (GITHUB_STEP_SUMMARY).
+          echo "### qolsys-controller ($CHANNEL channel)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "$NEW" = "$CUR" ]; then
             echo "qolsys-controller already at $CUR; no bump."
+            echo "ℹ️ Already at \`$CUR\` — no change." >> "$GITHUB_STEP_SUMMARY"
           else
             NEW="$NEW" python -c 'import json,re,os;v=os.environ["NEW"];p="custom_components/qolsys_panel/manifest.json";t=open(p).read();open(p,"w").write(re.sub(r"qolsys-controller==[0-9A-Za-z.+!_-]+","qolsys-controller=="+v,t))'
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "fix: bump qolsys-controller to $NEW" custom_components/qolsys_panel/manifest.json
             echo "Bumped qolsys-controller $CUR -> $NEW"
+            {
+              echo "| | version |"
+              echo "|---|---|"
+              echo "| before | \`$CUR\` |"
+              echo "| after | \`$NEW\` |"
+              echo ""
+              echo "✅ Bumped — committed as \`fix: bump qolsys-controller to $NEW\`."
+            } >> "$GITHUB_STEP_SUMMARY"
           fi
 
       # GITHUB_TOKEN is enough here: main/dev are not protected, so it can push
