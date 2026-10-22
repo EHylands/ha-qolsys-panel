@@ -177,16 +177,31 @@ jobs:
             echo "No qolsys-controller release notes for $QC_TAG; leaving release notes unchanged."
             exit 0
           fi
+          # Keep only the categorized change sections (### ...): drop the
+          # controller's own `## vX` title + license line and its trailing
+          # "Detailed Changes" compare link, so the library's changes read as
+          # first-class entries inline in our notes (not a boxed metadata blob).
+          CLEAN="$(printf '%s\n' "$NOTES" | awk '
+            /^### /{p=1}
+            /^---[[:space:]]*$/{if(p)exit}
+            /^\*\*Detailed Changes\*\*/{if(p)exit}
+            p{print}
+          ')"
+          # Fallback: if the controller release had no ### sections, use the body
+          # minus its title/license lines rather than showing nothing.
+          if [ -z "$CLEAN" ]; then
+            CLEAN="$(printf '%s\n' "$NOTES" | sed -E '/^## v[0-9]/d; /^_This release is published under.*_$/d; /./,$!d')"
+          fi
           CUR_BODY="$(gh release view "$TAG" --json body --jq .body)"
           {
             printf '%s\n\n' "$CUR_BODY"
             printf -- '---\n\n'
-            printf '<details>\n<summary>📦 Bundled <b>qolsys-controller %s</b> — changelog</summary>\n\n' "$QC_VER"
-            printf '%s\n\n' "$NOTES"
-            printf '</details>\n'
+            printf '## 📦 Bundled qolsys-controller %s\n\n' "$QC_VER"
+            printf '_Library changes shipped in this release ([full changelog](https://github.com/EHylands/QolsysController/releases/tag/%s)):_\n\n' "$QC_TAG"
+            printf '%s\n' "$CLEAN"
           } > release-notes.md
           gh release edit "$TAG" --notes-file release-notes.md
-          echo "Appended qolsys-controller $QC_TAG changelog to release $TAG."
+          echo "Inlined qolsys-controller $QC_TAG changes into release $TAG."
 
   # Stage 3 — rebuild the beta channel. After a STABLE release on main, reset the
   # throwaway `dev` beta sandbox to the freshly released main and re-merge the
