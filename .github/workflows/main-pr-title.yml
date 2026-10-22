@@ -1,0 +1,74 @@
+name: MAIN - Lint PR Title
+
+# main squash-merges, so a PR's TITLE becomes the squashed commit subject on
+# main — the exact string semantic-release parses for the version bump and the
+# CHANGELOG line. A title that isn't a conventional commit silently produces no
+# changelog entry (and, for feat/fix/perf, no release). This check fails the PR
+# (with a sticky explainer comment) until the title is conventional, and clears
+# the comment once it's fixed.
+#
+# pull_request_target with NO checkout: we only read the title from the event
+# payload and call the GitHub API, so no PR code is ever fetched or executed.
+on:
+  pull_request_target:
+    types: [opened, edited, reopened]
+    branches: [main]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  lint-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      TITLE: ${{ github.event.pull_request.title }}
+      MARKER: "<!-- pr-title-lint -->"
+    steps:
+      - name: Check conventional-commit prefix
+        run: |
+          # Types that map to a CHANGELOG section (feat/fix/perf also bump the
+          # version). Mirrors the conventional parser + the templates/ emoji map.
+          # Accepts an optional (scope) and a breaking `!`, then `: <description>`.
+          pattern='^(feat|fix|perf|docs|style|refactor|test|build|ci|chore)(\([^)]+\))?!?: .+'
+
+          # Locate any prior sticky lint comment (by hidden marker) so we neither
+          # double-post nor leave a stale failure note after the title is fixed.
+          existing_url="$(gh pr view "$PR" --repo "$REPO" --json comments \
+            --jq "[.comments[] | select(.body | contains(\"$MARKER\")) | .url] | first // empty")"
+
+          if printf '%s' "$TITLE" | grep -qE "$pattern"; then
+            echo "✓ Valid conventional-commit title: $TITLE"
+            if [ -n "$existing_url" ]; then
+              gh api -X DELETE "repos/$REPO/issues/comments/${existing_url##*issuecomment-}" >/dev/null 2>&1 \
+                && echo "Cleared stale lint comment." || true
+            fi
+            exit 0
+          fi
+
+          echo "::error title=Invalid PR title::'$TITLE' is not a conventional commit"
+
+          cat > pr-title-lint.md <<'EOF'
+          <!-- pr-title-lint -->
+          🏷️ **This PR's title isn't a conventional commit.**
+
+          `main` squash-merges, so the **PR title becomes the commit on `main`** that drives the version bump and the CHANGELOG entry. Please retitle it as:
+
+          ```
+          <type>(optional scope): short description
+          ```
+
+          Allowed types: `feat` `fix` `perf` `docs` `style` `refactor` `test` `build` `ci` `chore`.
+          `feat` → minor, `fix` / `perf` → patch; add `!` (e.g. `feat!:`) or a `BREAKING CHANGE:` footer for a major bump. The other types merge with no release.
+
+          Examples: `fix: lock state never reported on IQ Panel 2` · `feat(climate): add z-wave thermostat operating state`
+          EOF
+
+          # Sticky: only post if we haven't already (avoids spam on each edit).
+          if [ -z "$existing_url" ]; then
+            gh pr comment "$PR" --repo "$REPO" --body-file pr-title-lint.md
+          fi
+          exit 1

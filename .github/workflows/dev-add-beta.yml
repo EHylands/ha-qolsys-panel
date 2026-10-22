@@ -1,17 +1,22 @@
-name: Beta label → merge into dev
+name: DEV - Beta Label - Add
 
 # Label-driven beta track: apply the `beta` label to a PR and its head branch is
 # merged into `dev` (the throwaway beta sandbox), so the next Build dispatched
 # from `dev` includes it. Automates the "merge the features you want to test into
-# dev" step.
+# dev" step. The inverse is dev-del-beta.yml: REMOVING the `beta` label from an
+# open PR rebuilds dev without it.
+#
+# This merge is INCREMENTAL — it merges just this PR onto the current dev. Removal
+# can't be incremental (you can't cleanly un-merge once other betas sit on top),
+# so dev-del-beta.yml does a full reset + re-merge of the remaining betas instead.
 #
 # Applying the label IS the authorization gate: only users with triage+ can label
 # a PR, so only trusted users can push code into dev this way. That is why
 # pull_request_target (which exposes push-capable secrets) is safe here — we
 # never execute the PR's code, we only merge its commits into dev and push.
 #
-# Rebuilding dev (git reset --hard origin/main) drops previously merged features;
-# re-apply the `beta` label to merge them in again.
+# Rebuilding dev (dev-rebuild.yml) drops previously merged features and re-merges
+# the open `beta` PRs; re-apply the `beta` label to put a dropped one back.
 on:
   pull_request_target:
     types: [labeled]
@@ -21,7 +26,7 @@ permissions:
   pull-requests: write
 
 jobs:
-  beta-to-dev:
+  dev-add-beta:
     name: Merge labeled PR into dev
     runs-on: ubuntu-latest
     # Act only when the label that was just added is `beta`.

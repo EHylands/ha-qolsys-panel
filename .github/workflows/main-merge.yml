@@ -1,0 +1,57 @@
+name: MAIN - On Merge
+
+# One place for everything that must happen when a feature PR is MERGED into main
+# (feature → main is how features ship in this model). On that event:
+#   1. Remove the now-obsolete `beta` label from the merged PR.
+#   2. (No action — merging a PR already closes it on GitHub.)
+#   3. Reset the throwaway `dev` beta sandbox to the new main, and
+#   4. re-merge every still-open `beta`-labeled PR onto it.
+# Steps 3-4 are delegated to dev-rebuild.yml (also runnable manually and reused by
+# publish.yml after a stable release) so the reset logic lives in one place.
+#
+# pull_request_target runs in the base-repo context with a write-capable token so
+# this works for fork PRs too. Safe here: no PR code is ever checked out or
+# executed — the label step only calls the GitHub API, and dev-rebuild merges PR
+# *commits* into dev without running them.
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  # Step 1 — drop the obsolete `beta` label from the shipped PR, keeping
+  # `gh pr list --label beta` (what dev-rebuild reads) accurate. (Step 2, "close
+  # the PR", needs nothing: the merge closed it.) Only when the PR actually MERGED
+  # and still carries the label. Uses GITHUB_TOKEN with just pull-requests: write.
+  remove-beta-label:
+    name: Drop beta label
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true && contains(github.event.pull_request.labels.*.name, 'beta')
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Remove `beta` label
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr edit "$PR" --repo "$REPO" --remove-label beta
+          echo "Removed 'beta' label from merged PR #$PR."
+
+  # Steps 3-4 — rebuild the dev beta sandbox on top of the new main (reset dev to
+  # main, then re-merge every open `beta` PR). Runs on EVERY merge to main — even a
+  # non-beta feature — because main moved and dev must be rebased onto it. The
+  # just-merged PR is now closed, so dev-rebuild's `--state open` filter excludes it
+  # regardless of its label, which is why ordering vs. the label removal above does
+  # not matter. Mirrors publish.yml's caller block (job-level permissions +
+  # secrets: inherit); dev-rebuild.yml's own `concurrency: reset-dev` serializes
+  # this against the post-release rebuild so two dev force-pushes never race.
+  dev-rebuild:
+    name: Rebuild dev (reset + re-merge betas)
+    if: github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/dev-rebuild.yml
+    secrets: inherit

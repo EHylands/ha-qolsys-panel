@@ -1,0 +1,37 @@
+name: DEV - Block PRs
+
+# `dev` is a throwaway beta sandbox that the machinery resets and force-pushes
+# (dev-rebuild.yml). Nobody should ever open a PR *into* `dev`: a rebuild would
+# reset the branch out from under it, producing bogus diffs/conflicts. Features
+# ship via `feature → main`; to test a feature as a beta, label its main PR
+# `beta` (dev-add-beta.yml merges it into dev for you). So any PR whose BASE is
+# `dev` is closed automatically with an explanatory comment.
+#
+# pull_request_target (base-repo context, write-capable token) so fork PRs can be
+# closed too. Safe: no PR code is checked out or executed — we only call the API.
+#
+# Intentionally auto-close, NOT a branch rule: GitHub rulesets can't block
+# "opening a PR against this branch", and required status checks on dev would
+# also reject the release bot's version-bump push. Auto-close is the right tool.
+on:
+  pull_request_target:
+    branches: [dev]
+    types: [opened, reopened, edited]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  block:
+    name: Reject PR into dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Comment and close
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body \
+            "🚫 PRs into \`dev\` are not allowed. \`dev\` is a throwaway beta sandbox that gets reset and force-pushed, so a PR targeting it would break on the next rebuild. Open your PR against \`main\` instead, and add the \`beta\` label to test it as a beta in \`dev\`. Closing automatically."
+          gh pr close "$PR" --repo "$REPO"

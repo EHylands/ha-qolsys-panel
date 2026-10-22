@@ -1,32 +1,26 @@
 name: CI
 
 # Validations + lint + tests. Runs on every push and PR to any branch, and is
-# reusable (workflow_call) so the release workflow (release.yml) can gate a
-# release on these same checks.
+# reusable (workflow_call) so the release workflow (publish.yml) can gate a
+# release on these exact same checks without duplicating the steps.
+#
+# PR-title linting lives in main-pr-title.yml, not here: main squash-merges with
+# the PR title as the commit subject (that string drives the version bump and the
+# CHANGELOG entry), so the title is what must be a conventional commit — there is
+# no per-commit commitlint step.
 on:
   push:
   pull_request:
   workflow_call:
 
+# Cancel superseded runs of the same event on the same ref. push and
+# pull_request are separate events, so a branch with an open PR still runs CI
+# once per event (standard GitHub behavior) — only re-runs of each are culled.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}-${{ github.event_name }}
   cancel-in-progress: true
 
 jobs:
-  # Commit-message lint only makes sense for real pushes/PRs, not when this
-  # workflow is reused by release.yml (workflow_dispatch). Nothing depends on
-  # it, so skipping it there doesn't block the release gate.
-  commitlint:
-    name: Commit Message Lint
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push' || github.event_name == 'pull_request'
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - name: Validate commit messages
-        uses: wagoid/commitlint-github-action@v6
-
   hassfest:
     name: Hassfest Validation
     runs-on: ubuntu-latest
@@ -67,8 +61,11 @@ jobs:
             QC="qolsys-controller>=0a0"
           fi
           pip install ruff mypy pytest-homeassistant-custom-component==0.13.367 "$QC"
+      # `--output-format=github` emits ::error workflow commands, so lint
+      # violations show as inline annotations on the PR diff (and the run), not
+      # just buried in the step log. Silent on success.
       - name: Ruff check
-        run: ruff check .
+        run: ruff check --output-format=github .
       - name: Ruff format check
         run: ruff format --check .
       - name: MyPy check
@@ -93,6 +90,31 @@ jobs:
           else
             QC="qolsys-controller>=0a0"
           fi
-          pip install pytest-homeassistant-custom-component==0.13.367 "$QC" mypy
+          pip install pytest-homeassistant-custom-component==0.13.367 "$QC" mypy pytest-md-report
+      # Run the suite and, via pytest-md-report, emit a plain-markdown per-file
+      # results table to a file (color=never → no LaTeX, verbose=0 → one row per
+      # test file + a TOTAL). The table goes to the file only; normal pytest
+      # output still streams to the step log.
       - name: Pytest
-        run: pytest
+        run: >
+          pytest
+          --md-report
+          --md-report-flavor github
+          --md-report-color never
+          --md-report-verbose 0
+          --md-report-output pytest-md-report.md
+      # Surface that table on the run's Summary page. `always()` so it shows even
+      # when the suite fails (the report is written regardless, with failure
+      # counts); the guard avoids erroring if a hard collection crash wrote none.
+      - name: Publish test summary
+        if: always()
+        run: |
+          {
+            echo "## 🧪 Pytest results"
+            echo
+            if [ -f pytest-md-report.md ]; then
+              cat pytest-md-report.md
+            else
+              echo "_No report produced — pytest failed before the run finished._"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"

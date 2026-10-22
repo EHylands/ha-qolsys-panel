@@ -1,0 +1,49 @@
+name: DEV - Beta Label - Delete
+
+# Inverse of dev-add-beta.yml. When the `beta` label is REMOVED from a still-open
+# PR, that feature should leave the `dev` beta sandbox. You can't surgically
+# un-merge one PR once other betas sit on top of it, so instead we reset dev to
+# main and re-merge the REMAINING open `beta` PRs — the un-labeled PR drops out
+# because it's no longer in `gh pr list --label beta`. That reset-and-resync is
+# exactly what dev-rebuild.yml does, so we just call it.
+#
+# IMPORTANT guard: main-merge.yml also removes the `beta` label (when a PR
+# merges), which fires `unlabeled` too. We must NOT rebuild again for that — the
+# merge path already rebuilds dev. So we act only when the PR is still OPEN, i.e.
+# a genuine manual label removal on an in-flight PR; a removal on a merged/closed
+# PR is skipped.
+on:
+  pull_request_target:
+    types: [unlabeled]
+
+jobs:
+  # Courtesy note on the PR that the `beta` label was removed and dev is being
+  # rebuilt without it. Separate job because the rebuild job below is a reusable
+  # workflow call and can't carry steps of its own.
+  notify:
+    name: Comment on PR
+    runs-on: ubuntu-latest
+    if: github.event.label.name == 'beta' && github.event.pull_request.state == 'open'
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Comment
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          gh pr comment "$PR" --repo "$REPO" --body \
+            "🧹 \`beta\` label removed — \`dev\` is being rebuilt from \`main\` without this PR (the other open \`beta\` PRs are re-merged). Re-add the \`beta\` label to put it back."
+
+  # Reset dev to main + re-merge the remaining open `beta` PRs. Shares
+  # dev-rebuild.yml's `concurrency: reset-dev` so it can't race another dev
+  # force-push (e.g. a merge-to-main rebuild or a post-release rebuild).
+  dev-rebuild:
+    name: Rebuild dev without this PR
+    if: github.event.label.name == 'beta' && github.event.pull_request.state == 'open'
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/dev-rebuild.yml
+    secrets: inherit

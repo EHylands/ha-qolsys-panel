@@ -1,0 +1,77 @@
+name: DEV - Rebuild (reset + re-merge betas)
+
+# Rebuilds the throwaway `dev` beta sandbox from scratch: resets it to `main`,
+# then re-merges EVERY open PR still labeled `beta` so the next beta Build from
+# `dev` contains the current in-flight feature set on top of the latest stable.
+# Runs two ways:
+#   - Manually (workflow_dispatch): "Run workflow" button in the Actions tab.
+#   - Automatically (workflow_call): from publish.yml after a STABLE release on
+#     main, and from main-merge.yml on every merge to main, so the beta track is
+#     always rebased onto the latest main.
+#
+# Force-pushes dev (throwaway by design). A PR that no longer merges cleanly is
+# SKIPPED with a comment (not fatal) so one stale branch can't block the rebuild.
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+# Share the reset-dev concurrency group so a reset and a rebuild can never race
+# two force-pushes onto dev.
+concurrency:
+  group: reset-dev
+  cancel-in-progress: false
+
+jobs:
+  dev-rebuild:
+    name: Reset dev to main + re-merge beta PRs
+    runs-on: ubuntu-latest
+    steps:
+      # main/dev are unprotected here, so GITHUB_TOKEN can force-push dev
+      # directly. If branch protection is ever added to dev, switch this to a PAT
+      # with a ruleset bypass actor (GITHUB_TOKEN can't bypass its own repo's
+      # protection).
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Rebuild dev from main + open `beta` PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Build the new dev locally, starting from a clean main baseline (HEAD
+          # is main, including the version-bump commit + tag from a release).
+          git checkout -B dev HEAD
+
+          merged=0
+          conflicted=""
+          for pr in $(gh pr list --state open --label beta --json number --jq '.[].number'); do
+            echo "::group::Merging PR #$pr into dev"
+            git fetch origin "refs/pull/$pr/head"
+            # refs/pull/<n>/head resolves the PR tip even for forks.
+            if git merge --no-ff --no-edit FETCH_HEAD; then
+              merged=$((merged + 1))
+              echo "Merged PR #$pr."
+            else
+              git merge --abort || true
+              conflicted="$conflicted #$pr"
+              gh pr comment "$pr" --body \
+                "⚠️ Skipped during \`dev\` rebuild — merge conflict against the current \`dev\`. Rebase the branch onto \`main\`, then re-run **DEV - Rebuild** (or remove and re-apply the \`beta\` label)."
+              echo "Conflict on PR #$pr — skipped."
+            fi
+            echo "::endgroup::"
+          done
+
+          # One force-push publishes the rebuilt dev. --force-with-lease guards
+          # against a concurrent dev update between checkout and push.
+          git fetch origin dev
+          git push --force-with-lease=dev origin dev:refs/heads/dev
+          echo "Rebuilt dev: ${merged} beta PR(s) merged onto main.${conflicted:+ Conflicts skipped:${conflicted}}"

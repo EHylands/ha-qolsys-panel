@@ -1,4 +1,4 @@
-name: Block dev → main PRs
+name: MAIN - Block PR from dev
 
 # This project ships features via `feature → main`; `dev` is a throwaway beta
 # sandbox that is never promoted. Any pull request from `dev` into `main` is

@@ -6,16 +6,23 @@ name: Build
 # Stable-vs-beta is driven by the per-branch config in pyproject.toml
 # ([tool.semantic_release.branches.*]). semantic-release bumps both
 # pyproject.toml and custom_components/qolsys_panel/manifest.json.
+#
 # The qolsys-controller pin in the manifest is also channel-driven: a stable
 # release pins the latest FINAL controller, a beta pins the latest controller
 # incl. pre-releases (see the "Update qolsys-controller" step below). When that
 # resolves a version newer than the current pin, the step commits it as a `fix:`
-# so the controller bump is a release-triggering commit on its own.
+# so the controller bump is a release-triggering commit on its own, AND that
+# controller version's changelog is appended to this release's GitHub notes (see
+# the "Append qolsys-controller changelog" step) so users can see what changed in
+# the bundled library.
 #
 # The bump level comes from the conventional commits since the last tag
 # (feat -> minor, fix/perf -> patch) — including the controller `fix:` above.
 # The `bump` input forces a level instead, e.g. to cut a release with no
 # triggering commit at all.
+#
+# After a STABLE release on main, the throwaway `dev` beta sandbox is rebuilt
+# (reset to the new main + re-merge the open `beta` PRs) via dev-rebuild.yml.
 on:
   workflow_dispatch:
     inputs:
@@ -90,38 +97,31 @@ jobs:
       # Committing it as a `fix:` makes the controller bump a release-triggering
       # commit on its own: semantic-release (next step) then cuts a patch (a beta
       # on dev) with no `bump` input needed. Skipped when already current, so a
-      # dispatch with nothing else to ship is a genuine no-op.
+      # dispatch with nothing else to ship is a genuine no-op. The outputs below
+      # drive the "Append qolsys-controller changelog" step.
       - name: Update qolsys-controller to latest for channel
+        id: qc
         run: |
           python -m pip install --quiet --upgrade pip
           if [ "$GITHUB_REF_NAME" = "main" ]; then
-            QC="qolsys-controller"; CHANNEL="stable"
+            QC="qolsys-controller"
           else
-            QC="qolsys-controller>=0a0"; CHANNEL="beta"
+            QC="qolsys-controller>=0a0"
           fi
           python -m pip install --quiet --dry-run --report /tmp/qc.json "$QC"
           NEW="$(python -c 'import json;rep=json.load(open("/tmp/qc.json"));print(next(p["metadata"]["version"] for p in rep["install"] if p["metadata"]["name"].lower()=="qolsys-controller"))')"
           CUR="$(python -c 'import json;print(next(r.split("==",1)[1] for r in json.load(open("custom_components/qolsys_panel/manifest.json"))["requirements"] if r.startswith("qolsys-controller==")))')"
-          # Surface the result on the run's Summary page (GITHUB_STEP_SUMMARY).
-          echo "### qolsys-controller ($CHANNEL channel)" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
           if [ "$NEW" = "$CUR" ]; then
             echo "qolsys-controller already at $CUR; no bump."
-            echo "ℹ️ Already at \`$CUR\` — no change." >> "$GITHUB_STEP_SUMMARY"
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
           else
             NEW="$NEW" python -c 'import json,re,os;v=os.environ["NEW"];p="custom_components/qolsys_panel/manifest.json";t=open(p).read();open(p,"w").write(re.sub(r"qolsys-controller==[0-9A-Za-z.+!_-]+","qolsys-controller=="+v,t))'
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
             git commit -m "fix: bump qolsys-controller to $NEW" custom_components/qolsys_panel/manifest.json
             echo "Bumped qolsys-controller $CUR -> $NEW"
-            {
-              echo "| | version |"
-              echo "|---|---|"
-              echo "| before | \`$CUR\` |"
-              echo "| after | \`$NEW\` |"
-              echo ""
-              echo "✅ Bumped — committed as \`fix: bump qolsys-controller to $NEW\`."
-            } >> "$GITHUB_STEP_SUMMARY"
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+            echo "controller_version=$NEW" >> "$GITHUB_OUTPUT"
           fi
 
       # GITHUB_TOKEN is enough here: main/dev are not protected, so it can push
@@ -155,26 +155,52 @@ jobs:
             echo "released=false" >> "$GITHUB_OUTPUT"
           fi
 
-  # Stage 3 — restart the beta channel. After a STABLE release on main, reset dev
-  # to the freshly released main so the next beta computes from the stable tag.
-  # dev is a disposable beta branch: all real work reaches main via feature PRs,
-  # so this force-push is intentional and discards any dev-only commits. Runs only
-  # when a stable release was actually cut (released == 'true').
-  sync-dev:
-    name: Reset dev to main
-    runs-on: ubuntu-latest
+      # When this release bumped the bundled controller, append that controller
+      # version's GitHub release notes to THIS release's notes, so a reader of the
+      # integration release sees what changed in the library it now pins. Only
+      # runs when a release was actually cut AND the controller was bumped in it.
+      # The controller repo is public, so GITHUB_TOKEN can read its release; pip's
+      # resolved metadata.version matches the controller git tag verbatim (incl.
+      # `-beta.N`), so `v${QC_VER}` resolves directly. A missing controller
+      # release is non-fatal — we just leave our notes unchanged.
+      - name: Append qolsys-controller changelog to release notes
+        if: steps.release.outputs.released == 'true' && steps.qc.outputs.bumped == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.release.outputs.tag }}
+          QC_VER: ${{ steps.qc.outputs.controller_version }}
+        run: |
+          set -euo pipefail
+          QC_TAG="v${QC_VER}"
+          NOTES="$(gh release view "$QC_TAG" --repo EHylands/QolsysController --json body --jq .body 2>/dev/null || true)"
+          if [ -z "$NOTES" ]; then
+            echo "No qolsys-controller release notes for $QC_TAG; leaving release notes unchanged."
+            exit 0
+          fi
+          CUR_BODY="$(gh release view "$TAG" --json body --jq .body)"
+          {
+            printf '%s\n\n' "$CUR_BODY"
+            printf -- '---\n\n'
+            printf '<details>\n<summary>📦 Bundled <b>qolsys-controller %s</b> — changelog</summary>\n\n' "$QC_VER"
+            printf '%s\n\n' "$NOTES"
+            printf '</details>\n'
+          } > release-notes.md
+          gh release edit "$TAG" --notes-file release-notes.md
+          echo "Appended qolsys-controller $QC_TAG changelog to release $TAG."
+
+  # Stage 3 — rebuild the beta channel. After a STABLE release on main, reset the
+  # throwaway `dev` beta sandbox to the freshly released main and re-merge the
+  # still-open `beta` PRs so the beta track continues on top of the new stable tag
+  # (and the next beta computes the right version). The logic lives in
+  # dev-rebuild.yml so it is also runnable manually and reused by main-merge.yml;
+  # here we invoke it via workflow_call. Runs only when a stable release was
+  # actually cut (released == 'true').
+  dev-rebuild:
+    name: Rebuild dev (reset + re-merge betas)
     needs: release
     if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
-
-    steps:
-      # ref: main + fetch-depth: 0 pulls the latest origin/main, which already
-      # includes the release job's version-bump commit + tag (this job `needs`
-      # it), so HEAD is the released commit.
-      - uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Force dev to the released main
-        run: git push origin HEAD:dev --force
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/dev-rebuild.yml
+    secrets: inherit
