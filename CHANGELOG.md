@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v1.11.1 (2026-10-22)
+
+### 🐛 Bug Fixes
+
+- Bump qolsys-controller to 1.12.5
+  ([`9a9f984`](https://github.com/EHylands/ha-qolsys-panel/commit/9a9f9843e94214cb1caa904a014016ca50aadecb))
+
+### 🤖 Continuous Integration
+
+- Adopt qolsys-controller workflow process
+  ([`3804535`](https://github.com/EHylands/ha-qolsys-panel/commit/3804535fd9ce404ca0142a8f99c17f3ae1d4fd1f))
+
+- Commit qolsys-controller bump as a fix: to trigger releases
+  ([`7b6d64a`](https://github.com/EHylands/ha-qolsys-panel/commit/7b6d64aae4eb2f4c124fca91d093fe9ecfed1036))
+
+- Reset dev to main after a stable release
+  ([`b94b700`](https://github.com/EHylands/ha-qolsys-panel/commit/b94b700f98e49686023e251930e56eead0653928))
+
+- Surface qolsys-controller bump on the run summary
+  ([`f3031c3`](https://github.com/EHylands/ha-qolsys-panel/commit/f3031c3bcd6064ec5657f99ff393ed0485226b4d))
+
+
 ## v1.11.0 (2026-10-20)
 
 ### 🐛 Bug Fixes
