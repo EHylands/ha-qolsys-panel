@@ -227,6 +227,14 @@
       "camera_press": {
         "name": "Key Press"
       }
+    },
+    "event": {
+      "camera_motion": {
+        "name": "Motion"
+      },
+      "camera_doorbell": {
+        "name": "Doorbell"
+      }
     }
   },
   "services": {

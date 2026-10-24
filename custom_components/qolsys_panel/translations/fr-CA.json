@@ -227,6 +227,14 @@
       "camera_press": {
         "name": "Touche"
       }
+    },
+    "event": {
+      "camera_motion": {
+        "name": "Mouvement"
+      },
+      "camera_doorbell": {
+        "name": "Sonnette"
+      }
     }
   },
   "services": {
