@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.12.1-beta.1 (2026-10-24)
+
+### 🐛 Bug Fixes
+
+- Report RING event type for IP camera doorbell
+  ([`894f818`](https://github.com/EHylands/ha-qolsys-panel/commit/894f818a0bf22a5caff7bc516af25d403c8b65e7))
+
+
 ## v1.12.0 (2026-10-24)
 
 ### 🧹 Chores
