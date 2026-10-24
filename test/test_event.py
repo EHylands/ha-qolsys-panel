@@ -16,7 +16,11 @@ from custom_components.qolsys_panel.event import (
     QolsysIpCameraMotionEvent,
     async_setup_entry,
 )
-from homeassistant.components.event import EventDeviceClass, EventEntityStateAttribute
+from homeassistant.components.event import (
+    DoorbellEventType,
+    EventDeviceClass,
+    EventEntityStateAttribute,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 
@@ -171,7 +175,7 @@ _CAMERA_EVENT_CASES = [
         "_handle_press_event",
         QolsysNotification.CAMERA_PRESS_EVENT,
         EventDeviceClass.DOORBELL,
-        "pressed",
+        DoorbellEventType.RING,
         "_doorbell_event",
     ),
 ]
