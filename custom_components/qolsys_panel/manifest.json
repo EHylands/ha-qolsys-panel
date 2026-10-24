@@ -4,6 +4,9 @@
   "codeowners": [
     "@EHylands"
   ],
+  "categories": [
+    "security_safety.alarm_systems"
+  ],
   "config_flow": true,
   "dependencies": ["network","zeroconf"],
   "dhcp": [
