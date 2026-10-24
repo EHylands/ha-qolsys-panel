@@ -1,6 +1,7 @@
 # HA Qolsys Panel
 
 [![Build](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/publish.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/publish.yml)
+[![latest release](https://img.shields.io/github/v/release/EHylands/ha-qolsys-panel?logo=github&sort=semver)](https://github.com/EHylands/ha-qolsys-panel/releases)
 
 This is a HACS custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allowing local pairing and control via Home Assistant.
 

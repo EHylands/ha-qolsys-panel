@@ -9,7 +9,11 @@ from qolsys_controller.automation.service_central_scene import CentralSceneServi
 from qolsys_controller.enum_qolsys import QolsysNotification
 from qolsys_controller.observable import Event
 
-from homeassistant.components.event import EventDeviceClass, EventEntity
+from homeassistant.components.event import (
+    DoorbellEventType,
+    EventDeviceClass,
+    EventEntity,
+)
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -127,11 +131,7 @@ class AutomationDeviceCentralSceneEvent(QolsysAutomationDeviceEntity, EventEntit
 
 
 class QolsysIpCameraMotionEvent(QolsysIpCameraEntity, EventEntity):
-    """Event entity fired by an IP (doorbell) camera motion event.
-
-    Camera motion events are stateless pulses: each motion report from the
-    camera fires a ``motion`` event.
-    """
+    """Event entity fired by an IP (doorbell) camera motion event."""
 
     _attr_device_class = EventDeviceClass.MOTION
     _attr_event_types = ["motion"]
@@ -166,14 +166,10 @@ class QolsysIpCameraMotionEvent(QolsysIpCameraEntity, EventEntity):
 
 
 class QolsysIpCameraDoorbellEvent(QolsysIpCameraEntity, EventEntity):
-    """Event entity fired by an IP (doorbell) camera key-press event.
-
-    Camera press events are stateless pulses: each key press reported by the
-    camera fires a ``pressed`` event.
-    """
+    """Event entity fired by an IP (doorbell) camera key-press event."""
 
     _attr_device_class = EventDeviceClass.DOORBELL
-    _attr_event_types = ["pressed"]
+    _attr_event_types = [DoorbellEventType.RING]
     _attr_translation_key = "camera_doorbell"
 
     def __init__(
@@ -186,7 +182,7 @@ class QolsysIpCameraDoorbellEvent(QolsysIpCameraEntity, EventEntity):
     @callback
     def _handle_press_event(self, event: Event) -> None:
         """Fire the Home Assistant event when the camera reports a key press."""
-        self._trigger_event("pressed", event.data)
+        self._trigger_event(DoorbellEventType.RING, event.data)
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
