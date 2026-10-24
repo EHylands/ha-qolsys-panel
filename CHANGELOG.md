@@ -2,6 +2,28 @@
 
 <!-- version list -->
 
+## v1.12.0 (2026-10-24)
+
+### 🧹 Chores
+
+- Add Home Assistant categories to manifest
+  ([`dace5c0`](https://github.com/EHylands/ha-qolsys-panel/commit/dace5c036b9693b0be8ef610eb67adb0a04ba2ae))
+
+- Remove manifest.json categories for now
+  ([`73588b2`](https://github.com/EHylands/ha-qolsys-panel/commit/73588b23dc1eaeb64540a819862c7af22ee45d75))
+
+### 🤖 Continuous Integration
+
+- Inline bundled controller changelog, drop license line from release notes
+  ([`b52b464`](https://github.com/EHylands/ha-qolsys-panel/commit/b52b464056eda4980617816ad8cb278929d116fd))
+
+### ✨ Features
+
+- Add event entities for IP camera motion and doorbell events
+  ([#164](https://github.com/EHylands/ha-qolsys-panel/pull/164),
+  [`3f8d8da`](https://github.com/EHylands/ha-qolsys-panel/commit/3f8d8da900e0a807b579a01558c1cd254fb60341))
+
+
 ## v1.11.1 (2026-10-22)
 
 ### 🐛 Bug Fixes
