@@ -14,7 +14,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from .entity import QolsysAutomationDeviceEntity
+from .entity import QolsysAutomationDeviceEntity, QolsysIpCameraEntity
 from .types import QolsysPanelConfigEntry
 
 PARALLEL_UPDATES = 0
@@ -49,6 +49,15 @@ async def async_setup_entry(
                         unique_id,
                     )
                 )
+
+    # One motion and one doorbell (key-press) event entity per IP camera.
+    for camera in QolsysPanel.state.ip_cameras:
+        entities.append(
+            QolsysIpCameraMotionEvent(QolsysPanel, camera.camera_id, unique_id)
+        )
+        entities.append(
+            QolsysIpCameraDoorbellEvent(QolsysPanel, camera.camera_id, unique_id)
+        )
 
     async_add_entities(entities)
 
@@ -114,4 +123,82 @@ class AutomationDeviceCentralSceneEvent(QolsysAutomationDeviceEntity, EventEntit
         await super().async_will_remove_from_hass()
         self._autdev.unregister(
             QolsysNotification.AUTOMATION_CENTRAL_SCENE_EVENT, self._handle_scene_event
+        )
+
+
+class QolsysIpCameraMotionEvent(QolsysIpCameraEntity, EventEntity):
+    """Event entity fired by an IP (doorbell) camera motion event.
+
+    Camera motion events are stateless pulses: each motion report from the
+    camera fires a ``motion`` event.
+    """
+
+    _attr_device_class = EventDeviceClass.MOTION
+    _attr_event_types = ["motion"]
+    _attr_translation_key = "camera_motion"
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, camera_id: str, unique_id: str
+    ) -> None:
+        """Set up an IP camera motion event entity."""
+        super().__init__(QolsysPanel, camera_id, unique_id)
+        self._attr_unique_id = f"{self._camera_unique_id}_motion_event"
+
+    @callback
+    def _handle_motion_event(self, event: Event) -> None:
+        """Fire the Home Assistant event when the camera reports motion."""
+        self._trigger_event("motion", event.data)
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Observe the camera motion event."""
+        await super().async_added_to_hass()
+        self._camera.register(
+            QolsysNotification.CAMERA_MOTION_EVENT, self._handle_motion_event
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing the camera motion event."""
+        await super().async_will_remove_from_hass()
+        self._camera.unregister(
+            QolsysNotification.CAMERA_MOTION_EVENT, self._handle_motion_event
+        )
+
+
+class QolsysIpCameraDoorbellEvent(QolsysIpCameraEntity, EventEntity):
+    """Event entity fired by an IP (doorbell) camera key-press event.
+
+    Camera press events are stateless pulses: each key press reported by the
+    camera fires a ``pressed`` event.
+    """
+
+    _attr_device_class = EventDeviceClass.DOORBELL
+    _attr_event_types = ["pressed"]
+    _attr_translation_key = "camera_doorbell"
+
+    def __init__(
+        self, QolsysPanel: qolsys_controller, camera_id: str, unique_id: str
+    ) -> None:
+        """Set up an IP camera doorbell event entity."""
+        super().__init__(QolsysPanel, camera_id, unique_id)
+        self._attr_unique_id = f"{self._camera_unique_id}_doorbell_event"
+
+    @callback
+    def _handle_press_event(self, event: Event) -> None:
+        """Fire the Home Assistant event when the camera reports a key press."""
+        self._trigger_event("pressed", event.data)
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Observe the camera key-press event."""
+        await super().async_added_to_hass()
+        self._camera.register(
+            QolsysNotification.CAMERA_PRESS_EVENT, self._handle_press_event
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Stop observing the camera key-press event."""
+        await super().async_will_remove_from_hass()
+        self._camera.unregister(
+            QolsysNotification.CAMERA_PRESS_EVENT, self._handle_press_event
         )
