@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.12.0-beta.1 (2026-10-24)
+
+### 🤖 Continuous Integration
+
+- Inline bundled controller changelog, drop license line from release notes
+  ([`b52b464`](https://github.com/EHylands/ha-qolsys-panel/commit/b52b464056eda4980617816ad8cb278929d116fd))
+
+### ✨ Features
+
+- Add event entities for IP camera motion and doorbell events
+  ([`a2e678b`](https://github.com/EHylands/ha-qolsys-panel/commit/a2e678b55398d7c042fa439533f6cb1f85f59211))
+
+
 ## v1.11.1 (2026-10-22)
 
 ### 🐛 Bug Fixes
