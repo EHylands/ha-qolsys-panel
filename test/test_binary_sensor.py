@@ -210,8 +210,8 @@ def test_panel_sensor_unknown_key(controller: MagicMock) -> None:
 def test_zone_unreachable(controller: MagicMock) -> None:
     """Connectivity sensor is on unless the zone is unreachable."""
     sensor = ZoneSensor_Unreachable(controller, "1", UID)
-    cast(MagicMock, sensor._zone).is_trouble.side_effect = lambda: QolsysZone.is_trouble(
-        sensor._zone
+    cast(MagicMock, sensor._zone).is_trouble.side_effect = lambda: (
+        QolsysZone.is_trouble(sensor._zone)
     )
     sensor._zone.sensorstatus = ZoneStatus.CLOSED
     assert sensor.is_on is True
