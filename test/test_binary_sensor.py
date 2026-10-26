@@ -13,6 +13,7 @@ from qolsys_controller.enum_qolsys import (
     ZoneSensorType,
     ZoneStatus,
 )
+from qolsys_controller.zone import QolsysZone
 
 from custom_components.qolsys_panel.binary_sensor import (
     PANEL_SENSOR,
@@ -209,9 +210,12 @@ def test_panel_sensor_unknown_key(controller: MagicMock) -> None:
 def test_zone_unreachable(controller: MagicMock) -> None:
     """Connectivity sensor is on unless the zone is unreachable."""
     sensor = ZoneSensor_Unreachable(controller, "1", UID)
-    sensor._zone.sensorstatus = "Closed"
+    cast(MagicMock, sensor._zone).is_trouble.side_effect = lambda: (
+        QolsysZone.is_trouble(sensor._zone)
+    )
+    sensor._zone.sensorstatus = ZoneStatus.CLOSED
     assert sensor.is_on is True
-    sensor._zone.sensorstatus = "Unreachable"
+    sensor._zone.sensorstatus = ZoneStatus.UNREACHABLE
     assert sensor.is_on is False
 
 
@@ -255,6 +259,9 @@ def test_zones_sensor_is_on(
 ) -> None:
     """The main zone sensor is on for open/active states."""
     sensor = ZonesSensor(controller, "1", UID)
+    cast(MagicMock, sensor._zone).is_on.side_effect = lambda: QolsysZone.is_on(
+        sensor._zone
+    )
     sensor._zone.sensorstatus = status
     assert sensor.is_on is expected
 
