@@ -365,8 +365,8 @@ class ZoneSensor_Unreachable(QolsysZoneEntity, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool:
-        """Return if this zone is unreachable."""
-        return self._zone.is_trouble()
+        """Return True while this zone is reachable (CONNECTIVITY: on == connected)."""
+        return not self._zone.is_trouble()
 
 
 class ZoneSensor_Tamper(QolsysZoneEntity, BinarySensorEntity):
