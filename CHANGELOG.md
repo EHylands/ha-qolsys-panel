@@ -2,6 +2,26 @@
 
 <!-- version list -->
 
+## v1.12.2-beta.1 (2026-10-26)
+
+### 🐛 Bug Fixes
+
+- Add zone is_on and is_trouble properties based on zone status
+  ([`c0fbce7`](https://github.com/EHylands/ha-qolsys-panel/commit/c0fbce778f49b1e75d86e002f79b3a9b37ef8b4a))
+
+- Add zone is_on and is_trouble properties based on zone status
+  ([`92ddcc3`](https://github.com/EHylands/ha-qolsys-panel/commit/92ddcc39cec9c842cdbc8573caa34270460c0697))
+
+- Add zone is_on and is_trouble properties based on zone status
+  ([`aeb9623`](https://github.com/EHylands/ha-qolsys-panel/commit/aeb96230be36a6f3aa34c37974bb203386583e3a))
+
+- Add zone is_on and is_trouble properties based on zone status
+  ([`f83081b`](https://github.com/EHylands/ha-qolsys-panel/commit/f83081b643ee211af1403e77e0100e8fc733964f))
+
+- Bump qolsys-controller to 1.12.6-beta.1
+  ([`34c875d`](https://github.com/EHylands/ha-qolsys-panel/commit/34c875d0d715dc3eb72aa616ecae020df6d39306))
+
+
 ## v1.12.1 (2026-10-24)
 
 ### 🐛 Bug Fixes
