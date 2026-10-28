@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.12.2-beta.2 (2026-10-28)
+
+### 🐛 Bug Fixes
+
+- Attributes depreciation warining for climate entity
+  ([`a17166c`](https://github.com/EHylands/ha-qolsys-panel/commit/a17166c568648f7945a6cf7c1dd93803ddc7edb5))
+
+
 ## v1.12.2-beta.1 (2026-10-26)
 
 ### 🐛 Bug Fixes
