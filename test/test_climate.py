@@ -217,3 +217,108 @@ async def test_set_temperature_single(controller: MagicMock) -> None:
     cast(AsyncMock, climate._service.set_temperature).assert_awaited_once_with(
         72, QolsysHvacMode.HEAT
     )
+
+
+# --- Native temperature properties (HA 2026.11+) and their deprecated aliases ---
+
+
+def test_native_current_temperature(controller: MagicMock) -> None:
+    """native_current_temperature passes through to the backing service."""
+    climate = _climate(controller)
+    climate._service.current_temperature = 70
+    assert climate.native_current_temperature == 70
+
+
+@pytest.mark.parametrize(
+    ("hvac_mode", "expected_attr"),
+    [
+        (QolsysHvacMode.AUTO, None),
+        (QolsysHvacMode.HEAT_COOL, None),
+        (QolsysHvacMode.OFF, None),
+        (QolsysHvacMode.HEAT, "target_heat_temp"),
+        (QolsysHvacMode.COOL, "target_cool_temp"),
+        (QolsysHvacMode.FAN_ONLY, None),
+    ],
+)
+def test_native_target_temperature(
+    controller: MagicMock, hvac_mode, expected_attr
+) -> None:
+    """native_target_temperature depends on the HVAC mode."""
+    climate = _climate(controller)
+    climate._service.hvac_mode = hvac_mode
+    climate._service.target_heat_temp = 68
+    climate._service.target_cool_temp = 74
+
+    if expected_attr is None:
+        assert climate.native_target_temperature is None
+    else:
+        expected = getattr(climate._service, expected_attr)
+        assert climate.native_target_temperature == expected
+
+
+@pytest.mark.parametrize(
+    ("unit", "expected"),
+    [
+        (QolsysTemperatureUnit.CELSIUS, UnitOfTemperature.CELSIUS),
+        (QolsysTemperatureUnit.FAHRENHEIT, UnitOfTemperature.FAHRENHEIT),
+    ],
+)
+def test_native_temperature_unit(controller: MagicMock, unit, expected) -> None:
+    """native_temperature_unit maps the device unit."""
+    climate = _climate(controller)
+    climate._service.device_temperature_unit = unit
+    assert climate.native_temperature_unit == expected
+
+
+@pytest.mark.parametrize(
+    ("hvac_mode", "high", "low"),
+    [
+        (QolsysHvacMode.AUTO, 74, 68),
+        (QolsysHvacMode.HEAT_COOL, 74, 68),
+        (QolsysHvacMode.HEAT, None, None),
+    ],
+)
+def test_native_target_temperature_range(
+    controller: MagicMock, hvac_mode, high, low
+) -> None:
+    """The native high/low targets are exposed only in auto/heat-cool modes."""
+    climate = _climate(controller)
+    climate._service.hvac_mode = hvac_mode
+    climate._service.target_cool_temp = 74
+    climate._service.target_heat_temp = 68
+    assert climate.native_target_temperature_high == high
+    assert climate.native_target_temperature_low == low
+
+
+@pytest.mark.parametrize(
+    "hvac_mode",
+    [
+        QolsysHvacMode.AUTO,
+        QolsysHvacMode.HEAT_COOL,
+        QolsysHvacMode.OFF,
+        QolsysHvacMode.HEAT,
+        QolsysHvacMode.COOL,
+    ],
+)
+def test_deprecated_aliases_delegate_to_native(
+    controller: MagicMock, hvac_mode
+) -> None:
+    """The deprecated properties return exactly their native_ counterparts.
+
+    HA >= 2026.11 reads the native_ properties; HA <= 2026.10 reads these
+    aliases. Both paths must agree, so the aliases must stay in lock-step with
+    the native properties they delegate to. When the aliases are removed in HA
+    2027.11, this test goes with them.
+    """
+    climate = _climate(controller)
+    climate._service.hvac_mode = hvac_mode
+    climate._service.current_temperature = 70
+    climate._service.target_heat_temp = 68
+    climate._service.target_cool_temp = 74
+    climate._service.device_temperature_unit = QolsysTemperatureUnit.CELSIUS
+
+    assert climate.current_temperature == climate.native_current_temperature
+    assert climate.target_temperature == climate.native_target_temperature
+    assert climate.temperature_unit == climate.native_temperature_unit
+    assert climate.target_temperature_high == climate.native_target_temperature_high
+    assert climate.target_temperature_low == climate.native_target_temperature_low
