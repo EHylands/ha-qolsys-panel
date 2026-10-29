@@ -92,16 +92,27 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         if self._service.supports_turn_off():
             self._attr_supported_features |= ClimateEntityFeature.TURN_OFF
 
+    # HA >= 2026.11 reads the native_* properties below. The deprecated aliases
+    # (current_temperature, target_temperature, temperature_unit,
+    # target_temperature_high, target_temperature_low) keep the entity working on
+    # HA <= 2026.10, which has no native_* support. When both are present HA 2026.11+
+    # uses the native one and emits no deprecation warning. Remove the aliases once
+    # the minimum supported HA is 2026.11 (hard removal in HA 2027.11).
+
+    @property
+    def native_current_temperature(self) -> float | None:
+        return self._service.current_temperature
+
     @property
     def current_temperature(self) -> float | None:
-        return self._service.current_temperature
+        return self.native_current_temperature
 
     @property
     def current_humidity(self) -> float | None:
         return self._service.current_humidity
 
     @property
-    def target_temperature(self) -> float | None:
+    def native_target_temperature(self) -> float | None:
         # In AUTO mode, return None so dual sliders appear
         if self._service.hvac_mode in (QolsysHvacMode.AUTO, QolsysHvacMode.HEAT_COOL):
             return None
@@ -122,22 +133,38 @@ class AutomationDevice_Climate(QolsysAutomationDeviceEntity, ClimateEntity):
         return None
 
     @property
-    def temperature_unit(self) -> str:
+    def target_temperature(self) -> float | None:
+        return self.native_target_temperature
+
+    @property
+    def native_temperature_unit(self) -> str:
         if self._service.device_temperature_unit == QolsysTemperatureUnit.CELSIUS:
             return UnitOfTemperature.CELSIUS
         return UnitOfTemperature.FAHRENHEIT
 
     @property
-    def target_temperature_high(self) -> float | None:
+    def temperature_unit(self) -> str:
+        return self.native_temperature_unit
+
+    @property
+    def native_target_temperature_high(self) -> float | None:
         if self._service.hvac_mode in (QolsysHvacMode.AUTO, QolsysHvacMode.HEAT_COOL):
             return self._service.target_cool_temp
         return None
 
     @property
-    def target_temperature_low(self) -> float | None:
+    def target_temperature_high(self) -> float | None:
+        return self.native_target_temperature_high
+
+    @property
+    def native_target_temperature_low(self) -> float | None:
         if self._service.hvac_mode in (QolsysHvacMode.AUTO, QolsysHvacMode.HEAT_COOL):
             return self._service.target_heat_temp
         return None
+
+    @property
+    def target_temperature_low(self) -> float | None:
+        return self.native_target_temperature_low
 
     @property
     def fan_mode(self) -> str | None:
