@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.12.2 (2026-10-29)
+
+### 🐛 Bug Fixes
+
+- Add zone is_on and is_trouble properties based on zone status
+  ([#170](https://github.com/EHylands/ha-qolsys-panel/pull/170),
+  [`687ab08`](https://github.com/EHylands/ha-qolsys-panel/commit/687ab0843e81b0da45febb57977ea14ee15b9838))
+
+- Attributes depreciation warining for climate entity
+  ([#173](https://github.com/EHylands/ha-qolsys-panel/pull/173),
+  [`c32dbe4`](https://github.com/EHylands/ha-qolsys-panel/commit/c32dbe4a399c9920a6b65dce1aff6d320f8bb982))
+
+- Bump qolsys-controller to 1.12.6
+  ([`75bc14b`](https://github.com/EHylands/ha-qolsys-panel/commit/75bc14b6122a8689949bed80d59c496a36f7d8a3))
+
+
 ## v1.12.1 (2026-10-24)
 
 ### 🐛 Bug Fixes
