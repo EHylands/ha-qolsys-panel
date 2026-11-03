@@ -21,7 +21,7 @@ This integration is now part of the official HACS store.
 
 🔗 [How to add a custom repository in HACS](https://www.hacs.xyz/docs/faq/custom_repositories/)
 
-## ⚙️ Configuration
+## ⚙️ Pairing Configuration
 
 You can pair with your Qolsys Panel using one of the following two methods:
 
@@ -93,6 +93,50 @@ If pairing is not working, please verify the following:
 
 4. **Key-exchange server interface**: Review the Home Assistant logs when starting pairing. Confirm that the key-exchange server is listening on the expected IP address and network interface. If the wrong interface is selected, you can configure the default network adapter in:
    `Settings → System → Network → Network Adapter`
+
+## 🎛️ Integration Configuration Options
+
+After pairing, you can adjust the integration's behavior at any time from:
+`Settings → Devices & Services → Qolsys Panel → Configure`
+
+| Option | Description | Default |
+| --- | --- | --- |
+| **User Code required to Arm** | Require a user code to arm the panel. | `off` |
+| **User Code required to Disarm** | Require a user code to disarm the panel. | `on` |
+| **Enable Trigger Police Alarm** | Expose the panic/police alarm trigger. | `off` |
+| **Enable Trigger Auxiliary Alarm** | Expose the auxiliary (medical) alarm trigger. | `off` |
+| **Enable Trigger Fire Alarm** | Expose the fire alarm trigger. | `off` |
+| **Enable Peek In Picture** | Enable retrieval of Peek-In pictures from supported cameras. | `on` |
+| **Enable Motion Sensor Delay** | Apply a delay before a motion sensor returns to its cleared state. | `off` |
+| **Motion Sensor Delay (seconds)** | Delay, in seconds, applied when the motion sensor delay is enabled. | `310` |
+
+> Changing an option reloads the integration so the new settings take effect immediately.
+
+### 🔑 User Codes (`users.conf`)
+
+For **User Code required to Arm** and **User Code required to Disarm** to work as intended, you must add a `users.conf` file. The panel does not expose user codes over the API, so the integration needs this file to validate the code you enter when arming or disarming.
+
+Create the file at:
+
+```
+<config>/qolsys_panel/users.conf
+```
+
+(where `<config>` is your Home Assistant configuration directory — the one containing `configuration.yaml`).
+
+The file is a JSON array of users, where each entry maps a panel **user id** to its **user code**:
+
+```json
+[
+  { "id": 1, "user_code": "1234" },
+  { "id": 2, "user_code": "5678" }
+]
+```
+
+- `id` must match an existing user id in your Qolsys Panel's user database. If an id is not found on the panel, it is logged as an error and ignored.
+- `user_code` is the code that user enters to arm/disarm.
+
+After creating or editing `users.conf`, reload the integration (or restart Home Assistant) for the changes to be picked up. If the arm/disarm code options are enabled but `users.conf` is missing or empty, user-code validation will not work as intended.
 
 ## ✅ Supported Devices
 
