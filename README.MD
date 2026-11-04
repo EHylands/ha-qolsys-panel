@@ -11,16 +11,6 @@ This integration is now part of the official HACS store.
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=EHylands&repository=ha-qolsys-panel&category=Integration+)
 
-### Manuel Install Steps:
-
-1. Open Home Assistant.
-2. Navigate to: **HACS → Integrations → Menu (⋮) → Custom repositories**.
-3. Add the GitHub URL of this integration repository.
-4. Set the category to **Integration**.
-5. Once added, install the integration like any other HACS component.
-
-🔗 [How to add a custom repository in HACS](https://www.hacs.xyz/docs/faq/custom_repositories/)
-
 ## ⚙️ Pairing Configuration
 
 You can pair with your Qolsys Panel using one of the following two methods:
