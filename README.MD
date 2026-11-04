@@ -223,6 +223,18 @@ To remove an integration instance from Home Assistant:
 
 The integration will be cleanly removed from your system.
 
+### 🧹 Removing Stale Devices
+
+When a zone, automation device or camera is removed from the Qolsys Panel, its device in Home Assistant is cleaned up **automatically** the next time the integration reloads (or Home Assistant restarts).
+
+You can also remove a stale device **manually** at any time:
+
+1. Go to **Settings** > **Devices & Services** > **Qolsys Panel**.
+2. Open the device you want to remove.
+3. Click the **three dots menu** (⋮) and select **Delete**.
+
+Only devices that the panel no longer reports are removed. Devices still present on the panel — and the main **Panel** device itself — are kept; to remove those, delete the integration instead.
+
 ## ✨ Functionality Highlights
 
 | Category               | Feature                              | Status |
