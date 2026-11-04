@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.13.0 (2026-11-04)
+
+### 📝 Documentation
+
+- Add integration options section and users.conf setup for arm/disarm codes
+  ([`9be8c2f`](https://github.com/EHylands/ha-qolsys-panel/commit/9be8c2f03236d8d3df13de543126add16fafae27))
+
+### ✨ Features
+
+- Remove devices no longer present on the panel (#70)
+  ([#175](https://github.com/EHylands/ha-qolsys-panel/pull/175),
+  [`dc5130c`](https://github.com/EHylands/ha-qolsys-panel/commit/dc5130c274557b35a9c5f35179235072c67573ad))
+
+
 ## v1.12.2 (2026-10-29)
 
 ### 🐛 Bug Fixes
