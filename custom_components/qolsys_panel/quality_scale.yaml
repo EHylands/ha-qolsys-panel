@@ -67,6 +67,7 @@ rules:
       Connection and authentication failures are surfaced through
       ConfigEntryNotReady and ConfigEntryAuthFailed; there are no additional
       user-actionable conditions that warrant a repair issue.
+  stale-devices: done
 
   # Platinum
   async-dependency: done

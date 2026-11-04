@@ -10,7 +10,11 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
-from custom_components.qolsys_panel import async_migrate_entry
+from custom_components.qolsys_panel import (
+    _async_remove_stale_devices,
+    async_migrate_entry,
+    async_remove_config_entry_device,
+)
 from custom_components.qolsys_panel.const import (
     DOMAIN,
     OPTION_ARM_CODE,
@@ -18,6 +22,7 @@ from custom_components.qolsys_panel.const import (
 )
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 
 LOST_MESSAGE = "Connection to Qolsys Panel lost, reconnecting"
 RESTORED_MESSAGE = "Connection to Qolsys Panel restored"
@@ -218,3 +223,121 @@ async def test_migrate_from_v0_adds_disarm_option(hass: HomeAssistant) -> None:
     assert await async_migrate_entry(hass, entry) is True
     assert entry.options[OPTION_DISARM_CODE] is True
     assert entry.version == 1
+
+
+def _device(*identifiers: str) -> dr.DeviceEntry:
+    """Build a minimal device entry carrying the given domain identifiers."""
+    return dr.DeviceEntry(
+        config_entry_id="mock-entry-id",
+        identifiers={(DOMAIN, ident) for ident in identifiers},
+        name="Test Device",
+    )
+
+
+def _controller_with_state(
+    *,
+    zone: object | None = None,
+    partition: object | None = None,
+    automation_device: object | None = None,
+    ip_camera: object | None = None,
+) -> MagicMock:
+    """A controller whose state reports the given objects as present (else None)."""
+    controller = MagicMock()
+    controller.state.zone.return_value = zone
+    controller.state.partition.return_value = partition
+    controller.state.automation_device.return_value = automation_device
+    controller.state.ip_camera.return_value = ip_camera
+    return controller
+
+
+async def test_remove_device_rejects_panel_root(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """The panel's own (root) device cannot be deleted individually."""
+    mock_config_entry.runtime_data = _controller_with_state()
+    device = _device(mock_config_entry.unique_id)
+    assert (
+        await async_remove_config_entry_device(hass, mock_config_entry, device) is False
+    )
+
+
+async def test_remove_device_rejects_present_zone(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """A zone the panel still reports is kept and parsed by its id."""
+    controller = _controller_with_state(zone=object())
+    mock_config_entry.runtime_data = controller
+    device = _device(f"{mock_config_entry.unique_id}_zone5")
+    assert (
+        await async_remove_config_entry_device(hass, mock_config_entry, device) is False
+    )
+    controller.state.zone.assert_called_once_with("5")
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    ["zone5", "partition0", "autdev_12", "camera3", "mystery9"],
+)
+async def test_remove_device_allows_stale_devices(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+    suffix: str,
+) -> None:
+    """Devices no longer reported by the panel (or unknown) are removable."""
+    mock_config_entry.runtime_data = _controller_with_state()
+    device = _device(f"{mock_config_entry.unique_id}_{suffix}")
+    caplog.set_level(logging.INFO)
+    assert (
+        await async_remove_config_entry_device(hass, mock_config_entry, device) is True
+    )
+    assert "Removing device Test Device" in caplog.text
+
+
+async def test_remove_device_allows_when_not_loaded(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry
+) -> None:
+    """Without the loaded controller, removal is permitted."""
+    mock_config_entry.runtime_data = None
+    device = _device(f"{mock_config_entry.unique_id}_zone5")
+    assert (
+        await async_remove_config_entry_device(hass, mock_config_entry, device) is True
+    )
+
+
+async def test_async_remove_stale_devices(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Stale devices are pruned on setup; root and present devices are kept."""
+    mock_config_entry.add_to_hass(hass)
+    uid = mock_config_entry.unique_id
+    registry = dr.async_get(hass)
+
+    # Register the panel root, a zone the panel still has, and a stale zone.
+    for ident in (uid, f"{uid}_zone5", f"{uid}_zone9"):
+        registry.async_get_or_create(
+            config_entry_id=mock_config_entry.entry_id,
+            identifiers={(DOMAIN, ident)},
+            name=ident,
+        )
+
+    controller = _controller_with_state()
+    # Only zone 5 is still present on the panel.
+    controller.state.zone.side_effect = lambda zid: object() if zid == "5" else None
+
+    caplog.set_level(logging.INFO)
+    _async_remove_stale_devices(hass, mock_config_entry, controller)
+
+    entry_id = mock_config_entry.entry_id
+    assert registry.async_get_device_by_identifier((DOMAIN, uid), entry_id) is not None
+    assert (
+        registry.async_get_device_by_identifier((DOMAIN, f"{uid}_zone5"), entry_id)
+        is not None
+    )
+    assert (
+        registry.async_get_device_by_identifier((DOMAIN, f"{uid}_zone9"), entry_id)
+        is None
+    )
+    assert "Removing stale device" in caplog.text

@@ -179,6 +179,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         model=f"Qolsys Panel ({QolsysPanel.panel.HARDWARE_VERSION})",
     )
 
+    # Prune devices the panel no longer reports (e.g. a zone deleted on the
+    # panel) so they don't linger across reloads.
+    _async_remove_stale_devices(hass, entry, QolsysPanel)
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
@@ -191,6 +195,114 @@ async def async_unload_entry(
         QolsysPanel = entry.runtime_data
         await QolsysPanel.stop()
     return unload_ok
+
+
+def _panel_object_present(QolsysPanel: qolsys_controller, suffix: str) -> bool:
+    """Return True if the device identified by `suffix` still exists on the panel.
+
+    `suffix` is the part of a child device identifier after ``"{unique_id}_"``
+    (see `entity.py`), e.g. ``"zone5"``, ``"partition0"``, ``"autdev_12"`` or
+    ``"camera3"``. Unknown suffixes are treated as absent so the device can be
+    cleaned up.
+    """
+    state = QolsysPanel.state
+    if suffix.startswith("partition"):
+        return state.partition(suffix[len("partition") :]) is not None
+    if suffix.startswith("zone"):
+        return state.zone(suffix[len("zone") :]) is not None
+    if suffix.startswith("autdev_"):
+        return state.automation_device(suffix[len("autdev_") :]) is not None
+    if suffix.startswith("camera"):
+        return state.ip_camera(suffix[len("camera") :]) is not None
+    return False
+
+
+def _device_removable(
+    QolsysPanel: qolsys_controller, unique_id: str, device_entry: dr.DeviceEntry
+) -> bool:
+    """Return True if `device_entry` no longer maps to a device on the panel.
+
+    The root panel device and any zone, partition, automation device or camera
+    the panel still reports are kept; stale or unknown devices are removable.
+    """
+    prefix = f"{unique_id}_"
+    for domain, identifier in device_entry.identifiers:
+        if domain != DOMAIN:
+            continue
+        # The panel itself is the integration's root device; it is removed by
+        # deleting the integration, not individual devices.
+        if identifier == unique_id:
+            return False
+        if identifier.startswith(prefix) and _panel_object_present(
+            QolsysPanel, identifier[len(prefix) :]
+        ):
+            return False
+
+    return True
+
+
+def _async_remove_stale_devices(
+    hass: HomeAssistant,
+    entry: QolsysPanelConfigEntry,
+    QolsysPanel: qolsys_controller,
+) -> None:
+    """Remove registry devices the panel no longer reports.
+
+    Runs on every setup/reload so a zone, automation device or camera deleted
+    on the panel doesn't linger in Home Assistant. The manual per-device delete
+    (`async_remove_config_entry_device`) remains available as a fallback.
+    """
+    unique_id = entry.unique_id
+    if unique_id is None:
+        return
+
+    device_registry = dr.async_get(hass)
+    for device in dr.async_entries_for_config_entry(device_registry, entry.entry_id):
+        if _device_removable(QolsysPanel, unique_id, device):
+            _LOGGER.info(
+                "Removing stale device %s (%s); no longer present on the panel",
+                device.name_by_user or device.name,
+                device.id,
+            )
+            device_registry.async_remove_device(device.id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    config_entry: QolsysPanelConfigEntry,
+    device_entry: dr.DeviceEntry,
+) -> bool:
+    """Allow deleting a device only when it no longer exists on the panel.
+
+    Returning True lets the user remove the (stale) device from Home Assistant;
+    returning False keeps it because it is the panel device or still
+    corresponds to a zone, partition, automation device or camera the panel
+    currently reports.
+    """
+    unique_id = config_entry.unique_id
+    QolsysPanel = getattr(config_entry, "runtime_data", None)
+
+    # Without the loaded controller or a unique id we can't inspect panel
+    # state, so don't stand in the way of removal.
+    if unique_id is None or QolsysPanel is None:
+        return True
+
+    name = device_entry.name_by_user or device_entry.name
+    if _device_removable(QolsysPanel, unique_id, device_entry):
+        _LOGGER.info(
+            "Removing device %s (%s); it is no longer present on the panel",
+            name,
+            device_entry.id,
+        )
+        return True
+
+    _LOGGER.debug(
+        "Refusing to delete device %s (%s); it is the panel device or still "
+        "present on the panel",
+        name,
+        device_entry.id,
+    )
+    return False
 
 
 async def async_migrate_entry(
