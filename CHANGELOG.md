@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.13.2 (2026-11-05)
+
+### 🐛 Bug Fixes
+
+- Stop supervisory zones showing as device_class problem
+  ([`119782a`](https://github.com/EHylands/ha-qolsys-panel/commit/119782a1ecefeabe9cb7ba2cb2ad97219f380625))
+
+- Stop supervisory zones showing as device_class problem
+  ([`b4e85a9`](https://github.com/EHylands/ha-qolsys-panel/commit/b4e85a93fb7486be2d0837f24eca79eff2fbc519))
+
+- Stop supervisory zones showing as device_class problem
+  ([`9f8fbe6`](https://github.com/EHylands/ha-qolsys-panel/commit/9f8fbe64f33e76cb3c5b20165ac179b382538d6f))
+
+
 ## v1.13.0 (2026-11-04)
 
 ### 📝 Documentation
