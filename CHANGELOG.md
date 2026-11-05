@@ -2,6 +2,18 @@
 
 <!-- version list -->
 
+## v1.13.1 (2026-11-05)
+
+### 🐛 Bug Fixes
+
+- Bump qolsys-controller to 1.12.7
+  ([`210f79f`](https://github.com/EHylands/ha-qolsys-panel/commit/210f79f1aacf9f2b84d1fceb0b46667e2c62fc88))
+
+- Stop supervisory zones showing as device_class problem
+  ([#177](https://github.com/EHylands/ha-qolsys-panel/pull/177),
+  [`a99052b`](https://github.com/EHylands/ha-qolsys-panel/commit/a99052b0c31d81a969cf7b5e8733401b8b7b90d8))
+
+
 ## v1.13.0 (2026-11-04)
 
 ### 📝 Documentation
