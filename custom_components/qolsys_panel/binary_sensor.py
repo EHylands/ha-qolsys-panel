@@ -500,6 +500,9 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         if self._zone.sensortype == ZoneSensorType.DOORBELL:
             return BinarySensorDeviceClass.PRESENCE
 
+        if self._zone.sensortype == ZoneSensorType.TRANSLATOR:
+            return BinarySensorDeviceClass.PROBLEM
+
         return None
 
 
