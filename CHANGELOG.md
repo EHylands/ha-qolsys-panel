@@ -2,6 +2,22 @@
 
 <!-- version list -->
 
+## v1.14.2-beta.1 (2026-11-09)
+
+### 🐛 Bug Fixes
+
+- Bump qolsys-controller to 1.13.2-beta.1
+  ([`fa16f62`](https://github.com/EHylands/ha-qolsys-panel/commit/fa16f62a0acb8aae20b776d34665eb46e8c98e3a))
+
+- Set reports_position on valve entity
+  ([`8a40948`](https://github.com/EHylands/ha-qolsys-panel/commit/8a4094810e12ccc36e37714d8f1350451442ef6c))
+
+### 🧹 Chores
+
+- Append controller changelog on any pin change
+  ([`7d8547c`](https://github.com/EHylands/ha-qolsys-panel/commit/7d8547c66a3a7ca8215ba9c36d3503d9e49beda3))
+
+
 ## v1.14.1 (2026-11-09)
 
 ### 🐛 Bug Fixes
