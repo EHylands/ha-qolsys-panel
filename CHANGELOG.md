@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.14.1 (2026-11-09)
+
+### 🐛 Bug Fixes
+
+- Use a select for MQTT QoS option ([#179](https://github.com/EHylands/ha-qolsys-panel/pull/179),
+  [`28f247a`](https://github.com/EHylands/ha-qolsys-panel/commit/28f247ace1af7f470e06e725f93a9f5e6195ff06))
+
+
 ## v1.14.0 (2026-11-09)
 
 ### ✨ Features
