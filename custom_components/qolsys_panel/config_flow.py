@@ -632,6 +632,8 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
         if user_input is not None:
             # Options are stored flat; the section only groups fields in the form.
             advanced = user_input.pop(SECTION_ADVANCED)
+            # The select returns a string, but the controller only accepts an int.
+            advanced[OPTION_MQTT_QOS] = int(advanced[OPTION_MQTT_QOS])
             return self.async_create_entry(data={**user_input, **advanced})
 
         options = self.config_entry.options
@@ -689,10 +691,21 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                         {
                             vol.Required(
                                 OPTION_MQTT_QOS,
-                                default=options.get(
-                                    OPTION_MQTT_QOS, controller_defaults.mqtt_qos
+                                default=str(
+                                    options.get(
+                                        OPTION_MQTT_QOS, controller_defaults.mqtt_qos
+                                    )
                                 ),
-                            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=2)),
+                            ): selector(
+                                {
+                                    "select": {
+                                        "options": ["0", "1", "2"],
+                                        "multiple": False,
+                                        "mode": "dropdown",
+                                        "translation_key": "mqtt_qos",
+                                    }
+                                }
+                            ),
                             vol.Required(
                                 OPTION_MQTT_TIMEOUT,
                                 default=options.get(

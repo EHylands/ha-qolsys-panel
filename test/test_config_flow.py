@@ -803,7 +803,7 @@ async def test_options_flow(
     assert result["step_id"] == "init"
 
     advanced = {
-        OPTION_MQTT_QOS: 1,
+        OPTION_MQTT_QOS: "1",
         OPTION_MQTT_TIMEOUT: 60,
         OPTION_MQTT_COMMAND_TIMEOUT: 45,
     }
@@ -813,7 +813,35 @@ async def test_options_flow(
     await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert dict(mock_config_entry.options) == {**OPTIONS_USER_INPUT, **advanced}
+    assert dict(mock_config_entry.options) == {
+        **OPTIONS_USER_INPUT,
+        **advanced,
+        OPTION_MQTT_QOS: 1,
+    }
+
+
+async def test_options_flow_keeps_stored_qos(
+    hass: HomeAssistant,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+):
+    """A QoS already stored as an int pre-fills the select and stays an int."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry, options={OPTION_MQTT_QOS: 2}
+    )
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**OPTIONS_USER_INPUT, SECTION_ADVANCED: {}}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_config_entry.options[OPTION_MQTT_QOS] == 2
+    assert type(mock_config_entry.options[OPTION_MQTT_QOS]) is int
 
 
 async def test_options_flow_advanced_defaults_from_controller(
@@ -846,7 +874,7 @@ async def test_options_flow_advanced_defaults_from_controller(
 @pytest.mark.parametrize(
     "advanced",
     [
-        {OPTION_MQTT_QOS: 3},
+        {OPTION_MQTT_QOS: "3"},
         {OPTION_MQTT_TIMEOUT: 0},
         {OPTION_MQTT_TIMEOUT: 65536},
         {OPTION_MQTT_COMMAND_TIMEOUT: 0},
@@ -856,7 +884,7 @@ async def test_options_flow_rejects_invalid_advanced(
     hass: HomeAssistant,
     mock_setup_entry: AsyncMock,
     mock_config_entry: MockConfigEntry,
-    advanced: dict[str, int],
+    advanced: dict[str, int | str],
 ):
     """Out-of-range advanced options are rejected by the form."""
     mock_config_entry.add_to_hass(hass)

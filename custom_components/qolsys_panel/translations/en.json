@@ -91,6 +91,15 @@
         }
       }
     },
+  "selector": {
+    "mqtt_qos": {
+      "options": {
+        "0": "0 - At most once",
+        "1": "1 - At least once",
+        "2": "2 - Exactly once"
+      }
+    }
+  },
   "exceptions": {
     "integration_not_found": {
       "message": "Integration \"{target}\" not found in registry."
