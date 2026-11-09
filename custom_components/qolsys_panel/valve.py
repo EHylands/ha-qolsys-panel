@@ -83,7 +83,14 @@ class AutomationDevice_Valve(QolsysAutomationDeviceEntity, ValveEntity):
 
             if self._service.supports_position():
                 self._attr_supported_features |= ValveEntityFeature.SET_POSITION
-                self._attr_reports_position = True
+
+    @property
+    def reports_position(self) -> bool:
+        return self._service.supports_position()
+
+    @property
+    def current_valve_position(self) -> int | None:
+        return self._service.current_position
 
     async def async_open_valve(self) -> None:
         await self._service.open()

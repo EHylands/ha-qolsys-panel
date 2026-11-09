@@ -11,7 +11,7 @@ from custom_components.qolsys_panel.valve import (
     AutomationDevice_Valve,
     async_setup_entry,
 )
-from homeassistant.components.valve import ValveEntityFeature
+from homeassistant.components.valve import ValveEntityFeature, ValveState
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 
@@ -71,6 +71,8 @@ async def test_async_setup_entry_creates_entities(
 
 def test_supported_features(controller: MagicMock) -> None:
     """All supported valve features are advertised when the service allows."""
+    service = controller.state.automation_device.return_value.service_get.return_value
+    service.supports_position.return_value = True
     valve = AutomationDevice_Valve(controller, "5", 0, UID)
     features = valve.supported_features
     assert features & ValveEntityFeature.OPEN
@@ -78,6 +80,38 @@ def test_supported_features(controller: MagicMock) -> None:
     assert features & ValveEntityFeature.STOP
     assert features & ValveEntityFeature.SET_POSITION
     assert valve.reports_position is True
+
+
+def test_no_position_support(controller: MagicMock) -> None:
+    """A valve without position support reports its state from is_closed."""
+    service = controller.state.automation_device.return_value.service_get.return_value
+    service.supports_position.return_value = False
+    valve = AutomationDevice_Valve(controller, "5", 0, UID)
+
+    assert not valve.supported_features & ValveEntityFeature.SET_POSITION
+    assert valve.reports_position is False
+
+    service.is_closed = False
+    assert valve.state == ValveState.OPEN
+    service.is_closed = True
+    assert valve.state == ValveState.CLOSED
+
+
+def test_current_valve_position(controller: MagicMock) -> None:
+    """A valve with position support reports its state from the service position."""
+    service = controller.state.automation_device.return_value.service_get.return_value
+    service.supports_position.return_value = True
+    valve = AutomationDevice_Valve(controller, "5", 0, UID)
+
+    service.current_position = 40
+    assert valve.current_valve_position == 40
+    assert valve.state == ValveState.OPEN
+    service.current_position = 0
+    assert valve.current_valve_position == 0
+    assert valve.state == ValveState.CLOSED
+    service.current_position = None
+    assert valve.current_valve_position is None
+    assert valve.state is None
 
 
 def test_is_closed(controller: MagicMock) -> None:
