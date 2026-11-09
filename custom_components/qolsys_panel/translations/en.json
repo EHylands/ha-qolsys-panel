@@ -75,7 +75,18 @@
             "option_trigger_fire": "Enable Trigger Fire Alarm",
             "option_peek_in_picture": "Enable Peek In Picture",
             "option_motion_sensor_delay_enabled": "Enable Motions Sensor Delay",
-            "option_motion_sensor_delay": "Motion Sensors Delay (seconds)"       
+            "option_motion_sensor_delay": "Motion Sensors Delay (seconds)"
+          },
+          "sections": {
+            "advanced": {
+              "name": "Advanced Settings",
+              "description": "Change these only when troubleshooting the connection to the panel.",
+              "data": {
+                "option_mqtt_qos": "MQTT QoS",
+                "option_mqtt_timeout": "MQTT Timeout (seconds)",
+                "option_mqtt_command_timeout": "MQTT Command Timeout (seconds)"
+              }
+            }
           }
         }
       }

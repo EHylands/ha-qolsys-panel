@@ -18,6 +18,7 @@ from conftest import (
 )
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from qolsys_controller import qolsys_controller
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel.config_flow import _CONFIG_FLOW_DEBUG_LOGGERS
@@ -29,15 +30,19 @@ from custom_components.qolsys_panel.const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_MQTT_COMMAND_TIMEOUT,
+    OPTION_MQTT_QOS,
+    OPTION_MQTT_TIMEOUT,
     OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+    SECTION_ADVANCED,
 )
 from homeassistant.config_entries import SOURCE_DHCP, SOURCE_USER
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.core import HomeAssistant
-from homeassistant.data_entry_flow import FlowResultType
+from homeassistant.data_entry_flow import FlowResultType, InvalidData
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
 
 # PKI folders on disk are the random MAC without separators
@@ -56,6 +61,17 @@ EXPECTED_ENTRY_DATA = {
 EXISTING_PKI_USER_INPUT = {
     CONF_HOST: PANEL_HOST,
     CONF_RANDOM_MAC: RANDOM_MAC,
+}
+
+OPTIONS_USER_INPUT = {
+    OPTION_ARM_CODE: True,
+    OPTION_DISARM_CODE: True,
+    OPTION_TRIGGER_POLICE: True,
+    OPTION_TRIGGER_AUXILLIARY: False,
+    OPTION_TRIGGER_FIRE: True,
+    OPTION_PEEK_IN_PICTURE: False,
+    OPTION_MOTION_SENSOR_DELAY_ENABLED: True,
+    OPTION_MOTION_SENSOR_DELAY: 120,
 }
 
 
@@ -786,23 +802,72 @@ async def test_options_flow(
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "init"
 
-    user_input = {
-        OPTION_ARM_CODE: True,
-        OPTION_DISARM_CODE: True,
-        OPTION_TRIGGER_POLICE: True,
-        OPTION_TRIGGER_AUXILLIARY: False,
-        OPTION_TRIGGER_FIRE: True,
-        OPTION_PEEK_IN_PICTURE: False,
-        OPTION_MOTION_SENSOR_DELAY_ENABLED: True,
-        OPTION_MOTION_SENSOR_DELAY: 120,
+    advanced = {
+        OPTION_MQTT_QOS: 1,
+        OPTION_MQTT_TIMEOUT: 60,
+        OPTION_MQTT_COMMAND_TIMEOUT: 45,
     }
     result = await hass.config_entries.options.async_configure(
-        result["flow_id"], user_input
+        result["flow_id"], {**OPTIONS_USER_INPUT, SECTION_ADVANCED: advanced}
     )
     await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
-    assert dict(mock_config_entry.options) == user_input
+    assert dict(mock_config_entry.options) == {**OPTIONS_USER_INPUT, **advanced}
+
+
+async def test_options_flow_advanced_defaults_from_controller(
+    hass: HomeAssistant,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+):
+    """Advanced options default to the qolsys-controller settings."""
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    defaults = qolsys_controller().settings
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    result = await hass.config_entries.options.async_configure(
+        result["flow_id"], {**OPTIONS_USER_INPUT, SECTION_ADVANCED: {}}
+    )
+    await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert mock_config_entry.options[OPTION_MQTT_QOS] == defaults.mqtt_qos
+    assert mock_config_entry.options[OPTION_MQTT_TIMEOUT] == defaults.mqtt_timeout
+    assert (
+        mock_config_entry.options[OPTION_MQTT_COMMAND_TIMEOUT]
+        == defaults.mqtt_command_timeout
+    )
+
+
+@pytest.mark.parametrize(
+    "advanced",
+    [
+        {OPTION_MQTT_QOS: 3},
+        {OPTION_MQTT_TIMEOUT: 0},
+        {OPTION_MQTT_TIMEOUT: 65536},
+        {OPTION_MQTT_COMMAND_TIMEOUT: 0},
+    ],
+)
+async def test_options_flow_rejects_invalid_advanced(
+    hass: HomeAssistant,
+    mock_setup_entry: AsyncMock,
+    mock_config_entry: MockConfigEntry,
+    advanced: dict[str, int],
+):
+    """Out-of-range advanced options are rejected by the form."""
+    mock_config_entry.add_to_hass(hass)
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    with pytest.raises(InvalidData):
+        await hass.config_entries.options.async_configure(
+            result["flow_id"], {**OPTIONS_USER_INPUT, SECTION_ADVANCED: advanced}
+        )
 
 
 async def test_reauth_tolerates_newline_unique_id(

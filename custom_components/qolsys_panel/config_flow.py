@@ -25,7 +25,7 @@ from homeassistant.config_entries import (
 )
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import AbortFlow
+from homeassistant.data_entry_flow import AbortFlow, section
 from homeassistant.helpers.device_registry import format_mac
 from homeassistant.helpers.selector import selector
 from homeassistant.helpers.service_info.dhcp import DhcpServiceInfo
@@ -47,10 +47,14 @@ from .const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_MQTT_COMMAND_TIMEOUT,
+    OPTION_MQTT_QOS,
+    OPTION_MQTT_TIMEOUT,
     OPTION_PEEK_IN_PICTURE,
     OPTION_TRIGGER_AUXILLIARY,
     OPTION_TRIGGER_FIRE,
     OPTION_TRIGGER_POLICE,
+    SECTION_ADVANCED,
 )
 from .types import QolsysPanelConfigEntry
 from .utils import get_local_ip
@@ -78,6 +82,9 @@ _CONNECTION_FAILURE_ERRORS = {
     "configuration_error",
     "unknown",
 }
+
+# The controller uses mqtt_timeout as the MQTT keepalive, a 16-bit protocol field.
+_MQTT_TIMEOUT_VALIDATOR = vol.All(vol.Coerce(int), vol.Range(min=1, max=65535))
 
 
 class QolsysPanelConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -623,9 +630,12 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
     ) -> ConfigFlowResult:
         """Manage the options."""
         if user_input is not None:
-            return self.async_create_entry(data=user_input)
+            # Options are stored flat; the section only groups fields in the form.
+            advanced = user_input.pop(SECTION_ADVANCED)
+            return self.async_create_entry(data={**user_input, **advanced})
 
         options = self.config_entry.options
+        controller_defaults = qolsys_controller().settings
 
         data_schema = vol.Schema(
             {
@@ -674,6 +684,33 @@ class QolsysPanelOptionsFlowHandler(OptionsFlowWithReload):
                         DEFAULT_MOTION_SENSOR_DELAY,
                     ),
                 ): int,
+                vol.Required(SECTION_ADVANCED): section(
+                    vol.Schema(
+                        {
+                            vol.Required(
+                                OPTION_MQTT_QOS,
+                                default=options.get(
+                                    OPTION_MQTT_QOS, controller_defaults.mqtt_qos
+                                ),
+                            ): vol.All(vol.Coerce(int), vol.Range(min=0, max=2)),
+                            vol.Required(
+                                OPTION_MQTT_TIMEOUT,
+                                default=options.get(
+                                    OPTION_MQTT_TIMEOUT,
+                                    controller_defaults.mqtt_timeout,
+                                ),
+                            ): _MQTT_TIMEOUT_VALIDATOR,
+                            vol.Required(
+                                OPTION_MQTT_COMMAND_TIMEOUT,
+                                default=options.get(
+                                    OPTION_MQTT_COMMAND_TIMEOUT,
+                                    controller_defaults.mqtt_command_timeout,
+                                ),
+                            ): _MQTT_TIMEOUT_VALIDATOR,
+                        }
+                    ),
+                    {"collapsed": True},
+                ),
             },
             extra=vol.PREVENT_EXTRA,
         )

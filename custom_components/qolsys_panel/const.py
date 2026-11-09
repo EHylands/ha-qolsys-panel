@@ -14,6 +14,11 @@ OPTION_TRIGGER_FIRE = "option_trigger_fire"
 OPTION_PEEK_IN_PICTURE = "option_peek_in_picture"
 OPTION_ARM_CODE = "option_arm_code"
 OPTION_DISARM_CODE = "option_disarm_code"
+OPTION_MQTT_QOS = "option_mqtt_qos"
+OPTION_MQTT_TIMEOUT = "option_mqtt_timeout"
+OPTION_MQTT_COMMAND_TIMEOUT = "option_mqtt_command_timeout"
+
+SECTION_ADVANCED = "advanced"
 
 SERVICE_TRIGGER_POLICE = "trigger_police"
 SERVICE_TRIGGER_AUXILLIARY = "trigger_auxilliary"

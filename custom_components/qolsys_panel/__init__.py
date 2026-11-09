@@ -28,6 +28,9 @@ from .const import (
     OPTION_DISARM_CODE,
     OPTION_MOTION_SENSOR_DELAY,
     OPTION_MOTION_SENSOR_DELAY_ENABLED,
+    OPTION_MQTT_COMMAND_TIMEOUT,
+    OPTION_MQTT_QOS,
+    OPTION_MQTT_TIMEOUT,
 )
 from .services import async_setup_services
 from .types import QolsysPanelConfigEntry
@@ -109,6 +112,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     )
     QolsysPanel.settings.motion_sensor_delay = entry.options.get(
         OPTION_MOTION_SENSOR_DELAY_ENABLED, DEFAULT_MOTION_SENSOR_DELAY_ENABLED
+    )
+
+    # Advanced MQTT settings keep the controller's own defaults until overridden.
+    QolsysPanel.settings.mqtt_qos = entry.options.get(
+        OPTION_MQTT_QOS, QolsysPanel.settings.mqtt_qos
+    )
+    QolsysPanel.settings.mqtt_timeout = entry.options.get(
+        OPTION_MQTT_TIMEOUT, QolsysPanel.settings.mqtt_timeout
+    )
+    QolsysPanel.settings.mqtt_command_timeout = entry.options.get(
+        OPTION_MQTT_COMMAND_TIMEOUT, QolsysPanel.settings.mqtt_command_timeout
     )
 
     # Start the controller (long-lived) and, separately, wait for the CONNECTED state.

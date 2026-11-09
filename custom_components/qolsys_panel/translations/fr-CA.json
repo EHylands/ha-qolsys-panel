@@ -76,6 +76,17 @@
           "option_peek_in_picture": "Activer l'image d'aperçu",
           "option_motion_sensor_delay_enabled": "Activer le délai des détecteurs de mouvement",
           "option_motion_sensor_delay": "Délai des détecteurs de mouvement (secondes)"
+        },
+        "sections": {
+          "advanced": {
+            "name": "Paramètres avancés",
+            "description": "Modifiez ces paramètres uniquement pour dépanner la connexion au panneau.",
+            "data": {
+              "option_mqtt_qos": "QoS MQTT",
+              "option_mqtt_timeout": "Délai d'expiration MQTT (secondes)",
+              "option_mqtt_command_timeout": "Délai d'expiration des commandes MQTT (secondes)"
+            }
+          }
         }
       }
     }
