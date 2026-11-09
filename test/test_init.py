@@ -19,6 +19,9 @@ from custom_components.qolsys_panel.const import (
     DOMAIN,
     OPTION_ARM_CODE,
     OPTION_DISARM_CODE,
+    OPTION_MQTT_COMMAND_TIMEOUT,
+    OPTION_MQTT_QOS,
+    OPTION_MQTT_TIMEOUT,
 )
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -71,6 +74,48 @@ def _get_status_callback(controller: MagicMock):
     ]
     assert len(callbacks) == 1
     return callbacks[0]
+
+
+async def test_setup_keeps_controller_mqtt_defaults(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+):
+    """Without advanced options the controller's MQTT settings are untouched."""
+    mock_controller.settings.mqtt_qos = 0
+    mock_controller.settings.mqtt_timeout = 30
+    mock_controller.settings.mqtt_command_timeout = 30
+
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_controller.settings.mqtt_qos == 0
+    assert mock_controller.settings.mqtt_timeout == 30
+    assert mock_controller.settings.mqtt_command_timeout == 30
+
+
+async def test_setup_applies_advanced_mqtt_options(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+):
+    """Advanced options are passed to the controller settings."""
+    mock_config_entry.add_to_hass(hass)
+    hass.config_entries.async_update_entry(
+        mock_config_entry,
+        options={
+            OPTION_MQTT_QOS: 2,
+            OPTION_MQTT_TIMEOUT: 60,
+            OPTION_MQTT_COMMAND_TIMEOUT: 45,
+        },
+    )
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_controller.settings.mqtt_qos == 2
+    assert mock_controller.settings.mqtt_timeout == 60
+    assert mock_controller.settings.mqtt_command_timeout == 45
 
 
 async def test_log_when_unavailable(

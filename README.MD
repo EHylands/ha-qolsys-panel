@@ -99,6 +99,9 @@ After pairing, you can adjust the integration's behavior at any time from:
 | **Enable Peek In Picture** | Enable retrieval of Peek-In pictures from supported cameras. | `on` |
 | **Enable Motion Sensor Delay** | Apply a delay before a motion sensor returns to its cleared state. | `off` |
 | **Motion Sensor Delay (seconds)** | Delay, in seconds, applied when the motion sensor delay is enabled. | `310` |
+| **Advanced Settings → MQTT QoS** | MQTT quality of service used with the panel (`0`, `1` or `2`). | `0` |
+| **Advanced Settings → MQTT Timeout (seconds)** | MQTT keepalive interval for the panel connection. | `30` |
+| **Advanced Settings → MQTT Command Timeout (seconds)** | How long to wait for the panel to respond to a command. | `30` |
 
 > Changing an option reloads the integration so the new settings take effect immediately.
 
