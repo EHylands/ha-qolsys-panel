@@ -91,6 +91,15 @@
       }
     }
   },
+  "selector": {
+    "mqtt_qos": {
+      "options": {
+        "0": "0 - Au plus une fois",
+        "1": "1 - Au moins une fois",
+        "2": "2 - Exactement une fois"
+      }
+    }
+  },
   "exceptions": {
     "integration_not_found": {
       "message": "Intégration « {target} » introuvable dans le registre."
