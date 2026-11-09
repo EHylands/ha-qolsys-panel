@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.14.0 (2026-11-09)
+
+### ✨ Features
+
+- Add advanced MQTT settings to options flow
+  ([#178](https://github.com/EHylands/ha-qolsys-panel/pull/178),
+  [`c5c3d9b`](https://github.com/EHylands/ha-qolsys-panel/commit/c5c3d9ba045563f5a99448f8ab47f6a170bfce83))
+
+
 ## v1.13.3 (2026-11-08)
 
 ### 🐛 Bug Fixes
