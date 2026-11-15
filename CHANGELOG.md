@@ -2,6 +2,24 @@
 
 <!-- version list -->
 
+## v1.14.3-beta.1 (2026-11-15)
+
+### 🐛 Bug Fixes
+
+- Bump qolsys-controller to 1.13.3-beta.1
+  ([`2809659`](https://github.com/EHylands/ha-qolsys-panel/commit/28096598567f3e27563f223f37f9435723e53ba5))
+
+- Delegate zone availability to qolsys-controller
+  ([`25e6b4b`](https://github.com/EHylands/ha-qolsys-panel/commit/25e6b4bd41345ba438e31359e1d2b1a526e77002))
+
+- Qolsys-controller test version
+  ([`372c5f7`](https://github.com/EHylands/ha-qolsys-panel/commit/372c5f75b7c40d171e2d931da5aeebb5e95399df))
+
+- Report zones unavailable instead of misleading open/closed states
+  ([#182](https://github.com/EHylands/ha-qolsys-panel/pull/182),
+  [`41d0007`](https://github.com/EHylands/ha-qolsys-panel/commit/41d0007c4fc161416d6b9cfa5202a8a004c732a2))
+
+
 ## v1.14.2 (2026-11-10)
 
 ### 🐛 Bug Fixes
