@@ -442,6 +442,11 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         self._attr_unique_id = self._zone_unique_id
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's open/closed state is unknown."""
+        return super().available and self._zone.is_available()
+
+    @property
     def is_on(self) -> bool:
         return self._zone.is_on()
 

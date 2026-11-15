@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from conftest import PANEL_MAC
 import pytest
 from qolsys_controller.enum_qolsys import (
+    ControllerState,
     PartitionAlarmType,
     PartitionQuickExitState,
     QolsysNotification,
@@ -34,6 +35,7 @@ from custom_components.qolsys_panel.binary_sensor import (
     ZonesSensor,
     async_setup_entry,
 )
+from custom_components.qolsys_panel.entity import QolsysZoneEntity
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntityDescription,
@@ -264,6 +266,94 @@ def test_zones_sensor_is_on(
     )
     sensor._zone.sensorstatus = status
     assert sensor.is_on is expected
+
+
+@pytest.mark.parametrize(
+    ("controller_state", "zone_available", "expected"),
+    [
+        (ControllerState.CONNECTED, True, True),
+        (ControllerState.CONNECTED, False, False),
+        (ControllerState.RECONNECTING, True, False),
+        (ControllerState.RECONNECTING, False, False),
+        (ControllerState.CONNECTING, True, False),
+        (ControllerState.STOPPED, True, False),
+    ],
+)
+def test_zones_sensor_available(
+    controller: MagicMock,
+    controller_state: ControllerState,
+    zone_available: bool,
+    expected: bool,
+) -> None:
+    """The main zone sensor needs both a connected panel and an available zone."""
+    controller.controller_state = controller_state
+    sensor = ZonesSensor(controller, "1", UID)
+    cast(MagicMock, sensor._zone).is_available.return_value = zone_available
+    assert sensor.available is expected
+
+
+def test_zones_sensor_tracks_zone_availability(controller: MagicMock) -> None:
+    """Availability is re-read from the zone on every access, not cached."""
+    controller.controller_state = ControllerState.CONNECTED
+    sensor = ZonesSensor(controller, "1", UID)
+    zone = cast(MagicMock, sensor._zone)
+
+    zone.is_available.return_value = False
+    assert sensor.available is False
+
+    zone.is_available.return_value = True
+    assert sensor.available is True
+
+
+@pytest.mark.parametrize(
+    "sensor_cls",
+    [
+        ZoneSensor_Unreachable,
+        ZoneSensor_Tamper,
+        ZoneSensor_BatteryStatus,
+        ZoneSensor_ACStatus,
+    ],
+)
+def test_zone_diagnostic_sensors_stay_available_when_zone_unavailable(
+    controller: MagicMock, sensor_cls: type[QolsysZoneEntity]
+) -> None:
+    """Only the main zone sensor follows zone availability; diagnostics do not."""
+    controller.controller_state = ControllerState.CONNECTED
+    sensor = sensor_cls(controller, "1", UID)
+    cast(MagicMock, sensor._zone).is_available.return_value = False
+    assert sensor.available is True
+
+
+def test_tampered_zone_unavailable_with_tamper_sensor_on(
+    controller: MagicMock,
+) -> None:
+    """A tampered zone is unavailable while its tamper sensor shows why."""
+    controller.controller_state = ControllerState.CONNECTED
+    main = ZonesSensor(controller, "1", UID)
+    tamper = ZoneSensor_Tamper(controller, "1", UID)
+    zone = cast(MagicMock, main._zone)
+    zone.sensorstatus = ZoneStatus.TAMPERED
+    zone.is_available.return_value = False
+
+    assert main.available is False
+    assert tamper.available is True
+    assert tamper.is_on is True
+
+
+def test_troubled_zone_unavailable_with_connectivity_sensor_off(
+    controller: MagicMock,
+) -> None:
+    """A troubled zone is unavailable while its connectivity sensor shows why."""
+    controller.controller_state = ControllerState.CONNECTED
+    main = ZonesSensor(controller, "1", UID)
+    connectivity = ZoneSensor_Unreachable(controller, "1", UID)
+    zone = cast(MagicMock, main._zone)
+    zone.is_trouble.return_value = True
+    zone.is_available.return_value = False
+
+    assert main.available is False
+    assert connectivity.available is True
+    assert connectivity.is_on is False
 
 
 @pytest.mark.parametrize(
