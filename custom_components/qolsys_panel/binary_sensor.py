@@ -442,6 +442,21 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         self._attr_unique_id = self._zone_unique_id
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's open/closed state is unknown.
+
+        The panel reports trouble (Failure, Unreachable, ...) and tamper in the
+        same status field that otherwise carries Open/Closed, so during either
+        the last known state is gone and is_on would read as closed. The zone's
+        diagnostic connectivity and tamper sensors stay available to show why.
+        """
+        return (
+            super().available
+            and not self._zone.is_trouble()
+            and self._zone.sensorstatus != ZoneStatus.TAMPERED
+        )
+
+    @property
     def is_on(self) -> bool:
         return self._zone.is_on()
 

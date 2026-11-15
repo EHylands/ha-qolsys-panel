@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 from conftest import PANEL_MAC
 import pytest
 from qolsys_controller.enum_qolsys import (
+    ControllerState,
     PartitionAlarmType,
     PartitionQuickExitState,
     QolsysNotification,
@@ -264,6 +265,40 @@ def test_zones_sensor_is_on(
     )
     sensor._zone.sensorstatus = status
     assert sensor.is_on is expected
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        (ZoneStatus.OPEN, True),
+        (ZoneStatus.CLOSED, True),
+        (ZoneStatus.FAILURE, False),
+        (ZoneStatus.UNREACHABLE, False),
+        (ZoneStatus.DISCONNECTED, False),
+        (ZoneStatus.TAMPERED, False),
+    ],
+)
+def test_zones_sensor_unavailable_on_trouble(
+    controller: MagicMock, status: ZoneStatus, expected: bool
+) -> None:
+    """The main zone sensor is unavailable, not closed, while its state is unknown."""
+    controller.controller_state = ControllerState.CONNECTED
+    sensor = ZonesSensor(controller, "1", UID)
+    cast(MagicMock, sensor._zone).is_trouble.side_effect = lambda: (
+        QolsysZone.is_trouble(sensor._zone)
+    )
+    sensor._zone.sensorstatus = status
+    assert sensor.available is expected
+
+
+def test_zones_sensor_unavailable_when_panel_disconnected(
+    controller: MagicMock,
+) -> None:
+    """A healthy zone is still unavailable while the panel itself is disconnected."""
+    controller.controller_state = ControllerState.RECONNECTING
+    sensor = ZonesSensor(controller, "1", UID)
+    sensor._zone.is_trouble.return_value = False
+    assert sensor.available is False
 
 
 @pytest.mark.parametrize(
