@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.14.3 (2026-11-16)
+
+### 🐛 Bug Fixes
+
+- Remove device prefixes from panel scene names
+  ([#185](https://github.com/EHylands/ha-qolsys-panel/pull/185),
+  [`3a83adf`](https://github.com/EHylands/ha-qolsys-panel/commit/3a83adfe376d1f25f38947133227ec4a5446e9ce))
+
+
 ## v1.14.2 (2026-11-10)
 
 ### 🐛 Bug Fixes
