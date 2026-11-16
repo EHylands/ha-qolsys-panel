@@ -48,7 +48,7 @@ class QolsysPanelScene(Scene, QolsysPanelEntity):
         self._scene_id = scene_id
         scene = QolsysPanel.state.scene(scene_id)
         assert scene is not None
-        self._attr_name = f"Qolsys Panel - {scene.name}"
+        self._attr_name = f"{scene.name} Scene"
 
     async def async_activate(self, **kwargs: Any) -> None:
         """Activate scene. Try to get entities into requested state."""
