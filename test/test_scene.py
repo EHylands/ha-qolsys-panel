@@ -18,7 +18,9 @@ def controller() -> MagicMock:
     c = MagicMock()
     scene = MagicMock()
     scene.scene_id = "7"
+    scene.name = "Good Night"
     c.state.scenes = [scene]
+    c.state.scene.return_value = scene
     c.commands.panel.execute_scene = AsyncMock()
     return c
 
@@ -53,6 +55,14 @@ async def test_async_setup_entry_creates_entities(
     entities = add_entities.call_args.args[0]
     assert len(entities) == 1
     assert isinstance(entities[0], QolsysPanelScene)
+
+
+def test_name_has_no_device_prefix(controller: MagicMock) -> None:
+    """The entity is named after the panel scene, without a device prefix."""
+    scene = QolsysPanelScene(controller, "7", UID)
+    controller.state.scene.assert_called_once_with("7")
+    assert scene.name == "Good Night Scene"
+    assert scene.unique_id == f"{UID}_scene_7"
 
 
 async def test_activate(controller: MagicMock) -> None:
