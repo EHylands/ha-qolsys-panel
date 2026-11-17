@@ -39,6 +39,12 @@ match  = "dev"
 prerelease = true
 prerelease_token = "beta"
 
+# main squash-merges with the PR title as the commit subject, so only that line
+# should become a CHANGELOG entry. PSR otherwise splits a squash commit's body
+# into one entry per `type: ...` line it finds (e.g. a branch's commit list).
+[tool.semantic_release.commit_parser_options]
+parse_squash_commits = false
+
 # Use the vendored templates/ (copied from PSR's conventional/md set) so the
 # changelog AND GitHub release notes get emoji section headings. This REPLACES
 # PSR's bundled templates — re-sync templates/ when upgrading python-semantic-release.
