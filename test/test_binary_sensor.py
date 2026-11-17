@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import NamedTuple, cast
 from unittest.mock import MagicMock, patch
 
-from conftest import PANEL_MAC
+from conftest import PANEL_MAC, set_zone_status
 import pytest
 from qolsys_controller.enum_qolsys import (
     ControllerState,
@@ -224,9 +224,10 @@ def test_zone_unreachable(controller: MagicMock) -> None:
 def test_zone_tamper(controller: MagicMock) -> None:
     """Tamper sensor is on when the zone reports tampered."""
     sensor = ZoneSensor_Tamper(controller, "1", UID)
-    sensor._zone.sensorstatus = ZoneStatus.TAMPERED
+    zone = cast(MagicMock, sensor._zone)
+    set_zone_status(zone, ZoneStatus.TAMPERED)
     assert sensor.is_on is True
-    sensor._zone.sensorstatus = ZoneStatus.CLOSED
+    set_zone_status(zone, ZoneStatus.CLOSED)
     assert sensor.is_on is False
 
 
@@ -288,7 +289,7 @@ def test_zones_sensor_available(
     """The main zone sensor needs both a connected panel and an available zone."""
     controller.controller_state = controller_state
     sensor = ZonesSensor(controller, "1", UID)
-    cast(MagicMock, sensor._zone).is_available.return_value = zone_available
+    cast(MagicMock, sensor._zone).is_available_status.return_value = zone_available
     assert sensor.available is expected
 
 
@@ -298,11 +299,55 @@ def test_zones_sensor_tracks_zone_availability(controller: MagicMock) -> None:
     sensor = ZonesSensor(controller, "1", UID)
     zone = cast(MagicMock, sensor._zone)
 
-    zone.is_available.return_value = False
+    zone.is_available_status.return_value = False
     assert sensor.available is False
 
-    zone.is_available.return_value = True
+    zone.is_available_status.return_value = True
     assert sensor.available is True
+
+
+@pytest.mark.parametrize(
+    ("sensor_cls", "status", "expected"),
+    [
+        # Open/closed shares sensorstatus, so trouble, tamper and unknown hide it.
+        (ZonesSensor, ZoneStatus.CLOSED, True),
+        (ZonesSensor, ZoneStatus.OPEN, True),
+        (ZonesSensor, ZoneStatus.TAMPERED, False),
+        (ZonesSensor, ZoneStatus.UNREACHABLE, False),
+        (ZonesSensor, ZoneStatus.FAILURE, False),
+        (ZonesSensor, ZoneStatus.UNKNOWN, False),
+        # Battery and AC have fields of their own: current through a tamper,
+        # stale while the device is in trouble.
+        (ZoneSensor_BatteryStatus, ZoneStatus.CLOSED, True),
+        (ZoneSensor_BatteryStatus, ZoneStatus.TAMPERED, True),
+        (ZoneSensor_BatteryStatus, ZoneStatus.UNKNOWN, True),
+        (ZoneSensor_BatteryStatus, ZoneStatus.UNREACHABLE, False),
+        (ZoneSensor_BatteryStatus, ZoneStatus.FAILURE, False),
+        (ZoneSensor_ACStatus, ZoneStatus.CLOSED, True),
+        (ZoneSensor_ACStatus, ZoneStatus.TAMPERED, True),
+        (ZoneSensor_ACStatus, ZoneStatus.UNKNOWN, True),
+        (ZoneSensor_ACStatus, ZoneStatus.UNREACHABLE, False),
+        (ZoneSensor_ACStatus, ZoneStatus.FAILURE, False),
+        # Connectivity and tamper report the problem, so they stay available.
+        (ZoneSensor_Unreachable, ZoneStatus.UNREACHABLE, True),
+        (ZoneSensor_Unreachable, ZoneStatus.TAMPERED, True),
+        (ZoneSensor_Unreachable, ZoneStatus.UNKNOWN, True),
+        (ZoneSensor_Tamper, ZoneStatus.TAMPERED, True),
+        (ZoneSensor_Tamper, ZoneStatus.UNREACHABLE, True),
+        (ZoneSensor_Tamper, ZoneStatus.UNKNOWN, True),
+    ],
+)
+def test_zone_entity_available_by_status(
+    controller: MagicMock,
+    sensor_cls: type[QolsysZoneEntity],
+    status: ZoneStatus,
+    expected: bool,
+) -> None:
+    """Each zone entity is unavailable only for statuses that hide its value."""
+    controller.controller_state = ControllerState.CONNECTED
+    sensor = sensor_cls(controller, "1", UID)
+    set_zone_status(cast(MagicMock, sensor._zone), status)
+    assert sensor.available is expected
 
 
 @pytest.mark.parametrize(
@@ -314,14 +359,14 @@ def test_zones_sensor_tracks_zone_availability(controller: MagicMock) -> None:
         ZoneSensor_ACStatus,
     ],
 )
-def test_zone_diagnostic_sensors_stay_available_when_zone_unavailable(
+def test_zone_diagnostic_sensors_unavailable_when_panel_disconnected(
     controller: MagicMock, sensor_cls: type[QolsysZoneEntity]
 ) -> None:
-    """Only the main zone sensor follows zone availability; diagnostics do not."""
-    controller.controller_state = ControllerState.CONNECTED
+    """A lost panel connection makes every zone entity unavailable."""
+    controller.controller_state = ControllerState.RECONNECTING
     sensor = sensor_cls(controller, "1", UID)
-    cast(MagicMock, sensor._zone).is_available.return_value = False
-    assert sensor.available is True
+    set_zone_status(cast(MagicMock, sensor._zone), ZoneStatus.CLOSED)
+    assert sensor.available is False
 
 
 def test_tampered_zone_unavailable_with_tamper_sensor_on(
@@ -331,13 +376,13 @@ def test_tampered_zone_unavailable_with_tamper_sensor_on(
     controller.controller_state = ControllerState.CONNECTED
     main = ZonesSensor(controller, "1", UID)
     tamper = ZoneSensor_Tamper(controller, "1", UID)
-    zone = cast(MagicMock, main._zone)
-    zone.sensorstatus = ZoneStatus.TAMPERED
-    zone.is_available.return_value = False
+    battery = ZoneSensor_BatteryStatus(controller, "1", UID)
+    set_zone_status(cast(MagicMock, main._zone), ZoneStatus.TAMPERED)
 
     assert main.available is False
     assert tamper.available is True
     assert tamper.is_on is True
+    assert battery.available is True
 
 
 def test_troubled_zone_unavailable_with_connectivity_sensor_off(
@@ -347,13 +392,13 @@ def test_troubled_zone_unavailable_with_connectivity_sensor_off(
     controller.controller_state = ControllerState.CONNECTED
     main = ZonesSensor(controller, "1", UID)
     connectivity = ZoneSensor_Unreachable(controller, "1", UID)
-    zone = cast(MagicMock, main._zone)
-    zone.is_trouble.return_value = True
-    zone.is_available.return_value = False
+    battery = ZoneSensor_BatteryStatus(controller, "1", UID)
+    set_zone_status(cast(MagicMock, main._zone), ZoneStatus.UNREACHABLE)
 
     assert main.available is False
     assert connectivity.available is True
     assert connectivity.is_on is False
+    assert battery.available is False
 
 
 @pytest.mark.parametrize(

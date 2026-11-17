@@ -204,6 +204,11 @@ class ZoneSensor_LatestDBM(QolsysZoneEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
+
+    @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
         return self._zone.latestdBm
@@ -227,6 +232,11 @@ class ZoneSensor_AverageDBM(QolsysZoneEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
+
+    @property
     def native_value(self) -> int | None:
         """Return the latest dBm value of the zone."""
         return self._zone.averagedBm
@@ -248,6 +258,11 @@ class ZoneSensor_PowerG_Temperature(QolsysZoneEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
+
+    @property
     def native_value(self) -> float | None:
         """Return the latest Zone PowerG Temperature."""
         return self._zone.powerg_temperature
@@ -267,6 +282,11 @@ class ZoneSensor_PowerG_Light(QolsysZoneEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.ILLUMINANCE
         self._attr_suggested_display_precision = 0
         self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
 
     @property
     def native_value(self) -> float | None:
@@ -292,6 +312,11 @@ class ZoneSensor_BatteryLevel(QolsysZoneEntity, SensorEntity):
         self._attr_state_class = SensorStateClass.MEASUREMENT
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
+
+    @property
     def native_value(self) -> int | None:
         """Return zone device battery level value."""
         return self._zone.powerg_battery_level
@@ -313,6 +338,11 @@ class ZoneSensor_BatteryVoltage(QolsysZoneEntity, SensorEntity):
         self._attr_device_class = SensorDeviceClass.VOLTAGE
         self._attr_suggested_display_precision = 3
         self._attr_state_class = SensorStateClass.MEASUREMENT
+
+    @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
 
     @property
     def native_value(self) -> float | None:

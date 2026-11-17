@@ -5,6 +5,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from qolsys_controller.enum_qolsys import ZoneStatus
+from qolsys_controller.zone import QolsysZone
 
 from custom_components.qolsys_panel.const import CONF_IMEI, CONF_RANDOM_MAC, DOMAIN
 from homeassistant.const import CONF_HOST, CONF_MAC, CONF_MODEL
@@ -17,6 +19,17 @@ PANEL_MODEL = "IQ Panel 4"
 PANEL_IMEI = "123456789012345"
 RANDOM_MAC = "aa:bb:cc:dd:ee:01"
 PLUGIN_IP = "192.168.1.2"
+
+
+def set_zone_status(zone: MagicMock, status: ZoneStatus) -> None:
+    """Set a mocked zone's status and answer status checks with the real logic."""
+    zone.sensorstatus = status
+    zone.is_trouble.side_effect = lambda: QolsysZone.is_trouble(zone)
+    zone.is_tampered.side_effect = lambda: QolsysZone.is_tampered(zone)
+    zone.is_available_reading.side_effect = lambda: QolsysZone.is_available_reading(
+        zone
+    )
+    zone.is_available_status.side_effect = lambda: QolsysZone.is_available_status(zone)
 
 
 @pytest.fixture(autouse=True)
