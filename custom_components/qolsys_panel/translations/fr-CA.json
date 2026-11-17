@@ -136,6 +136,24 @@
     },
     "mqtt_error": {
       "message": "Erreur de communication MQTT avec le panneau Qolsys."
+    },
+    "missing_unique_id": {
+      "message": "L'entrée de configuration n'a pas d'identifiant unique; ajoutez de nouveau l'intégration."
+    },
+    "invalid_user_code": {
+      "message": "Code d'utilisateur invalide."
+    },
+    "operation_timeout": {
+      "message": "Le panneau Qolsys n'a pas répondu à temps."
+    },
+    "arm_failed": {
+      "message": "Échec de l'armement de la partition."
+    },
+    "disarm_failed": {
+      "message": "Échec du désarmement de la partition."
+    },
+    "zones_require_bypass": {
+      "message": "Des zones ouvertes doivent être contournées : {zones}. Activez l'interrupteur « Force Arm » pour armer quand même."
     }
   },
   "entity": {

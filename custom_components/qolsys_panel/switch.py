@@ -14,6 +14,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
 from . import QolsysPanelConfigEntry
+from .const import DOMAIN
 from .entity import QolsysAutomationDeviceEntity, QolsysPartitionEntity
 
 PARALLEL_UPDATES = 0
@@ -27,7 +28,9 @@ async def async_setup_entry(
     """Set up switch."""
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="missing_unique_id"
+        )
 
     entities: list[SwitchEntity] = []
 

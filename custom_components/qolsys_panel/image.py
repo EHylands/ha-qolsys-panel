@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import DOMAIN
 from .entity import QolsysPanelEntity
 from .types import QolsysPanelConfigEntry
 
@@ -26,7 +27,9 @@ async def async_setup_entry(
 ) -> None:
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="missing_unique_id"
+        )
 
     entities: list[ImageEntity] = []
     peek_in_picture = QolsysPicture_PeekIn(hass, QolsysPanel, unique_id)

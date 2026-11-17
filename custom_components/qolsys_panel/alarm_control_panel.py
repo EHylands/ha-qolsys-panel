@@ -26,6 +26,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError, HomeAssistantError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import DOMAIN
 from .entity import QolsysPartitionEntity
 from .types import QolsysPanelConfigEntry
 
@@ -43,7 +44,9 @@ async def async_setup_entry(
     QolsysPanel = config_entry.runtime_data
 
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="missing_unique_id"
+        )
 
     entities: list[AlarmControlPanelEntity] = []
 
@@ -140,12 +143,18 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         try:
             await self._partition.disarm(user_code=code or "")
         except QolsysUserCodeError as err:
-            raise HomeAssistantError("DISARM: Invalid user code") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="invalid_user_code"
+            ) from err
         except QolsysOperationTimeoutError as err:
-            raise HomeAssistantError("DISARM: Operation timed out") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="operation_timeout"
+            ) from err
         except Exception as err:
             _LOGGER.error("Failed to disarm partition%s: %s", self._partition_id, err)
-            raise HomeAssistantError("DISARM: Failed to disarm partition") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="disarm_failed"
+            ) from err
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
         """Send ARM-STAY command."""
@@ -166,22 +175,27 @@ class PartitionAlarmControlPanel(QolsysPartitionEntity, AlarmControlPanelEntity)
         try:
             await self._partition.arm(arm_mode, user_code=code or "")
         except QolsysUserCodeError as err:
-            raise HomeAssistantError(f"{arm_mode.name}: Invalid user code") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="invalid_user_code"
+            ) from err
         except QolsysOperationTimeoutError as err:
-            raise HomeAssistantError(f"{arm_mode.name}: Operation timed out") from err
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="operation_timeout"
+            ) from err
         except QolsysZoneBypassError as err:
             zone_names = [
                 zone.sensorname
                 if (zone := self.QolsysPanel.state.zone(zone_id))
-                else zone_id
+                else str(zone_id)
                 for zone_id in err.zones
             ]
             raise HomeAssistantError(
-                f"{arm_mode.name}: Open zones {zone_names} require bypass; "
-                "turn on the Force Arm switch to arm anyway"
+                translation_domain=DOMAIN,
+                translation_key="zones_require_bypass",
+                translation_placeholders={"zones": ", ".join(zone_names)},
             ) from err
         except Exception as err:
             _LOGGER.error("Failed to arm partition%s: %s", self._partition_id, err)
             raise HomeAssistantError(
-                f"{arm_mode.name}: Failed to arm partition"
+                translation_domain=DOMAIN, translation_key="arm_failed"
             ) from err
