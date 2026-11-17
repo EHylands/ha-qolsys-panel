@@ -2,6 +2,41 @@
 
 <!-- version list -->
 
+## v1.14.4 (2026-11-17)
+
+### 🐛 Bug Fixes
+
+- Add is_available_tamper ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+- Bump qolsys-controller to 1.13.3
+  ([`26e9b4a`](https://github.com/EHylands/ha-qolsys-panel/commit/26e9b4a515c0423b2550a03f04c7a70e943594cd))
+
+- Delegate zone availability to qolsys-controller
+  ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+- Qolsys-controller test version ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+- Report zones unavailable instead of misleading open/closed states
+  ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+- Report zones unavailable instead of misleading openclosed states (#183)
+  ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+- Zone tamper ([#184](https://github.com/EHylands/ha-qolsys-panel/pull/184),
+  [`cb11be0`](https://github.com/EHylands/ha-qolsys-panel/commit/cb11be0fea06ce6ba8a000579476f6f69c17c282))
+
+### 🤖 Continuous Integration
+
+- Rebuild dev at the start of every beta build
+  ([#186](https://github.com/EHylands/ha-qolsys-panel/pull/186),
+  [`da9e32c`](https://github.com/EHylands/ha-qolsys-panel/commit/da9e32cceb00ea3cfcc506d0ea59f1089e503efe))
+
+
 ## v1.14.3 (2026-11-16)
 
 ### 🐛 Bug Fixes
