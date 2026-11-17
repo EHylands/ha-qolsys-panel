@@ -14,7 +14,6 @@ from qolsys_controller.enum_qolsys import (
     PartitionQuickExitState,
     QolsysNotification,
     ZoneSensorType,
-    ZoneStatus,
 )
 
 from homeassistant.components.binary_sensor import (
@@ -384,9 +383,14 @@ class ZoneSensor_Tamper(QolsysZoneEntity, BinarySensorEntity):
         self._attr_translation_key = "zone_tamper"
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's tamper state is unknown ."""
+        return super().available and self._zone.is_available_tamper()
+
+    @property
     def is_on(self) -> bool:
-        """Return if this zone tamper is on."""
-        return self._zone.sensorstatus == ZoneStatus.TAMPERED
+        """Return if this zone is tampered."""
+        return self._zone.is_tampered()
 
 
 class ZoneSensor_BatteryStatus(QolsysZoneEntity, BinarySensorEntity):
@@ -402,6 +406,11 @@ class ZoneSensor_BatteryStatus(QolsysZoneEntity, BinarySensorEntity):
         self._attr_device_class = BinarySensorDeviceClass.BATTERY
         self._attr_unique_id = f"{self._zone_unique_id}_battery_status"
         self._attr_translation_key = "zone_battery_status"
+
+    @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
 
     @property
     def is_on(self) -> bool:
@@ -424,6 +433,11 @@ class ZoneSensor_ACStatus(QolsysZoneEntity, BinarySensorEntity):
         self._attr_translation_key = "zone_ac_status"
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's readings are stale."""
+        return super().available and self._zone.is_available_reading()
+
+    @property
     def is_on(self) -> bool:
         """Return True while this zone has AC power (device_class PLUG: on == plugged in)."""
         return self._zone.ac_status == "Normal"
@@ -440,6 +454,11 @@ class ZonesSensor(QolsysZoneEntity, BinarySensorEntity):
         """Set up a binary sensor entity for a zone in a Qolsys Panel."""
         super().__init__(QolsysPanel, zone_id, unique_id)
         self._attr_unique_id = self._zone_unique_id
+
+    @property
+    def available(self) -> bool:
+        """Return False while the zone's open/closed state is unknown."""
+        return super().available and self._zone.is_available_status()
 
     @property
     def is_on(self) -> bool:
