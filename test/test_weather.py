@@ -62,6 +62,14 @@ async def test_async_setup_entry_creates_entities(
     assert isinstance(entities[0], WeatherSensor)
 
 
+def test_name(controller: MagicMock) -> None:
+    """The entity is named "Weather", under the panel device's name."""
+    weather = WeatherSensor(controller, UID)
+    assert weather.has_entity_name is True
+    assert weather.name == "Weather"
+    assert weather.unique_id == f"{UID}_weather"
+
+
 def test_condition_present(controller: MagicMock) -> None:
     """The condition reflects the current weather when available."""
     weather = WeatherSensor(controller, UID)

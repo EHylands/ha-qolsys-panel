@@ -57,10 +57,11 @@ async def test_async_setup_entry_creates_entities(
     assert isinstance(entities[0], QolsysPanelScene)
 
 
-def test_name_has_no_device_prefix(controller: MagicMock) -> None:
-    """The entity is named after the panel scene, without a device prefix."""
+def test_name(controller: MagicMock) -> None:
+    """The entity is named after the panel scene, under the panel device's name."""
     scene = QolsysPanelScene(controller, "7", UID)
     controller.state.scene.assert_called_once_with("7")
+    assert scene.has_entity_name is True
     assert scene.name == "Good Night Scene"
     assert scene.unique_id == f"{UID}_scene_7"
 
