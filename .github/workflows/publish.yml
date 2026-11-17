@@ -24,8 +24,8 @@ name: Build
 #
 # A Build from dev first rebuilds the throwaway `dev` beta sandbox (reset to main
 # + re-merge every open `beta` PR at its latest commit), so a beta always ships
-# what those PRs contain now. After a STABLE release on main, dev is rebuilt the
-# same way on top of the new main. Both go through dev-rebuild.yml.
+# what those PRs contain now (via dev-rebuild.yml). A stable release doesn't
+# rebuild dev: the next beta Build does that before it runs.
 on:
   workflow_dispatch:
     inputs:
@@ -61,7 +61,7 @@ jobs:
           fi
           echo "Releasing from '${{ github.ref_name }}'."
 
-  # Stage 0.5 — refresh dev. A beta Build always contains the latest commit of
+  # Stage 1 — refresh dev. A beta Build always contains the latest commit of
   # every open `beta` PR. Runs as a no-op on main rather than being skipped: a
   # skipped job would also skip every later job, including the release.
   rebuild:
@@ -76,7 +76,7 @@ jobs:
       fail_on_conflict: true
     secrets: inherit
 
-  # Stage 1 — checks. Reuse the same validations + lint + tests that run on
+  # Stage 2 — checks. Reuse the same validations + lint + tests that run on
   # every push/PR so a release can never ship code that would fail CI. On dev,
   # test the branch tip: the dispatched commit predates the rebuild.
   checks:
@@ -86,15 +86,11 @@ jobs:
     with:
       ref: ${{ github.ref_name == 'dev' && 'dev' || '' }}
 
-  # Stage 2 — release. Only runs if the branch is valid and checks passed.
+  # Stage 3 — release. Only runs if the branch is valid and checks passed.
   release:
     name: Semantic Version + Tag
     runs-on: ubuntu-latest
     needs: [guard, checks]
-
-    outputs:
-      released: ${{ steps.release.outputs.released }}
-      tag: ${{ steps.release.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v7
@@ -255,20 +251,3 @@ jobs:
           } > release-notes.md
           gh release edit "$TAG" --notes-file release-notes.md
           echo "Inlined qolsys-controller $QC_TAG changes into release $TAG."
-
-  # Stage 3 — rebuild the beta channel. After a STABLE release on main, reset the
-  # throwaway `dev` beta sandbox to the freshly released main and re-merge the
-  # still-open `beta` PRs so the beta track continues on top of the new stable tag
-  # (and the next beta computes the right version). The logic lives in
-  # dev-rebuild.yml so it is also runnable manually and reused by main-merge.yml;
-  # here we invoke it via workflow_call. Runs only when a stable release was
-  # actually cut (released == 'true').
-  dev-rebuild:
-    name: Dev
-    needs: release
-    if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
-    permissions:
-      contents: write
-      pull-requests: write
-    uses: ./.github/workflows/dev-rebuild.yml
-    secrets: inherit

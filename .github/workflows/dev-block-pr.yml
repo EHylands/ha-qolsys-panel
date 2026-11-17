@@ -4,7 +4,7 @@ name: DEV - Block PRs
 # (dev-rebuild.yml). Nobody should ever open a PR *into* `dev`: a rebuild would
 # reset the branch out from under it, producing bogus diffs/conflicts. Features
 # ship via `feature → main`; to test a feature as a beta, label its main PR
-# `beta` (dev-add-beta.yml merges it into dev for you). So any PR whose BASE is
+# `beta` (the next Build from dev merges it in). So any PR whose BASE is
 # `dev` is closed automatically with an explanatory comment.
 #
 # pull_request_target (base-repo context, write-capable token) so fork PRs can be
