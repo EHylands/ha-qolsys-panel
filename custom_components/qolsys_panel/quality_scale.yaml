@@ -69,11 +69,7 @@ rules:
     comment: |
       Only sensor, binary sensor and event entities use translation keys; the
       other platforms set hard-coded English names.
-  exception-translations:
-    status: todo
-    comment: |
-      Actions use translation keys, but the alarm control panel's arm/disarm
-      errors and each platform's missing unique_id error are plain English.
+  exception-translations: done
   icon-translations: done
   reconfiguration-flow: done
   repair-issues:
