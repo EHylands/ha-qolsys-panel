@@ -139,9 +139,10 @@ async def test_async_setup_entry_missing_unique_id_raises(
     config_entry.unique_id = None
     add_entities = MagicMock()
 
-    with pytest.raises(ConfigEntryError):
+    with pytest.raises(ConfigEntryError) as exc_info:
         await async_setup_entry(hass, config_entry, add_entities)
 
+    assert exc_info.value.translation_key == "missing_unique_id"
     add_entities.assert_not_called()
 
 

@@ -136,6 +136,24 @@
     },
     "mqtt_error": {
       "message": "Qolsys Panel MQTT communication error."
+    },
+    "missing_unique_id": {
+      "message": "The config entry has no unique ID; re-add the integration."
+    },
+    "invalid_user_code": {
+      "message": "Invalid user code."
+    },
+    "operation_timeout": {
+      "message": "The Qolsys Panel did not respond in time."
+    },
+    "arm_failed": {
+      "message": "Failed to arm the partition."
+    },
+    "disarm_failed": {
+      "message": "Failed to disarm the partition."
+    },
+    "zones_require_bypass": {
+      "message": "Open zones require bypass: {zones}. Turn on the Force Arm switch to arm anyway."
     }
   },
   "entity": {

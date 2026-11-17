@@ -28,6 +28,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_call_later
 
 from . import QolsysPanelConfigEntry
+from .const import DOMAIN
 from .entity import (
     QolsysAutomationDeviceEntity,
     QolsysIpCameraEntity,
@@ -114,7 +115,9 @@ async def async_setup_entry(
     QolsysPanel = config_entry.runtime_data
 
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="missing_unique_id"
+        )
 
     # Add Doorbell Binary Sensor
     entities.append(QolsysDoorbellSensor(hass, QolsysPanel, unique_id))

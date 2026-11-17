@@ -27,6 +27,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
+from .const import DOMAIN
 from .types import QolsysPanelConfigEntry
 
 _LOGGER = logging.getLogger(__name__)
@@ -42,7 +43,9 @@ async def async_setup_entry(
     """Set up Thermostats entities."""
     QolsysPanel = config_entry.runtime_data
     if (unique_id := config_entry.unique_id) is None:
-        raise ConfigEntryError("Config entry has no unique_id; re-add the integration")
+        raise ConfigEntryError(
+            translation_domain=DOMAIN, translation_key="missing_unique_id"
+        )
 
     entities: list[ClimateEntity] = []
 

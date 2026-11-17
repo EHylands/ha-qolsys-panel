@@ -20,6 +20,7 @@ from custom_components.qolsys_panel.alarm_control_panel import (
     PartitionAlarmControlPanel,
     async_setup_entry,
 )
+from custom_components.qolsys_panel.const import DOMAIN
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelState,
     CodeFormat,
@@ -57,9 +58,10 @@ async def test_async_setup_entry_missing_unique_id_raises(
     config_entry.unique_id = None
     add_entities = MagicMock()
 
-    with pytest.raises(ConfigEntryError):
+    with pytest.raises(ConfigEntryError) as exc_info:
         await async_setup_entry(hass, config_entry, add_entities)
 
+    assert exc_info.value.translation_key == "missing_unique_id"
     add_entities.assert_not_called()
 
 
@@ -168,15 +170,24 @@ async def test_disarm(controller: MagicMock) -> None:
 
 
 @pytest.mark.parametrize(
-    "error",
-    [QolsysUserCodeError(), QolsysOperationTimeoutError(), RuntimeError("boom")],
+    ("error", "translation_key"),
+    [
+        (QolsysUserCodeError(), "invalid_user_code"),
+        (QolsysOperationTimeoutError(), "operation_timeout"),
+        (RuntimeError("boom"), "disarm_failed"),
+    ],
 )
-async def test_disarm_errors(controller: MagicMock, error: Exception) -> None:
-    """Disarm failures surface as HomeAssistantError."""
+async def test_disarm_errors(
+    controller: MagicMock, error: Exception, translation_key: str
+) -> None:
+    """Disarm failures surface as translated HomeAssistantErrors."""
     entity = _panel(controller)
     cast(AsyncMock, entity._partition.disarm).side_effect = error
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(HomeAssistantError) as exc_info:
         await entity.async_alarm_disarm("1234")
+
+    assert exc_info.value.translation_domain == DOMAIN
+    assert exc_info.value.translation_key == translation_key
 
 
 @pytest.mark.parametrize(
@@ -197,17 +208,38 @@ async def test_arm(controller: MagicMock, method: str, arm_mode) -> None:
 
 
 @pytest.mark.parametrize(
-    "error",
+    ("error", "translation_key"),
     [
-        QolsysUserCodeError(),
-        QolsysOperationTimeoutError(),
-        QolsysZoneBypassError(["1"]),
-        RuntimeError("boom"),
+        (QolsysUserCodeError(), "invalid_user_code"),
+        (QolsysOperationTimeoutError(), "operation_timeout"),
+        (RuntimeError("boom"), "arm_failed"),
     ],
 )
-async def test_arm_errors(controller: MagicMock, error: Exception) -> None:
-    """Arm failures surface as HomeAssistantError."""
+async def test_arm_errors(
+    controller: MagicMock, error: Exception, translation_key: str
+) -> None:
+    """Arm failures surface as translated HomeAssistantErrors."""
     entity = _panel(controller)
     cast(AsyncMock, entity._partition.arm).side_effect = error
-    with pytest.raises(HomeAssistantError):
+    with pytest.raises(HomeAssistantError) as exc_info:
         await entity.async_alarm_arm_away("1234")
+
+    assert exc_info.value.translation_domain == DOMAIN
+    assert exc_info.value.translation_key == translation_key
+
+
+async def test_arm_bypass_error(controller: MagicMock) -> None:
+    """The bypass error lists open zones by name, falling back to the zone id."""
+    front_door = MagicMock()
+    front_door.sensorname = "Front Door"
+    controller.state.zone.side_effect = {"1": front_door}.get
+    entity = _panel(controller)
+    cast(AsyncMock, entity._partition.arm).side_effect = QolsysZoneBypassError(
+        ["1", "2"]
+    )
+    with pytest.raises(HomeAssistantError) as exc_info:
+        await entity.async_alarm_arm_away("1234")
+
+    assert exc_info.value.translation_domain == DOMAIN
+    assert exc_info.value.translation_key == "zones_require_bypass"
+    assert exc_info.value.translation_placeholders == {"zones": "Front Door, 2"}
