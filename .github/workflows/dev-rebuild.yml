@@ -4,11 +4,11 @@ name: DEV - Rebuild (reset + re-merge betas)
 # then re-merges EVERY open PR still labeled `beta` so the next beta Build from
 # `dev` contains the current in-flight feature set on top of the latest stable.
 # Runs two ways:
-#   - Manually (workflow_dispatch): "Run workflow" button in the Actions tab.
-#   - Automatically (workflow_call): from publish.yml after a STABLE release on
-#     main, and from main-merge.yml on every merge to main, so the beta track is
-#     always rebased onto the latest main. Also at the start of every beta Build
-#     from dev, with fail_on_conflict set.
+#   - Automatically (workflow_call): from publish.yml at the start of every beta
+#     Build from dev, with fail_on_conflict set. This is the only automatic
+#     rebuild, so dev on GitHub reflects the `beta` labels as of the last Build.
+#   - Manually (workflow_dispatch): "Run workflow" button in the Actions tab, to
+#     refresh dev without cutting a beta.
 #
 # Force-pushes dev (throwaway by design). A PR that no longer merges cleanly is
 # SKIPPED with a comment (not fatal) so one stale branch can't block the rebuild,
@@ -79,7 +79,7 @@ jobs:
               git merge --abort || true
               conflicted="$conflicted #$pr"
               gh pr comment "$pr" --body \
-                "⚠️ Skipped during \`dev\` rebuild — merge conflict against the current \`dev\`. Rebase the branch onto \`main\`, then re-run **DEV - Rebuild** (or remove and re-apply the \`beta\` label)."
+                "⚠️ Skipped during \`dev\` rebuild — merge conflict against the current \`dev\`. Rebase the branch onto \`main\`, then run **Build** from \`dev\` again."
               echo "Conflict on PR #$pr — skipped."
             fi
             echo "::endgroup::"
