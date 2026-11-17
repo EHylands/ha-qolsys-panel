@@ -37,8 +37,6 @@ async def async_setup_entry(
 class QolsysPanelScene(Scene, QolsysPanelEntity):
     """An scene entity for a qolsys panel."""
 
-    _attr_has_entity_name = False
-
     def __init__(
         self, QolsysPanel: qolsys_controller, scene_id: str, unique_id: str
     ) -> None:

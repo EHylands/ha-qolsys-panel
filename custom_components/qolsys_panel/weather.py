@@ -42,8 +42,6 @@ async def async_setup_entry(
 class WeatherSensor(QolsysWeatherEntity, WeatherEntity):
     """An Weather Entity for Qolsys Panel."""
 
-    _attr_has_entity_name = False
-
     def __init__(self, QolsysPanel: qolsys_controller, unique_id: str) -> None:
         """Initialise a Qolsys Weather entity."""
         super().__init__(QolsysPanel, unique_id)
