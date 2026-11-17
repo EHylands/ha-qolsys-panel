@@ -7,13 +7,25 @@ name: DEV - Rebuild (reset + re-merge betas)
 #   - Manually (workflow_dispatch): "Run workflow" button in the Actions tab.
 #   - Automatically (workflow_call): from publish.yml after a STABLE release on
 #     main, and from main-merge.yml on every merge to main, so the beta track is
-#     always rebased onto the latest main.
+#     always rebased onto the latest main. Also at the start of every beta Build
+#     from dev, with fail_on_conflict set.
 #
 # Force-pushes dev (throwaway by design). A PR that no longer merges cleanly is
-# SKIPPED with a comment (not fatal) so one stale branch can't block the rebuild.
+# SKIPPED with a comment (not fatal) so one stale branch can't block the rebuild,
+# unless the caller sets fail_on_conflict.
 on:
   workflow_dispatch:
   workflow_call:
+    inputs:
+      # Run as a no-op. Lets publish.yml always call this job on main: a skipped
+      # job would also skip every later job, including the release.
+      skip:
+        type: boolean
+        default: false
+      # Fail without pushing dev rather than building a beta missing a PR.
+      fail_on_conflict:
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -27,7 +39,7 @@ concurrency:
 
 jobs:
   dev-rebuild:
-    name: Reset dev to main + re-merge beta PRs
+    name: Rebuild dev
     runs-on: ubuntu-latest
     steps:
       # main/dev are unprotected here, so GITHUB_TOKEN can force-push dev
@@ -35,14 +47,17 @@ jobs:
       # with a ruleset bypass actor (GITHUB_TOKEN can't bypass its own repo's
       # protection).
       - uses: actions/checkout@v7
+        if: ${{ !inputs.skip }}
         with:
           ref: main
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Rebuild dev from main + open `beta` PRs
+        if: ${{ !inputs.skip }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FAIL_ON_CONFLICT: ${{ inputs.fail_on_conflict }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -69,6 +84,11 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+          if [ -n "$conflicted" ] && [ "$FAIL_ON_CONFLICT" = "true" ]; then
+            echo "::error::Merge conflict on PR(s)${conflicted}. Rebase onto main, then run Build again."
+            exit 1
+          fi
 
           # One force-push publishes the rebuilt dev. --force-with-lease guards
           # against a concurrent dev update between checkout and push.

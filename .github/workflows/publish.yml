@@ -22,8 +22,10 @@ name: Build
 # The `bump` input forces a level instead, e.g. to cut a release with no
 # triggering commit at all.
 #
-# After a STABLE release on main, the throwaway `dev` beta sandbox is rebuilt
-# (reset to the new main + re-merge the open `beta` PRs) via dev-rebuild.yml.
+# A Build from dev first rebuilds the throwaway `dev` beta sandbox (reset to main
+# + re-merge every open `beta` PR at its latest commit), so a beta always ships
+# what those PRs contain now. After a STABLE release on main, dev is rebuilt the
+# same way on top of the new main. Both go through dev-rebuild.yml.
 on:
   workflow_dispatch:
     inputs:
@@ -59,12 +61,30 @@ jobs:
           fi
           echo "Releasing from '${{ github.ref_name }}'."
 
+  # Stage 0.5 — refresh dev. A beta Build always contains the latest commit of
+  # every open `beta` PR. Runs as a no-op on main rather than being skipped: a
+  # skipped job would also skip every later job, including the release.
+  rebuild:
+    name: Beta
+    needs: guard
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/dev-rebuild.yml
+    with:
+      skip: ${{ github.ref_name != 'dev' }}
+      fail_on_conflict: true
+    secrets: inherit
+
   # Stage 1 — checks. Reuse the same validations + lint + tests that run on
-  # every push/PR so a release can never ship code that would fail CI.
+  # every push/PR so a release can never ship code that would fail CI. On dev,
+  # test the branch tip: the dispatched commit predates the rebuild.
   checks:
     name: CI
-    needs: guard
+    needs: [guard, rebuild]
     uses: ./.github/workflows/ci.yml
+    with:
+      ref: ${{ github.ref_name == 'dev' && 'dev' || '' }}
 
   # Stage 2 — release. Only runs if the branch is valid and checks passed.
   release:
@@ -79,6 +99,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ github.ref_name == 'dev' && 'dev' || '' }}
           fetch-depth: 0
 
       - uses: actions/setup-python@v7
@@ -87,6 +108,28 @@ jobs:
 
       - name: Install semantic-release
         run: python -m pip install python-semantic-release
+
+      # A dev rebuild drops the previous beta's tag from dev's history, and
+      # semantic-release only counts tags reachable from HEAD, so it recomputes
+      # the same beta version and stops with "already been released". Merge the
+      # newest unshipped beta tag with -s ours (history only, no file changes) so
+      # numbering continues from it.
+      - name: Keep beta numbering across dev rebuilds
+        if: github.ref_name == 'dev'
+        run: |
+          stable="$(git tag --merged HEAD --list 'v*' | grep -v -- '-beta' | sort -V | tail -1)"
+          beta="$(git tag --list 'v*-beta.*' | sort -V | tail -1)"
+          base="${beta%-beta.*}"
+
+          # Only for a beta of a version newer than the last stable release
+          if [ -n "$beta" ] && [ "$base" != "$stable" ] \
+            && [ "$(printf '%s\n' "$base" "$stable" | sort -V | tail -1)" = "$base" ] \
+            && ! git merge-base --is-ancestor "$beta" HEAD; then
+            echo "Merging $beta into dev's history."
+            git -c user.name="github-actions[bot]" \
+              -c user.email="github-actions[bot]@users.noreply.github.com" \
+              merge -s ours --no-edit "$beta"
+          fi
 
       # Resolve the controller version this channel ships and, if it's newer than
       # the current pin, commit the bump: latest FINAL from main (stable), latest
@@ -221,7 +264,7 @@ jobs:
   # here we invoke it via workflow_call. Runs only when a stable release was
   # actually cut (released == 'true').
   dev-rebuild:
-    name: Rebuild dev (reset + re-merge betas)
+    name: Dev
     needs: release
     if: github.ref_name == 'main' && needs.release.outputs.released == 'true'
     permissions:

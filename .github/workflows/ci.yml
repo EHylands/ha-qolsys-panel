@@ -12,6 +12,11 @@ on:
   push:
   pull_request:
   workflow_call:
+    inputs:
+      # Ref to test. Empty tests the commit that triggered the run.
+      ref:
+        type: string
+        default: ""
 
 # Cancel superseded runs of the same event on the same ref. push and
 # pull_request are separate events, so a branch with an open PR still runs CI
@@ -26,6 +31,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
       - uses: home-assistant/actions/hassfest@master
 
   hacs:
@@ -33,6 +40,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
       - uses: hacs/action@main
         with:
           category: integration
@@ -43,6 +52,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
@@ -77,6 +87,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
+          ref: ${{ inputs.ref }}
           fetch-depth: 0
       - uses: actions/setup-python@v7
         with:
