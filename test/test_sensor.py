@@ -2,16 +2,18 @@
 
 from unittest.mock import MagicMock
 
-from conftest import PANEL_MAC
+from conftest import PANEL_MAC, set_zone_status
 import pytest
 from qolsys_controller.automation.service_battery import BatteryService
 from qolsys_controller.automation.service_meter import MeterService
 from qolsys_controller.automation.service_sensor import SensorService
 from qolsys_controller.enum_qolsys import (
+    ControllerState,
     PartitionError,
     QolsysMeterScale,
     QolsysNotification,
     QolsysSensorScale,
+    ZoneStatus,
 )
 from qolsys_controller.observable import Event
 
@@ -275,6 +277,27 @@ def test_zone_sensor_native_value(controller: MagicMock, sensor_cls, attr) -> No
     sensor = sensor_cls(controller, "1", UID)
     setattr(sensor._zone, attr, 42)
     assert sensor.native_value == 42
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        (ZoneStatus.CLOSED, True),
+        (ZoneStatus.TAMPERED, True),
+        (ZoneStatus.UNKNOWN, True),
+        (ZoneStatus.UNREACHABLE, False),
+        (ZoneStatus.FAILURE, False),
+    ],
+)
+@pytest.mark.parametrize(("sensor_cls", "attr"), ZONE_SENSORS)
+def test_zone_sensor_available(
+    controller: MagicMock, sensor_cls, attr, status: ZoneStatus, expected: bool
+) -> None:
+    """Zone readings survive a tamper but go stale while the zone is in trouble."""
+    controller.controller_state = ControllerState.CONNECTED
+    sensor = sensor_cls(controller, "1", UID)
+    set_zone_status(sensor._zone, status)
+    assert sensor.available is expected
 
 
 def test_automation_battery_value(controller: MagicMock) -> None:
