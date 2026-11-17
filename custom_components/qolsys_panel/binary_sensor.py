@@ -383,6 +383,11 @@ class ZoneSensor_Tamper(QolsysZoneEntity, BinarySensorEntity):
         self._attr_translation_key = "zone_tamper"
 
     @property
+    def available(self) -> bool:
+        """Return False while the zone's tamper state is unknown."""
+        return super().available and self._zone.is_available_tamper()
+
+    @property
     def is_on(self) -> bool:
         """Return if this zone is tampered."""
         return self._zone.is_tampered()

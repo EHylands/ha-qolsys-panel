@@ -328,13 +328,16 @@ def test_zones_sensor_tracks_zone_availability(controller: MagicMock) -> None:
         (ZoneSensor_ACStatus, ZoneStatus.UNKNOWN, True),
         (ZoneSensor_ACStatus, ZoneStatus.UNREACHABLE, False),
         (ZoneSensor_ACStatus, ZoneStatus.FAILURE, False),
-        # Connectivity and tamper report the problem, so they stay available.
+        # Connectivity reports the trouble itself, so it stays available.
         (ZoneSensor_Unreachable, ZoneStatus.UNREACHABLE, True),
         (ZoneSensor_Unreachable, ZoneStatus.TAMPERED, True),
         (ZoneSensor_Unreachable, ZoneStatus.UNKNOWN, True),
+        # Tamper shares sensorstatus: trouble or unknown hides whether it's tampered.
+        (ZoneSensor_Tamper, ZoneStatus.CLOSED, True),
         (ZoneSensor_Tamper, ZoneStatus.TAMPERED, True),
-        (ZoneSensor_Tamper, ZoneStatus.UNREACHABLE, True),
-        (ZoneSensor_Tamper, ZoneStatus.UNKNOWN, True),
+        (ZoneSensor_Tamper, ZoneStatus.UNREACHABLE, False),
+        (ZoneSensor_Tamper, ZoneStatus.FAILURE, False),
+        (ZoneSensor_Tamper, ZoneStatus.UNKNOWN, False),
     ],
 )
 def test_zone_entity_available_by_status(
@@ -392,12 +395,14 @@ def test_troubled_zone_unavailable_with_connectivity_sensor_off(
     controller.controller_state = ControllerState.CONNECTED
     main = ZonesSensor(controller, "1", UID)
     connectivity = ZoneSensor_Unreachable(controller, "1", UID)
+    tamper = ZoneSensor_Tamper(controller, "1", UID)
     battery = ZoneSensor_BatteryStatus(controller, "1", UID)
     set_zone_status(cast(MagicMock, main._zone), ZoneStatus.UNREACHABLE)
 
     assert main.available is False
     assert connectivity.available is True
     assert connectivity.is_on is False
+    assert tamper.available is False
     assert battery.available is False
 
 

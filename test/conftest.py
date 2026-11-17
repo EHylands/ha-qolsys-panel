@@ -30,6 +30,7 @@ def set_zone_status(zone: MagicMock, status: ZoneStatus) -> None:
         zone
     )
     zone.is_available_status.side_effect = lambda: QolsysZone.is_available_status(zone)
+    zone.is_available_tamper.side_effect = lambda: QolsysZone.is_available_tamper(zone)
 
 
 @pytest.fixture(autouse=True)
