@@ -11,9 +11,10 @@ from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.errors import QolsysMqttError, QolsysSslError
 
 from homeassistant.const import CONF_HOST, CONF_MAC, Platform
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed, ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.debounce import Debouncer
 from homeassistant.helpers.device_registry import CONNECTION_NETWORK_MAC
 from homeassistant.helpers.typing import ConfigType
 
@@ -60,6 +61,26 @@ CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 # How long to wait for the panel to connect during setup before retrying.
 _CONNECT_TIMEOUT_SECONDS = 30
+
+# Panel notifications for objects being added or deleted. Entities are only
+# created at setup, so any of these reloads the entry to pick up new devices and
+# prune removed ones.
+_DEVICE_CHANGE_NOTIFICATIONS = (
+    QolsysNotification.PARTITION_ADD,
+    QolsysNotification.PARTITION_DELETE,
+    QolsysNotification.ZONE_ADD,
+    QolsysNotification.ZONE_DELETE,
+    QolsysNotification.AUTOMATION_ADD,
+    QolsysNotification.AUTOMATION_DELETE,
+    QolsysNotification.SCENE_ADD,
+    QolsysNotification.SCENE_DELETE,
+    QolsysNotification.CAMERA_ADD,
+    QolsysNotification.CAMERA_DELETE,
+)
+
+# Coalesce a burst of add/delete notifications (e.g. the resync after a
+# reconnect, or deleting a partition along with its zones) into one reload.
+_RELOAD_COOLDOWN_SECONDS = 10
 
 
 def _setup_error(
@@ -126,7 +147,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     )
 
     # Start the controller (long-lived) and, separately, wait for the CONNECTED state.
-    controller_task = hass.async_create_background_task(
+    # The controller runs as a config entry background task, so HA cancels it
+    # when the entry is unloaded.
+    controller_task = entry.async_create_background_task(
+        hass,
         QolsysPanel.run_forever(reconnect=True, run_once=False, start_pairing=False),
         "qolsys-controller",
     )
@@ -140,9 +164,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 
     if connected_task not in done or connected_task.exception() is not None:
         # Fatal startup failure or timeout: tear everything down and surface the reason.
+        # Cancel the controller task rather than calling QolsysPanel.stop(), which
+        # can hang while the controller is waiting to reconnect.
         connected_task.cancel()
-        await QolsysPanel.stop()
         controller_task.cancel()
+        await asyncio.wait({controller_task})
+        
         if controller_task in done:
             exc = controller_task.exception()
             _LOGGER.error("Qolsys Panel startup failed: %r", exc)
@@ -157,7 +184,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
     # restored.
     was_connected = True
 
-    def _check_connection() -> None:
+    def _on_panel_status_update() -> None:
         nonlocal was_connected
         state = QolsysPanel.controller_state
         if was_connected and state == ControllerState.RECONNECTING:
@@ -165,9 +192,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         elif not was_connected and state == ControllerState.CONNECTED:
             _LOGGER.info("Connection to Qolsys Panel restored")
         was_connected = state == ControllerState.CONNECTED
-
-    def _on_panel_status_update() -> None:
-        hass.loop.call_soon(_check_connection)
 
     def _unregister_connection_logger() -> None:
         QolsysPanel.state.unregister(
@@ -178,6 +202,33 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         QolsysNotification.PANEL_STATUS_UPDATE, _on_panel_status_update
     )
     entry.async_on_unload(_unregister_connection_logger)
+
+    # Reload when a device is added to or deleted from the panel. The initial
+    # database sync happens before the controller reports CONNECTED, so it
+    # doesn't trigger a reload here.
+    @callback
+    def _reload_entry() -> None:
+        _LOGGER.info("Devices changed on the Qolsys Panel, reloading")
+        hass.config_entries.async_schedule_reload(entry.entry_id)
+
+    reload_debouncer = Debouncer(
+        hass,
+        _LOGGER,
+        cooldown=_RELOAD_COOLDOWN_SECONDS,
+        immediate=False,
+        function=_reload_entry,
+    )
+
+    def _unregister_device_change_listener() -> None:
+        for notification in _DEVICE_CHANGE_NOTIFICATIONS:
+            QolsysPanel.state.unregister(
+                notification, reload_debouncer.async_schedule_call
+            )
+        reload_debouncer.async_shutdown()
+
+    for notification in _DEVICE_CHANGE_NOTIFICATIONS:
+        QolsysPanel.state.register(notification, reload_debouncer.async_schedule_call)
+    entry.async_on_unload(_unregister_device_change_listener)
 
     device_registry = dr.async_get(hass)
     mac = entry.data.get(CONF_MAC)
@@ -204,11 +255,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
 async def async_unload_entry(
     hass: HomeAssistant, entry: QolsysPanelConfigEntry
 ) -> bool:
-    """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        QolsysPanel = entry.runtime_data
-        await QolsysPanel.stop()
-    return unload_ok
+    """Unload a config entry.
+
+    HA cancels the controller task (a config entry background task) once the
+    platforms have unloaded. QolsysPanel.stop() isn't used because it can hang
+    while the controller is waiting to reconnect.
+    """
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
 def _panel_object_present(QolsysPanel: qolsys_controller, suffix: str) -> bool:
