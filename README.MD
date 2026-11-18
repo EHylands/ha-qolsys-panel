@@ -292,6 +292,8 @@ actions:
 
 This integration is **local push**. It maintains a persistent local MQTT connection to the panel (by emulating an IQ Remote) and receives state changes in real time as the panel reports them within moments of a change. The integration does **not** poll the panel on an interval. If the connection drops it reconnects automatically.
 
+When a partition, zone, automation device, scene or camera is added to or removed from the panel, the integration reloads itself automatically about 10 seconds later (several changes in a row cause a single reload) so new devices appear and removed ones are cleaned up.
+
 ## ⚠️ Known Limitations
 
 - **IQ Remote emulation** — The integration communicates with the panel by emulating an IQ Remote device. Only features and devices the panel exposes to IQ Remotes can be monitored or controlled
@@ -312,7 +314,7 @@ The integration will be cleanly removed from your system.
 
 ### 🧹 Removing Stale Devices
 
-When a zone, automation device or camera is removed from the Qolsys Panel, its device in Home Assistant is cleaned up **automatically** the next time the integration reloads (or Home Assistant restarts).
+When a zone, automation device or camera is removed from the Qolsys Panel, its device in Home Assistant is cleaned up **automatically**: the integration reloads itself when the panel reports the removal.
 
 You can also remove a stale device **manually** at any time:
 
