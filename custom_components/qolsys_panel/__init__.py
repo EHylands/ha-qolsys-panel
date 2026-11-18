@@ -169,7 +169,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: QolsysPanelConfigEntry) 
         connected_task.cancel()
         controller_task.cancel()
         await asyncio.wait({controller_task})
-        
+
         if controller_task in done:
             exc = controller_task.exception()
             _LOGGER.error("Qolsys Panel startup failed: %r", exc)
