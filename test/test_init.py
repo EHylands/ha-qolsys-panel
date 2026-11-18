@@ -1,16 +1,22 @@
 """Tests for the Qolsys Panel integration setup."""
 
 import asyncio
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 import logging
 from unittest.mock import AsyncMock, MagicMock, patch
 
+from freezegun.api import FrozenDateTimeFactory
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import (
+    MockConfigEntry,
+    async_fire_time_changed,
+)
 from qolsys_controller.enum_qolsys import ControllerState, QolsysNotification
 from qolsys_controller.errors import QolsysConfigError, QolsysMqttError, QolsysSslError
 
 from custom_components.qolsys_panel import (
+    _DEVICE_CHANGE_NOTIFICATIONS,
+    _RELOAD_COOLDOWN_SECONDS,
     _async_remove_stale_devices,
     async_migrate_entry,
     async_remove_config_entry_device,
@@ -34,6 +40,22 @@ RESTORED_MESSAGE = "Connection to Qolsys Panel restored"
 async def _block_forever(*_args, **_kwargs) -> None:
     """Simulate a controller call that never completes (blocks until cancelled)."""
     await asyncio.Event().wait()
+
+
+class _FakeRunForever:
+    """Stand-in for run_forever that runs until cancelled, counting both."""
+
+    def __init__(self) -> None:
+        self.started = 0
+        self.cancelled = 0
+
+    async def run(self, *_args, **_kwargs) -> None:
+        self.started += 1
+        try:
+            await asyncio.Event().wait()
+        except asyncio.CancelledError:
+            self.cancelled += 1
+            raise
 
 
 @pytest.fixture(autouse=True)
@@ -177,7 +199,9 @@ async def test_unload_unregisters_connection_logger(
     mock_config_entry: MockConfigEntry,
     mock_controller: MagicMock,
 ):
-    """Test unloading the entry stops the controller and unregisters."""
+    """Test unloading the entry cancels the controller and unregisters."""
+    run_forever = _FakeRunForever()
+    mock_controller.run_forever.side_effect = run_forever.run
     mock_config_entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
     await hass.async_block_till_done()
@@ -188,10 +212,125 @@ async def test_unload_unregisters_connection_logger(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.NOT_LOADED
-    mock_controller.stop.assert_awaited_once()
+    assert run_forever.cancelled == 1
+    # stop() can hang while the controller is waiting to reconnect.
+    mock_controller.stop.assert_not_awaited()
     mock_controller.state.unregister.assert_any_call(
         QolsysNotification.PANEL_STATUS_UPDATE, status_callback
     )
+
+
+def _get_device_change_callbacks(
+    controller: MagicMock,
+) -> dict[QolsysNotification, Callable[[], None]]:
+    """Return the add/delete callbacks registered during setup, by notification."""
+    return {
+        call.args[0]: call.args[1]
+        for call in controller.state.register.call_args_list
+        if call.args[0] in _DEVICE_CHANGE_NOTIFICATIONS
+    }
+
+
+@pytest.mark.parametrize("notification", _DEVICE_CHANGE_NOTIFICATIONS)
+async def test_device_change_reloads_entry(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    freezer: FrozenDateTimeFactory,
+    notification: QolsysNotification,
+) -> None:
+    """A device added to or deleted from the panel reloads the entry."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    callbacks = _get_device_change_callbacks(mock_controller)
+    assert callbacks.keys() == set(_DEVICE_CHANGE_NOTIFICATIONS)
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as mock_reload:
+        callbacks[notification]()
+        await hass.async_block_till_done()
+        mock_reload.assert_not_called()
+
+        freezer.tick(_RELOAD_COOLDOWN_SECONDS)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+
+    mock_reload.assert_called_once_with(mock_config_entry.entry_id)
+
+
+async def test_device_change_burst_reloads_once(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """A burst of add/delete notifications is coalesced into one reload."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    callbacks = _get_device_change_callbacks(mock_controller)
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as mock_reload:
+        for callback in callbacks.values():
+            callback()
+        freezer.tick(_RELOAD_COOLDOWN_SECONDS)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+
+    mock_reload.assert_called_once_with(mock_config_entry.entry_id)
+
+
+async def test_device_change_reload_end_to_end(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """The scheduled reload restarts the controller and the entry comes back."""
+    run_forever = _FakeRunForever()
+    mock_controller.run_forever.side_effect = run_forever.run
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    _get_device_change_callbacks(mock_controller)[QolsysNotification.ZONE_ADD]()
+    freezer.tick(_RELOAD_COOLDOWN_SECONDS)
+    async_fire_time_changed(hass)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.LOADED
+    assert run_forever.started == 2
+    assert run_forever.cancelled == 1
+
+
+async def test_unload_unregisters_device_change_listener(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_controller: MagicMock,
+    freezer: FrozenDateTimeFactory,
+) -> None:
+    """Unloading unregisters the listener and drops a pending reload."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    callbacks = _get_device_change_callbacks(mock_controller)
+
+    with patch.object(hass.config_entries, "async_schedule_reload") as mock_reload:
+        # Pending reload when the entry is unloaded.
+        callbacks[QolsysNotification.ZONE_DELETE]()
+        assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+        freezer.tick(_RELOAD_COOLDOWN_SECONDS)
+        async_fire_time_changed(hass)
+        await hass.async_block_till_done()
+
+    mock_reload.assert_not_called()
+    for notification, callback in callbacks.items():
+        mock_controller.state.unregister.assert_any_call(notification, callback)
 
 
 @pytest.mark.parametrize(
@@ -229,8 +368,13 @@ async def test_setup_connection_timeout(
     mock_config_entry: MockConfigEntry,
     mock_controller: MagicMock,
 ) -> None:
-    """No connection and no fatal error within the timeout leaves the entry retrying."""
-    mock_controller.run_forever.side_effect = _block_forever
+    """No connection and no fatal error within the timeout leaves the entry retrying.
+
+    The controller task is cancelled rather than stopped: stop() can hang while
+    the controller is waiting to reconnect.
+    """
+    run_forever = _FakeRunForever()
+    mock_controller.run_forever.side_effect = run_forever.run
     mock_controller.wait_until_connected.side_effect = _block_forever
     mock_config_entry.add_to_hass(hass)
 
@@ -239,6 +383,8 @@ async def test_setup_connection_timeout(
         await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+    assert run_forever.cancelled == 1
+    mock_controller.stop.assert_not_awaited()
 
 
 async def test_migrate_future_version_fails(hass: HomeAssistant) -> None:
