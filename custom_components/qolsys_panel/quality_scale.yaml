@@ -1,11 +1,6 @@
 rules:
   # Bronze
-  action-setup:
-    status: exempt
-    comment: |
-      Only entity service actions are provided, registered via
-      async_register_platform_entity_service. Entity services are tied to a
-      loaded entity and are exempt from action-setup.
+  action-setup: done
   appropriate-polling:
     status: exempt
     comment: |
@@ -16,9 +11,17 @@ rules:
   config-flow: done
   dependency-transparency: done
   docs-actions: done
+  docs-conditions:
+    status: exempt
+    comment: |
+      Integration does not provide conditions.
   docs-high-level-description: done
   docs-installation-instructions: done
   docs-removal-instructions: done
+  docs-triggers:
+    status: exempt
+    comment: |
+      Integration does not provide triggers.
   entity-event-setup: done
   entity-unique-id: done
   has-entity-name: done
@@ -51,13 +54,21 @@ rules:
   docs-supported-functions: done
   docs-troubleshooting: done
   docs-use-cases: todo
+  dynamic-devices:
+    status: todo
+    comment: |
+      Zones and devices added on the panel only appear after a reload.
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default:
     status: exempt
     comment: |
       All entities are considered useful
-  entity-translations: done
+  entity-translations:
+    status: todo
+    comment: |
+      Only sensor, binary sensor and event entities use translation keys; the
+      other platforms set hard-coded English names.
   exception-translations: done
   icon-translations: done
   reconfiguration-flow: done
@@ -75,3 +86,4 @@ rules:
     status: exempt
     comment: |
       Integration does not make any HTTP requests.
+  strict-typing: done
