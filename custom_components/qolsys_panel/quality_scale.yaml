@@ -54,10 +54,7 @@ rules:
   docs-supported-functions: done
   docs-troubleshooting: done
   docs-use-cases: todo
-  dynamic-devices:
-    status: todo
-    comment: |
-      Zones and devices added on the panel only appear after a reload.
+  dynamic-devices: done
   entity-category: done
   entity-device-class: done
   entity-disabled-by-default:
