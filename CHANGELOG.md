@@ -2,6 +2,54 @@
 
 <!-- version list -->
 
+## v1.15.0 (2026-11-24)
+
+### 🐛 Bug Fixes
+
+- Translate alarm panel and setup errors
+  ([#193](https://github.com/EHylands/ha-qolsys-panel/pull/193),
+  [`89ed4dd`](https://github.com/EHylands/ha-qolsys-panel/commit/89ed4ddffba30b8156ac5ccd605aca1d17c639f4))
+
+- Use has_entity_name for scene and weather entities
+  ([#192](https://github.com/EHylands/ha-qolsys-panel/pull/192),
+  [`820cf52`](https://github.com/EHylands/ha-qolsys-panel/commit/820cf5296df424e2a31c281ae04e8d9c178846bb))
+
+### 🧹 Chores
+
+- Correct quality scale rule statuses ([#191](https://github.com/EHylands/ha-qolsys-panel/pull/191),
+  [`b687704`](https://github.com/EHylands/ha-qolsys-panel/commit/b687704cff3f7877fa99facc62fb178e98fb20ab))
+
+- Ship brand images with the integration
+  ([#189](https://github.com/EHylands/ha-qolsys-panel/pull/189),
+  [`f4332f1`](https://github.com/EHylands/ha-qolsys-panel/commit/f4332f1a39fc02180ef92a88c86e07877ebce86c))
+
+### 🤖 Continuous Integration
+
+- Disable squash commit body parsing ([#187](https://github.com/EHylands/ha-qolsys-panel/pull/187),
+  [`34f0575`](https://github.com/EHylands/ha-qolsys-panel/commit/34f05750bb4fd929ded697eb0d5471418870c0a2))
+
+- Rebuild dev only at the start of a beta build
+  ([#188](https://github.com/EHylands/ha-qolsys-panel/pull/188),
+  [`2a3f388`](https://github.com/EHylands/ha-qolsys-panel/commit/2a3f388b910a0ceba017801328964844ba0041d4))
+
+### 📝 Documentation
+
+- Add automation examples ([#194](https://github.com/EHylands/ha-qolsys-panel/pull/194),
+  [`262de48`](https://github.com/EHylands/ha-qolsys-panel/commit/262de483a75e493f58116cba66a19e3a9efcd77d))
+
+### ✨ Features
+
+- Reload integration on panel device changes
+  ([#195](https://github.com/EHylands/ha-qolsys-panel/pull/195),
+  [`79e6172`](https://github.com/EHylands/ha-qolsys-panel/commit/79e61727e2513b23bbd5626fbdc7f8c6dbc1c57f))
+
+### ✅ Testing
+
+- Cover remaining config flow error paths
+  ([#190](https://github.com/EHylands/ha-qolsys-panel/pull/190),
+  [`7ddb3c7`](https://github.com/EHylands/ha-qolsys-panel/commit/7ddb3c748e12d0d2b2b73b62b69e50729e7ad3ab))
+
+
 ## v1.14.4 (2026-11-17)
 
 ### 🐛 Bug Fixes
