@@ -72,8 +72,6 @@ _DEVICE_CHANGE_NOTIFICATIONS = (
     QolsysNotification.ZONE_DELETE,
     QolsysNotification.AUTOMATION_ADD,
     QolsysNotification.AUTOMATION_DELETE,
-    QolsysNotification.SCENE_ADD,
-    QolsysNotification.SCENE_DELETE,
     QolsysNotification.CAMERA_ADD,
     QolsysNotification.CAMERA_DELETE,
 )
