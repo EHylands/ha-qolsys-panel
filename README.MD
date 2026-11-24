@@ -3,7 +3,7 @@
 [![Build](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/publish.yml/badge.svg)](https://github.com/EHylands/ha-qolsys-panel/actions/workflows/publish.yml)
 [![latest release](https://img.shields.io/github/v/release/EHylands/ha-qolsys-panel?logo=github&sort=semver)](https://github.com/EHylands/ha-qolsys-panel/releases)
 
-This is a HACS custom integration for **Qolsys Panels** (such as IQ Panel 2+/4), allowing local pairing and control via Home Assistant.
+This is a HACS custom integration for **Qolsys Panels** (such as IQ Panel 2+/4/5), allowing local pairing and control via Home Assistant.
 
 ## 🧩 Installation
 
@@ -131,6 +131,16 @@ The file is a JSON array of users, where each entry maps a panel **user id** to 
 
 After creating or editing `users.conf`, reload the integration (or restart Home Assistant) for the changes to be picked up. If the arm/disarm code options are enabled but `users.conf` is missing or empty, user-code validation will not work as intended.
 
+#### 🔒 Why user codes are stored in plain text
+
+Hashing or encrypting `users.conf` wouldn't make your codes meaningfully safer:
+
+- **Hashing:** a 4-digit code has only 10,000 possible values (a 6-digit code has 1,000,000). Anyone with the file can simply try them all. Salting doesn't change that, and even a deliberately slow hash only delays it.
+- **Encryption:** Home Assistant must read the codes on its own at startup, so the key would have to be stored on the same system, readable by anyone who can read the file.
+- **The pairing certificate:** the `pki` folder next to `users.conf` holds the integration's paired IQ Remote certificate, which can arm and disarm the panel without a code. The integration checks the code itself; the panel never sees it.
+
+The user code options control who can arm and disarm **from Home Assistant**. They don't protect the panel from someone who can read your configuration directory. Treat `<config>/qolsys_panel/` like `secrets.yaml`: limit access to your Home Assistant host, its file-sharing and SSH add-ons, and its backups.
+
 ## ✅ Supported Devices
 
 Any **Qolsys Panel** that can be paired with an **IQ Remote**:
@@ -158,7 +168,7 @@ The integration emulates an IQ Remote and exposes the panel's capabilities to Ho
 
 - **Diagnostic binary sensors** (`binary_sensor`): AC status, tamper, battery status, communication failure, Z-Wave controller, secure arming, auto stay, auto arm stay, auto bypass and Control4.
 - **Doorbell** and **Chime** (`binary_sensor`): pulse when the panel reports a doorbell press or a chime.
-- **Media Player** (`media_player`): text-to-speech. Send plain text with `media_player.play_media` and `media_content_type: text`, and the panel speaks it (see [Make the panel speak](#make-the-panel-speak)). `tts.speak` and the `tts.*_say` actions send audio, which the panel can't play, so it ignores them.
+- **Media Player** (`media_player`): text-to-speech. Send plain text with `media_player.play_media` and `media_content_type: text`, and the panel speaks it (see [Make the panel speak](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md#make-the-panel-speak)). `tts.speak` and the `tts.*_say` actions send audio, which the panel can't play, so it ignores them.
 - **Scenes** (`scene`): activate scenes defined on the panel.
 - **Weather** (`weather`): the panel's weather forecast.
 - **Peek In Picture** (`image`): the most recent Peek In snapshot; refreshed by the `update_picture_peek_in` action.
@@ -196,103 +206,20 @@ Most actions target a partition's `alarm_control_panel` entity; `change_master_v
 
 ## 💡 Automation Examples
 
-Paste an example into a new automation's YAML editor (**Settings → Automations & scenes → Create automation → ⋮ → Edit in YAML**). Then replace the entity IDs with your own: they're listed under **Settings → Devices & services → Qolsys Panel → Entities**.
+Ready-to-paste automations are in [Automation Examples](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md):
 
-### Make the panel speak
-
-Announce on the panel when the garage door has been open for 10 minutes. The panel speaks plain text only, so use `media_player.play_media` with `media_content_type: text`. `tts.speak` won't work.
-
-```yaml
-alias: "Panel: garage door left open"
-triggers:
-  - trigger: state
-    entity_id: cover.garage_door
-    to: "open"
-    for: "00:10:00"
-actions:
-  - action: media_player.play_media
-    target:
-      entity_id: media_player.panel_qolsys_tts_player
-    data:
-      media_content_type: text
-      media_content_id: "The garage door has been open for 10 minutes."
-```
-
-### Send a Peek In snapshot when the doorbell rings
-
-When the panel reports a doorbell press, capture a Peek In picture and send it to your phone. **Enable Peek In Picture** must be on in the integration options. It's on by default.
-
-```yaml
-alias: "Doorbell: send a Peek In snapshot"
-triggers:
-  - trigger: state
-    entity_id: binary_sensor.panel_doorbell
-    to: "on"
-actions:
-  - action: qolsys_panel.update_picture_peek_in
-    data:
-      config_entry_id: "{{ config_entry_id('image.panel_peek_in_picture') }}"
-  # The picture arrives from the panel a moment later.
-  - wait_for_trigger:
-      - trigger: state
-        entity_id: image.panel_peek_in_picture
-    timeout: "00:00:30"
-    continue_on_timeout: false
-  - action: notify.mobile_app_your_phone
-    data:
-      message: "Someone is at the door."
-      data:
-        image: /api/image_proxy/image.panel_peek_in_picture
-```
-
-### Arm away when everyone leaves
-
-Arm the partition when nobody is home. Turning on **Force Arm** first bypasses zones left open, such as a window, instead of failing to arm. The switch turns itself off after the partition arms.
-
-```yaml
-alias: "Alarm: arm away when everyone leaves"
-triggers:
-  - trigger: numeric_state
-    entity_id: zone.home
-    below: 1
-actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.partition1_home_force_arm
-  - action: alarm_control_panel.alarm_arm_away
-    target:
-      entity_id: alarm_control_panel.partition1_home
-    # Only needed when "User Code required to Arm" is on in the integration options.
-    # data:
-    #   code: !secret alarm_code
-```
-
-### Toggle lights from a scene controller button
-
-Double-tap a Z-Wave Central Scene button to toggle a light. Each button is an event entity. Its state changes on every press, and the `event_type` attribute says which kind of press it was.
-
-```yaml
-alias: "Remote: double-tap toggles the living room lights"
-triggers:
-  - trigger: state
-    entity_id: event.living_room_remote_scene_1
-    not_from: unavailable
-conditions:
-  - condition: state
-    entity_id: event.living_room_remote_scene_1
-    attribute: event_type
-    state: double_tap
-actions:
-  - action: light.toggle
-    target:
-      entity_id: light.living_room
-```
+- [Make the panel speak](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md#make-the-panel-speak): announce on the panel when the garage door has been left open.
+- [Send a Peek In snapshot when the doorbell rings](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md#send-a-peek-in-snapshot-when-the-doorbell-rings): capture a Peek In picture and send it to your phone.
+- [Arm away when everyone leaves](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md#arm-away-when-everyone-leaves): force-arm the partition when nobody is home.
+- [Toggle lights from a scene controller button](https://github.com/EHylands/ha-qolsys-panel/blob/main/docs/automation-examples.md#toggle-lights-from-a-scene-controller-button): double-tap a Z-Wave Central Scene button to toggle a light.
 
 ## 🔄 Data Updates
 
 This integration is **local push**. It maintains a persistent local MQTT connection to the panel (by emulating an IQ Remote) and receives state changes in real time as the panel reports them within moments of a change. The integration does **not** poll the panel on an interval. If the connection drops it reconnects automatically.
 
-When a partition, zone, automation device, scene or camera is added to or removed from the panel, the integration reloads itself automatically about 10 seconds later (several changes in a row cause a single reload) so new devices appear and removed ones are cleaned up.
+### Adding and Removing Devices
+
+When a partition, zone, automation device or camera is added to or removed from the panel, the integration reloads itself automatically about 10 seconds later (several changes in a row cause a single reload). New devices appear and removed ones are cleaned up.
 
 ## ⚠️ Known Limitations
 
@@ -356,6 +283,6 @@ Only devices that the panel no longer reports are removed. Devices still present
 | Smart Outlet     | 🛠️     | ❌     | ❌    | ❌    |
 | Thermometer      | ✅     | ❌     | ❌    | ❌    |
 | Thermostat       | ✅     | ❌     | ❌    | ✅    |
-| Water Valve      | 🛠️     | ❌     | ❌    | ❌    |
+| Water Valve      | ✅     | ❌     | ❌    | ❌    |
 
 🛠️ = partially supported or untested
